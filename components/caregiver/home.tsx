@@ -27,6 +27,7 @@ import {
   MessageCircle,
   Heart,
   ArrowLeftRight,
+  History,
 } from 'lucide-react'
 import { MedicationForm } from './medication-form'
 import { SettingsPanel } from './settings-panel'
@@ -40,6 +41,8 @@ import { AnalyticsDashboard } from './analytics-dashboard'
 import { EmergencyContacts } from './emergency-contacts'
 import { Messages } from './messages'
 import { WellnessOverview } from './wellness-overview'
+import { MedicationHistory } from './medication-history'
+import { QuickPillActions } from './quick-pill-actions'
 
 /**
  * Caregiver Home Screen
@@ -58,6 +61,7 @@ export function CaregiverHome() {
   const [showEmergency, setShowEmergency] = useState(false)
   const [showMessages, setShowMessages] = useState(false)
   const [showWellness, setShowWellness] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
 
   const unreadMessages = getUnreadCount()
 
@@ -143,6 +147,11 @@ export function CaregiverHome() {
   // Show wellness
   if (showWellness) {
     return <WellnessOverview onClose={() => setShowWellness(false)} />
+  }
+
+  // Show medication history
+  if (showHistory) {
+    return <MedicationHistory onClose={() => setShowHistory(false)} />
   }
 
   return (
@@ -231,100 +240,194 @@ export function CaregiverHome() {
 
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto px-6 pb-24">
+        {/* Medication Streak Counter - NEW FEATURE */}
+        {totalMeds > 0 && (
+          <motion.div
+            className="bg-gradient-to-br from-sahay-sage/10 to-sahay-success/10 rounded-2xl p-5 mb-6 border-2 border-sahay-sage/20 card-interactive"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Current Streak</p>
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-3xl font-bold text-sahay-sage">{data.currentStreak}</h3>
+                  <span className="text-lg text-muted-foreground">days</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Best: {data.longestStreak} days
+                </p>
+              </div>
+              <motion.div
+                className="w-16 h-16 rounded-full bg-sahay-success/20 flex items-center justify-center"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <span className="text-2xl">🔥</span>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Quick Pill Actions - NEW FEATURE */}
+        {totalMeds > 0 && <QuickPillActions />}
+
         {/* Gentle check-in suggestion */}
         <GentleCheckIn />
 
         {/* Care confidence indicator */}
         {totalMeds > 0 && (
-          <div className="mb-6">
+          <motion.div 
+            className="mb-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <CareConfidence />
-          </div>
+          </motion.div>
         )}
 
         {/* Quick actions - row 1 */}
         <div className="grid grid-cols-4 gap-3 mb-3">
-          <button
+          <motion.button
             onClick={() => setShowTimeline(true)}
             className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-sage/50 transition-all touch-manipulation
-                     focus:outline-none focus:ring-2 focus:ring-ring"
+                     hover:border-sahay-sage/50 active:bg-sahay-sage/5 transition-all touch-manipulation button-interactive
+                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-1"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <BookOpen className="w-5 h-5 text-sahay-sage" />
+            <motion.div
+              animate={{ y: [0, -2, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <BookOpen className="w-5 h-5 text-sahay-sage" />
+            </motion.div>
             <span className="text-xs font-medium text-foreground">Timeline</span>
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             onClick={() => setShowAnalytics(true)}
             className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-blue/50 transition-all touch-manipulation
-                     focus:outline-none focus:ring-2 focus:ring-ring"
+                     hover:border-sahay-blue/50 active:bg-sahay-blue/5 transition-all touch-manipulation button-interactive
+                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <BarChart3 className="w-5 h-5 text-sahay-blue" />
+            <motion.div
+              animate={{ y: [0, -2, 0] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 0.2 }}
+            >
+              <BarChart3 className="w-5 h-5 text-sahay-blue" />
+            </motion.div>
             <span className="text-xs font-medium text-foreground">Insights</span>
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             onClick={() => setShowMessages(true)}
             className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-warm/50 transition-all touch-manipulation relative
-                     focus:outline-none focus:ring-2 focus:ring-ring"
+                     hover:border-sahay-warm/50 active:bg-sahay-warm/5 transition-all touch-manipulation button-interactive relative
+                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-3"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <MessageCircle className="w-5 h-5 text-sahay-warm" />
+            <motion.div
+              animate={{ y: [0, -2, 0] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 0.4 }}
+            >
+              <MessageCircle className="w-5 h-5 text-sahay-warm" />
+            </motion.div>
             <span className="text-xs font-medium text-foreground">Messages</span>
             {unreadMessages > 0 && (
-              <span className="absolute top-2 right-2 w-5 h-5 bg-sahay-sage text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
+              <motion.span 
+                className="absolute top-2 right-2 w-5 h-5 bg-sahay-sage text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+              >
                 {unreadMessages}
-              </span>
+              </motion.span>
             )}
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             onClick={() => setShowWellness(true)}
             className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-success/50 transition-all touch-manipulation
-                     focus:outline-none focus:ring-2 focus:ring-ring"
+                     hover:border-sahay-success/50 active:bg-sahay-success/5 transition-all touch-manipulation button-interactive
+                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-4"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <Heart className="w-5 h-5 text-sahay-success" />
+            <motion.div
+              animate={{ y: [0, -2, 0] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
+            >
+              <Heart className="w-5 h-5 text-sahay-success" />
+            </motion.div>
             <span className="text-xs font-medium text-foreground">Wellness</span>
-          </button>
+          </motion.button>
         </div>
 
         {/* Quick actions - row 2 */}
         <div className="grid grid-cols-4 gap-3 mb-6">
-          <button
+          <motion.button
             onClick={() => setShowRoleStatus(true)}
             className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-blue/50 transition-all touch-manipulation
-                     focus:outline-none focus:ring-2 focus:ring-ring"
+                     hover:border-sahay-blue/50 active:bg-sahay-blue/5 transition-all touch-manipulation button-interactive
+                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <Users className="w-5 h-5 text-sahay-blue" />
             <span className="text-xs font-medium text-foreground">Roles</span>
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             onClick={() => setShowNotes(true)}
             className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-warm/50 transition-all touch-manipulation
-                     focus:outline-none focus:ring-2 focus:ring-ring"
+                     hover:border-sahay-warm/50 active:bg-sahay-warm/5 transition-all touch-manipulation button-interactive
+                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-3"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <FileText className="w-5 h-5 text-sahay-warm" />
             <span className="text-xs font-medium text-foreground">Notes</span>
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             onClick={() => setShowEmergency(true)}
             className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-destructive/50 transition-all touch-manipulation
-                     focus:outline-none focus:ring-2 focus:ring-ring"
+                     hover:border-destructive/50 active:bg-destructive/5 transition-all touch-manipulation button-interactive
+                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-4"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <Phone className="w-5 h-5 text-destructive" />
             <span className="text-xs font-medium text-foreground">Emergency</span>
-          </button>
-          <button
-            onClick={switchRole}
+          </motion.button>
+          <motion.button
+            onClick={() => setShowHistory(true)}
             className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-muted-foreground/50 transition-all touch-manipulation
-                     focus:outline-none focus:ring-2 focus:ring-ring"
+                     hover:border-sahay-blue/50 active:bg-sahay-blue/5 transition-all touch-manipulation button-interactive
+                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-5"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <ArrowLeftRight className="w-5 h-5 text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">Switch</span>
-          </button>
+            <History className="w-5 h-5 text-sahay-blue" />
+            <span className="text-xs font-medium text-foreground">History</span>
+          </motion.button>
         </div>
+
+        {/* Switch role button - moved to its own row */}
+        <motion.button
+          onClick={switchRole}
+          className="w-full py-3 px-4 bg-card border-2 border-border rounded-xl flex items-center justify-center gap-2
+                   hover:border-muted-foreground/50 active:bg-muted/10 transition-all touch-manipulation button-interactive
+                   focus:outline-none focus:ring-2 focus:ring-ring mb-6"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <ArrowLeftRight className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">Switch to {data.careReceiver?.name}&apos;s View</span>
+        </motion.button>
 
         {/* Refill awareness - show if any meds need refill soon */}
         {data.medications.some(
@@ -379,39 +482,65 @@ export function CaregiverHome() {
               </div>
 
               <div className="space-y-2">
-                {meds.map((med) => (
-                  <button
+                {meds.map((med, idx) => (
+                  <motion.button
                     key={med.id}
                     onClick={() => setEditingMed(med)}
                     className="w-full p-4 bg-card rounded-xl border-2 border-border 
-                             hover:border-sahay-sage/50 transition-all text-left
-                             touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage"
+                             hover:border-sahay-sage/50 active:bg-sahay-sage/5 text-left
+                             touch-manipulation button-interactive focus:outline-none focus:ring-2 focus:ring-sahay-sage"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 + idx * 0.05, duration: 0.4 }}
+                    whileHover={{ x: 4, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)' }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
+                      <div className="flex items-center gap-3 flex-1">
+                        <motion.div
                           className={`w-8 h-8 rounded-full flex items-center justify-center
                                     ${med.taken ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}
+                          animate={med.taken ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+                          transition={{ duration: 2, repeat: Infinity }}
                         >
                           {med.taken ? (
-                            <Check className="w-4 h-4 text-sahay-success" />
+                            <motion.div
+                              animate={{ scale: [0, 1] }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <Check className="w-4 h-4 text-sahay-success" />
+                            </motion.div>
                           ) : (
                             <Clock className="w-4 h-4 text-sahay-pending" />
                           )}
-                        </div>
+                        </motion.div>
                         <div>
-                          <p className="text-lg font-medium text-foreground">
+                          <p className={`text-lg font-medium ${med.taken ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                             {med.name}
                           </p>
                           <p className="text-muted-foreground">
                             {med.dosage}
                             {med.notes && ` · ${med.notes}`}
                           </p>
+                          {med.streak && med.streak > 0 && (
+                            <motion.p 
+                              className="text-xs text-sahay-success font-medium mt-1"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                            >
+                              🔥 {med.streak} day streak
+                            </motion.p>
+                          )}
                         </div>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      <motion.div
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      </motion.div>
                     </div>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </section>
@@ -437,16 +566,24 @@ export function CaregiverHome() {
       {/* Floating add button */}
       <div className="fixed bottom-6 left-0 right-0 px-6">
         <div className="max-w-md mx-auto">
-          <button
+          <motion.button
             onClick={() => setShowAddForm(true)}
             className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold 
-                     rounded-xl flex items-center justify-center gap-2 transition-all
-                     hover:opacity-90 shadow-lg touch-manipulation 
+                     rounded-xl flex items-center justify-center gap-2 shadow-lg touch-manipulation button-interactive
                      focus:outline-none focus:ring-2 focus:ring-sahay-sage focus:ring-offset-2"
+            whileHover={{ scale: 1.05, boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15)' }}
+            whileTap={{ scale: 0.98 }}
+            animate={{ y: [0, -2, 0] }}
+            transition={{ duration: 3, repeat: Infinity }}
           >
-            <Plus className="w-5 h-5" />
+            <motion.div
+              animate={{ rotate: [0, 90, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Plus className="w-5 h-5" />
+            </motion.div>
             Add medication
-          </button>
+          </motion.button>
         </div>
       </div>
     </main>

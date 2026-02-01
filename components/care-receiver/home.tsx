@@ -378,48 +378,70 @@ export function CareReceiverHome() {
           <motion.button
             onClick={handleTookIt}
             className="w-full py-6 px-8 bg-primary text-primary-foreground text-2xl font-semibold 
-                     rounded-2xl flex items-center justify-center gap-3 transition-all
-                     shadow-lg touch-manipulation
+                     rounded-2xl flex items-center justify-center gap-3 shadow-lg touch-manipulation button-interactive
                      focus:outline-none focus:ring-4 focus:ring-primary/50"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.05, boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)' }}
+            whileTap={{ scale: 0.95 }}
           >
-            <Check className="w-7 h-7" strokeWidth={2.5} />
+            <motion.div animate={{ rotate: [0, -10, 10, 0] }} transition={{ duration: 0.6 }}>
+              <Check className="w-7 h-7" strokeWidth={2.5} />
+            </motion.div>
             I took it
           </motion.button>
 
           {/* Quick actions - simplified for care receiver */}
           <div className="grid grid-cols-3 gap-3 mt-8">
-            <button
+            <motion.button
               onClick={() => setShowWellness(true)}
               className="p-4 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-2
-                       hover:border-sahay-success/50 active:bg-sahay-sage-light transition-all touch-manipulation
+                       hover:border-sahay-success/50 active:bg-sahay-sage-light transition-all touch-manipulation button-interactive
                        focus:outline-none focus:ring-2 focus:ring-ring"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
             >
-              <Smile className="w-7 h-7 text-sahay-success" />
+              <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+                <Smile className="w-7 h-7 text-sahay-success" />
+              </motion.div>
               <span className="text-sm font-medium text-foreground">How I feel</span>
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={() => setShowMessages(true)}
               className="p-4 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-2
-                       hover:border-sahay-blue/50 active:bg-sahay-sage-light transition-all touch-manipulation
+                       hover:border-sahay-blue/50 active:bg-sahay-sage-light transition-all touch-manipulation button-interactive
                        focus:outline-none focus:ring-2 focus:ring-ring"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
             >
-              <MessageCircle className="w-7 h-7 text-sahay-blue" />
+              <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity, delay: 0.2 }}>
+                <MessageCircle className="w-7 h-7 text-sahay-blue" />
+              </motion.div>
               <span className="text-sm font-medium text-foreground">Message</span>
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={() => setShowEmergency(true)}
               className="p-4 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-2
-                       hover:border-destructive/50 active:bg-destructive/10 transition-all touch-manipulation
+                       hover:border-destructive/50 active:bg-destructive/10 transition-all touch-manipulation button-interactive
                        focus:outline-none focus:ring-2 focus:ring-ring"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
             >
-              <Phone className="w-7 h-7 text-destructive" />
+              <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity, delay: 0.4 }}>
+                <Phone className="w-7 h-7 text-destructive" />
+              </motion.div>
               <span className="text-sm font-medium text-foreground">Call help</span>
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
