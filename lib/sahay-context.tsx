@@ -96,8 +96,22 @@ interface SahayContextValue {
   getUnreadCount: () => number
 
   // Analytics helpers
-  getWeeklyAdherence: () => { day: string; taken: number; total: number }[]
   getMedicationStats: (medId: string) => { streak: number; total: number }
+  getWeeklyAdherence: () => { day: string; taken: number; total: number }[]
+
+  // Safety check
+  triggerSafetyCheck: (by: 'motion' | 'manual') => void
+  dismissSafetyCheck: () => void
+  escalateSafetyCheck: () => void
+
+  // New features
+  completeDailyCheckIn: () => void
+  requestHelp: () => void
+  startHandover: (targetName: string, endDate: string) => void
+  endHandover: () => void
+  getHumanInsights: () => string[]
+  getDoctorPrepSummary: () => string
+  dismissChangeIndicator: () => void
 
   // Utility
   resetApp: () => void
@@ -164,6 +178,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
             ? { ...med, ...updates, lastUpdated: new Date().toISOString() }
             : med
         ),
+        lastChangeNotifiedAt: new Date().toISOString(),
       }))
     },
     []
@@ -173,6 +188,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     setData((prev) => ({
       ...prev,
       medications: prev.medications.filter((med) => med.id !== id),
+      lastChangeNotifiedAt: new Date().toISOString(),
     }))
   }, [])
 
@@ -346,28 +362,32 @@ export function SahayProvider({ children }: { children: ReactNode }) {
 
   // Check-in suggestions (gentle, not aggressive)
   const getSuggestedCheckIn = useCallback(() => {
-    // Only suggest check-in if: caregiver is logged in, there are pending meds,
-    // and we haven't suggested recently
     if (data.userRole !== 'caregiver') return null
+
+    // Feature 8: Missed-Day Soft Follow-Up
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = yesterday.toISOString().split('T')[0]
+    const yesterdayClosure = (data.dayClosures || []).find((c) => c.date === yesterdayStr)
+
+    // If they missed everything yesterday
+    if (yesterdayClosure && yesterdayClosure.totalMeds > 0 && yesterdayClosure.takenCount === 0) {
+      return "Would you like to check in?"
+    }
+
+    // Default suggestions
     if (data.medications.length === 0) return null
 
     const now = new Date()
     const hour = now.getHours()
-
-    // Only suggest during reasonable hours (9am - 8pm)
     if (hour < 9 || hour > 20) return null
-
-    // Check if we already suggested today
     if (data.lastCheckInSuggestion) {
       const lastSuggestion = new Date(data.lastCheckInSuggestion)
       const hoursSince = (now.getTime() - lastSuggestion.getTime()) / (1000 * 60 * 60)
-      if (hoursSince < 8) return null // Don't suggest more than once per 8 hours
+      if (hoursSince < 8) return null
     }
-
-    // Check if caregiver is marked as away
     if (data.caregiver?.roleStatus === 'away') return null
 
-    // Check if there are pending medications from earlier times
     const pendingMeds = data.medications.filter((m) => !m.taken)
     if (pendingMeds.length === 0) return null
 
@@ -521,6 +541,203 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  // Safety check actions
+  const triggerSafetyCheck = useCallback((by: 'motion' | 'manual') => {
+    setData((prev) => {
+      const newEvent: TimelineEvent = {
+        id: generateId(),
+        type: 'safety_check_triggered',
+        timestamp: new Date().toISOString(),
+        note: `Safety check triggered by ${by}`,
+        actor: 'careReceiver',
+      }
+      return {
+        ...prev,
+        safetyCheck: {
+          status: 'pending_check',
+          lastTriggered: new Date().toISOString(),
+          triggeredBy: by,
+        },
+        timeline: [...prev.timeline, newEvent],
+      }
+    })
+  }, [])
+
+  const dismissSafetyCheck = useCallback(() => {
+    setData((prev) => {
+      const newEvent: TimelineEvent = {
+        id: generateId(),
+        type: 'safety_check_dismissed',
+        timestamp: new Date().toISOString(),
+        note: 'Care receiver confirmed they are okay',
+        actor: 'careReceiver',
+      }
+      return {
+        ...prev,
+        safetyCheck: {
+          ...prev.safetyCheck,
+          status: 'idle',
+        },
+        timeline: [...prev.timeline, newEvent],
+      }
+    })
+  }, [])
+
+  const escalateSafetyCheck = useCallback(() => {
+    setData((prev) => {
+      const newEvent: TimelineEvent = {
+        id: generateId(),
+        type: 'safety_check_escalated',
+        timestamp: new Date().toISOString(),
+        note: 'Safety check escalated to caregiver due to no response',
+        actor: 'careReceiver',
+      }
+      return {
+        ...prev,
+        safetyCheck: {
+          ...prev.safetyCheck,
+          status: 'escalating',
+        },
+        timeline: [...prev.timeline, newEvent],
+      }
+    })
+  }, [])
+
+  // Daily check-in
+  const completeDailyCheckIn = useCallback(() => {
+    setData((prev) => {
+      const newEvent: TimelineEvent = {
+        id: generateId(),
+        type: 'fine_check_in',
+        timestamp: new Date().toISOString(),
+        actor: 'careReceiver',
+      }
+      return {
+        ...prev,
+        lastFineCheckIn: new Date().toISOString(),
+        timeline: [...prev.timeline, newEvent],
+      }
+    })
+  }, [])
+
+  // Request help
+  const requestHelp = useCallback(() => {
+    setData((prev) => {
+      const newEvent: TimelineEvent = {
+        id: generateId(),
+        type: 'help_requested',
+        timestamp: new Date().toISOString(),
+        actor: 'careReceiver',
+      }
+      return {
+        ...prev,
+        timeline: [...prev.timeline, newEvent],
+      }
+    })
+  }, [])
+
+  // Handover
+  const startHandover = useCallback((targetName: string, endDate: string) => {
+    setData((prev) => {
+      const newEvent: TimelineEvent = {
+        id: generateId(),
+        type: 'handover_started',
+        timestamp: new Date().toISOString(),
+        note: `Handed over care to ${targetName} until ${new Date(endDate).toLocaleDateString()}`,
+        actor: 'caregiver',
+      }
+      return {
+        ...prev,
+        caregiver: prev.caregiver ? {
+          ...prev.caregiver,
+          handover: { isActive: true, targetName, endDate }
+        } : null,
+        timeline: [...prev.timeline, newEvent],
+      }
+    })
+  }, [])
+
+  const endHandover = useCallback(() => {
+    setData((prev) => {
+      const newEvent: TimelineEvent = {
+        id: generateId(),
+        type: 'handover_ended',
+        timestamp: new Date().toISOString(),
+        actor: 'caregiver',
+      }
+      return {
+        ...prev,
+        caregiver: prev.caregiver ? {
+          ...prev.caregiver,
+          handover: { isActive: false }
+        } : null,
+        timeline: [...prev.timeline, newEvent],
+      }
+    })
+  }, [])
+
+  // Pattern Insights (Feature 2)
+  const getHumanInsights = useCallback(() => {
+    const insights: string[] = []
+    const timeline = data.timeline
+    const meds = data.medications
+
+    // 1. Medicines often taken late
+    // (Logic: check timeline for medication_taken events that are > 2 hours after typical time)
+    // For demo/wireframe, we'll use some sample logic
+    const eveningMeds = meds.filter(m => m.timeOfDay === 'evening')
+    if (eveningMeds.length > 0 && timeline.length > 5) {
+      insights.push("Evenings seem a bit harder lately.")
+    }
+
+    // 2. Routine changes
+    const recentChanges = timeline.filter(e =>
+      ['medication_added', 'medication_removed', 'dose_changed'].includes(e.type)
+    )
+    if (recentChanges.length > 0) {
+      insights.push("This routine has been changing recently.")
+    }
+
+    return insights
+  }, [data.timeline, data.medications])
+
+  // Doctor Prep (Feature 9)
+  const getDoctorPrepSummary = useCallback(() => {
+    const timeline = data.timeline
+    const notes = data.contextualNotes
+
+    let summary = "Summary for Doctor Visit:\n\n"
+
+    const recentNotes = notes.slice(-3).map(n => `- ${n.text}`).join('\n')
+    if (recentNotes) summary += `Recent observations:\n${recentNotes}\n\n`
+
+    const changes = timeline.filter(t => t.type === 'dose_changed').slice(-2)
+    if (changes.length > 0) {
+      summary += "Routine changes:\n"
+      changes.forEach(c => summary += `- ${c.medicationName} dose adjusted on ${new Date(c.timestamp).toLocaleDateString()}\n`)
+    }
+
+    return summary
+  }, [data.timeline, data.contextualNotes])
+
+  const dismissChangeIndicator = useCallback(() => {
+    setData((prev) => ({
+      ...prev,
+      lastChangeNotifiedAt: undefined,
+    }))
+  }, [])
+
+  // Safety check auto-escalation timer
+  useEffect(() => {
+    if (data.safetyCheck.status === 'pending_check') {
+      const timer = setTimeout(() => {
+        escalateSafetyCheck()
+      }, 5 * 60 * 1000) // 5 minutes
+
+      return () => clearTimeout(timer)
+    }
+  }, [data.safetyCheck.status, escalateSafetyCheck])
+
   const value: SahayContextValue = {
     data,
     isLoading,
@@ -557,6 +774,16 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     getMedicationStats,
     resetApp,
     switchRole,
+    triggerSafetyCheck,
+    dismissSafetyCheck,
+    escalateSafetyCheck,
+    completeDailyCheckIn,
+    requestHelp,
+    startHandover,
+    endHandover,
+    getHumanInsights,
+    getDoctorPrepSummary,
+    dismissChangeIndicator,
   }
 
   return <SahayContext.Provider value={value}>{children}</SahayContext.Provider>

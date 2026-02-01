@@ -12,6 +12,7 @@ import {
   Phone,
   Moon,
   ArrowLeft,
+  ShieldAlert,
 } from 'lucide-react'
 
 /**
@@ -72,6 +73,10 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
         return Phone
       case 'day_closed':
         return Moon
+      case 'safety_check_triggered':
+      case 'safety_check_dismissed':
+      case 'safety_check_escalated':
+        return ShieldAlert
       default:
         return Check
     }
@@ -97,6 +102,12 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
         return 'Check-in completed'
       case 'day_closed':
         return event.note || "Day's routine completed"
+      case 'safety_check_triggered':
+        return 'Safety check started'
+      case 'safety_check_dismissed':
+        return 'Confirmed they are okay'
+      case 'safety_check_escalated':
+        return 'Safety check escalated - no response'
       default:
         return 'Activity recorded'
     }

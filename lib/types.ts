@@ -19,12 +19,22 @@ export type TimelineEventType =
   | 'emergency_contact'
   | 'voice_confirmed'
   | 'message_sent'
+  | 'safety_check_triggered'
+  | 'safety_check_dismissed'
+  | 'safety_check_escalated'
+  | 'fine_check_in'
+  | 'help_requested'
+  | 'handover_started'
+  | 'handover_ended'
+  | 'routine_changed'
 
 export type CareRoleStatus = 'active' | 'away' | 'independent'
 
 export type ConfidenceLevel = 'stable' | 'adjusting' | 'new'
 
 export type WellnessLevel = 'great' | 'okay' | 'notGreat'
+
+export type SafetyCheckStatus = 'idle' | 'pending_check' | 'escalating'
 
 export type MedicationColor = 'white' | 'blue' | 'pink' | 'yellow' | 'orange' | 'green' | 'red'
 
@@ -46,6 +56,12 @@ export interface WellnessEntry {
   level: WellnessLevel
   note?: string
   timestamp: string
+}
+
+export interface HandoverInfo {
+  isActive: boolean
+  targetName?: string
+  endDate?: string // ISO date
 }
 
 // Message between caregiver and care receiver
@@ -94,6 +110,7 @@ export interface Medication {
   imageUrl?: string // Photo of actual pill
   streak?: number // Consecutive days taken
   totalTaken?: number // Lifetime total
+  simpleExplanation?: string // Feature 5: Simple Medication Explanations
 }
 
 export interface CaregiverProfile {
@@ -101,6 +118,7 @@ export interface CaregiverProfile {
   setupComplete: boolean
   roleStatus: CareRoleStatus
   awayUntil?: string // ISO date when temporarily away
+  handover?: HandoverInfo // Feature 3: Temporary Care Handover
 }
 
 export interface CareReceiverProfile {
@@ -143,6 +161,13 @@ export interface AppData {
   currentStreak: number // Days in a row with all meds taken
   longestStreak: number
   totalDaysTracked: number
+  lastChangeNotifiedAt?: string // Feature 7: Calm "Something Changed" Indicator
+  lastFineCheckIn?: string // Feature 1: Daily "I'm Fine Today" Check-In
+  safetyCheck: {
+    status: SafetyCheckStatus
+    lastTriggered?: string
+    triggeredBy?: 'motion' | 'manual'
+  }
 }
 
 // Storage key for localStorage
@@ -165,6 +190,9 @@ export const defaultAppData: AppData = {
   currentStreak: 0,
   longestStreak: 0,
   totalDaysTracked: 0,
+  safetyCheck: {
+    status: 'idle',
+  },
 }
 
 // Helper to create dates relative to today
@@ -187,6 +215,7 @@ export const dummyAppData: AppData = {
     name: 'Ayushi',
     setupComplete: true,
     roleStatus: 'active',
+    handover: { isActive: false },
   },
   careReceiver: {
     name: 'Dad',
@@ -212,6 +241,7 @@ export const dummyAppData: AppData = {
       lastUpdated: new Date().toISOString(),
       refillDaysLeft: 12,
       pharmacistNote: 'Best absorbed with food',
+      simpleExplanation: 'This helps keep your blood pressure steady.',
       color: 'white',
       shape: 'oval',
       streak: 14,
@@ -225,6 +255,7 @@ export const dummyAppData: AppData = {
       taken: true,
       lastUpdated: new Date().toISOString(),
       refillDaysLeft: 18,
+      simpleExplanation: 'This helps with your circulation.',
       color: 'pink',
       shape: 'round',
       streak: 14,
@@ -239,6 +270,7 @@ export const dummyAppData: AppData = {
       taken: false,
       lastUpdated: new Date().toISOString(),
       refillDaysLeft: 5,
+      simpleExplanation: 'Strengthens your bones and heart.',
       color: 'white',
       shape: 'round',
       streak: 12,
@@ -252,6 +284,7 @@ export const dummyAppData: AppData = {
       taken: false,
       lastUpdated: new Date().toISOString(),
       refillDaysLeft: 22,
+      simpleExplanation: 'Keeps your heart rate calm.',
       color: 'white',
       shape: 'round',
       streak: 14,
@@ -267,6 +300,7 @@ export const dummyAppData: AppData = {
       lastUpdated: new Date().toISOString(),
       refillDaysLeft: 8,
       pharmacistNote: 'Do not take with calcium supplements',
+      simpleExplanation: 'Supports your energy levels and thyroid.',
       color: 'yellow',
       shape: 'round',
       streak: 14,
@@ -408,7 +442,7 @@ export const dummyAppData: AppData = {
     },
   ],
   pharmacist: {
-    name: 'Apollo Pharmacy - Koramangala',
+    name: 'Apollo Pharmacy - Mumbai',
     lastRefillConfirm: daysAgo(2),
     note: 'Ask for Mr. Sharma for home delivery',
   },
@@ -578,6 +612,9 @@ export const dummyAppData: AppData = {
   currentStreak: 14,
   longestStreak: 21,
   totalDaysTracked: 45,
+  safetyCheck: {
+    status: 'idle',
+  },
 }
 
 // Calculate care confidence based on recent activity

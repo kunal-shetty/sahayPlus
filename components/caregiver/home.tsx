@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
 import {
   type TimeOfDay,
@@ -28,6 +28,10 @@ import {
   Heart,
   ArrowLeftRight,
   History,
+  ShieldAlert,
+  AlertTriangle,
+  Smile,
+  ArrowLeft,
 } from 'lucide-react'
 import { MedicationForm } from './medication-form'
 import { SettingsPanel } from './settings-panel'
@@ -50,7 +54,15 @@ import { QuickPillActions } from './quick-pill-actions'
  * Features: medication list grouped by time, add/edit/remove, calm status indicators
  */
 export function CaregiverHome() {
-  const { data, getUnreadCount, switchRole } = useSahay()
+  const {
+    data,
+    getUnreadCount,
+    switchRole,
+    getHumanInsights,
+    getDoctorPrepSummary,
+    endHandover,
+    startHandover,
+  } = useSahay()
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingMed, setEditingMed] = useState<Medication | null>(null)
   const [showSettings, setShowSettings] = useState(false)
@@ -62,6 +74,10 @@ export function CaregiverHome() {
   const [showMessages, setShowMessages] = useState(false)
   const [showWellness, setShowWellness] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
+  const [showDoctorPrep, setShowDoctorPrep] = useState(false)
+  const [showHandoverSetup, setShowHandoverSetup] = useState(false)
+  const [handoverName, setHandoverName] = useState('')
+  const [handoverDays, setHandoverDays] = useState('3')
 
   const unreadMessages = getUnreadCount()
 
@@ -154,6 +170,22 @@ export function CaregiverHome() {
     return <MedicationHistory onClose={() => setShowHistory(false)} />
   }
 
+  // Doctor Visit Prep Modal (Feature 9)
+  if (showDoctorPrep) {
+    return (
+      <main className="min-h-screen flex flex-col bg-background p-6">
+        <header className="flex items-center gap-4 mb-8">
+          <button onClick={() => setShowDoctorPrep(false)} className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center"><ArrowLeft className="w-6 h-6" /></button>
+          <h1 className="text-2xl font-bold">Doctor Visit Prep</h1>
+        </header>
+        <div className="bg-card border-2 border-border rounded-2xl p-6 whitespace-pre-wrap leading-relaxed">
+          {getDoctorPrepSummary()}
+        </div>
+        <button onClick={() => window.print()} className="mt-6 w-full py-4 bg-primary text-primary-foreground font-bold rounded-xl">Share or Print</button>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen flex flex-col bg-background safe-top safe-bottom">
       {/* Header */}
@@ -186,8 +218,8 @@ export function CaregiverHome() {
         {/* Status card */}
         <motion.div
           className={`p-5 rounded-2xl glass-card ${allTaken
-              ? 'bg-sahay-sage-light/80 border-2 border-sahay-sage/30'
-              : 'bg-card/80 border-2 border-border'
+            ? 'bg-sahay-sage-light/80 border-2 border-sahay-sage/30'
+            : 'bg-card/80 border-2 border-border'
             }`}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -238,8 +270,88 @@ export function CaregiverHome() {
         </motion.div>
       </motion.header>
 
+      {/* Feature 3: Active Handover Banner */}
+      {data.caregiver?.handover?.isActive && (
+        <div className="bg-sahay-blue border-b border-sahay-blue/20 p-2 overflow-hidden text-center">
+          <p className="text-xs font-bold text-white uppercase tracking-widest flex items-center justify-center gap-2">
+            <ArrowLeftRight className="w-3 h-3" />
+            Care handed over to {data.caregiver.handover.targetName}
+            <button onClick={endHandover} className="ml-2 underline opacity-80 hover:opacity-100">End Now</button>
+          </p>
+        </div>
+      )}
+
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto px-6 pb-24">
+        {/* Feature 4: Help Requested Alert */}
+        {data.timeline.find(e => e.type === 'help_requested' && !e.note?.includes('resolved')) && (
+          <motion.div
+            className="bg-sahay-blue/10 border-2 border-sahay-blue/30 rounded-2xl p-6 mb-6 shadow-lg shadow-sahay-blue/10"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-sahay-blue/20 flex items-center justify-center shrink-0">
+                <Heart className="w-7 h-7 text-sahay-blue" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-sahay-blue mb-1">
+                  Check-in Requested
+                </h3>
+                <p className="text-foreground leading-snug">
+                  {data.careReceiver?.name} just tapped &quot;I need help&quot;. No alarm was triggered, but they&apos;d appreciate a check-in.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => setShowEmergency(true)} className="flex items-center justify-center gap-2 py-3 px-4 bg-sahay-blue text-white font-bold rounded-xl"><Phone className="w-5 h-5" /> Call</button>
+              <button onClick={() => setShowMessages(true)} className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl"><MessageCircle className="w-5 h-5" /> Message</button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Safety Check Escalation Alert */}
+        {data.safetyCheck.status === 'escalating' && (
+          <motion.div
+            className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-6 mb-6 shadow-lg shadow-destructive/10"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", damping: 15 }}
+          >
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-7 h-7 text-destructive" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-destructive mb-1">
+                  Safety Alert: No Response
+                </h3>
+                <p className="text-foreground leading-snug">
+                  {data.careReceiver?.name} did not respond to the safety check.
+                  Please try to reach them immediately.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowEmergency(true)}
+                className="flex items-center justify-center gap-2 py-3 px-4 bg-destructive text-destructive-foreground font-bold rounded-xl"
+              >
+                <Phone className="w-5 h-5" />
+                Call Them
+              </button>
+              <button
+                onClick={() => setShowMessages(true)}
+                className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl border-2 border-border"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Message
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Medication Streak Counter - NEW FEATURE */}
         {totalMeds > 0 && (
           <motion.div
@@ -273,12 +385,50 @@ export function CaregiverHome() {
         {/* Quick Pill Actions - NEW FEATURE */}
         {totalMeds > 0 && <QuickPillActions />}
 
+        {/* Feature 1: "I'm Fine Today" Status */}
+        {data.lastFineCheckIn?.startsWith(new Date().toISOString().split('T')[0]) && (
+          <motion.div
+            className="bg-sahay-success/10 border-2 border-sahay-success/20 rounded-2xl p-5 mb-6 flex items-center gap-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="w-12 h-12 rounded-full bg-sahay-success/20 flex items-center justify-center">
+              <Smile className="w-6 h-6 text-sahay-success" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-foreground">{data.careReceiver?.name} checked in</p>
+              <p className="text-muted-foreground">They tapped &quot;I&apos;m fine today&quot; at {new Date(data.lastFineCheckIn!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Feature 2: Pattern Insights */}
+        {getHumanInsights().length > 0 && (
+          <div className="space-y-3 mb-6">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest pl-1">Daily Insights</h3>
+            {getHumanInsights().map((insight, idx) => (
+              <motion.div
+                key={idx}
+                className="bg-card border-2 border-border rounded-2xl p-5 flex items-start gap-4"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.1 }}
+              >
+                <div className="w-10 h-10 rounded-full bg-sahay-warm/10 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-sahay-warm" />
+                </div>
+                <p className="text-lg font-medium text-foreground leading-snug pt-1">{insight}</p>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
         {/* Gentle check-in suggestion */}
         <GentleCheckIn />
 
         {/* Care confidence indicator */}
         {totalMeds > 0 && (
-          <motion.div 
+          <motion.div
             className="mb-6"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -338,7 +488,7 @@ export function CaregiverHome() {
             </motion.div>
             <span className="text-xs font-medium text-foreground">Messages</span>
             {unreadMessages > 0 && (
-              <motion.span 
+              <motion.span
                 className="absolute top-2 right-2 w-5 h-5 bg-sahay-sage text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center"
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 0.5, repeat: Infinity }}
@@ -412,6 +562,95 @@ export function CaregiverHome() {
             <span className="text-xs font-medium text-foreground">History</span>
           </motion.button>
         </div>
+
+        {/* Feature 9: Doctor Visit Prep Button */}
+        <motion.button
+          onClick={() => setShowDoctorPrep(true)}
+          className="w-full py-4 px-5 bg-sahay-sage-light/30 border-2 border-sahay-sage/20 rounded-2xl mb-3 flex items-center justify-between group overflow-hidden relative"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+              <BookOpen className="w-6 h-6 text-sahay-sage" />
+            </div>
+            <div className="text-left">
+              <p className="text-lg font-bold text-foreground">Prepare for Doctor Visit</p>
+              <p className="text-sm text-muted-foreground">See key routine patterns and notes</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-sahay-sage/5 rounded-full -mr-16 -mt-16" />
+        </motion.button>
+
+        {/* Feature 3: Handover Button */}
+        <motion.button
+          onClick={() => setShowHandoverSetup(!showHandoverSetup)}
+          className="w-full py-4 px-5 bg-sahay-blue/10 border-2 border-sahay-blue/20 rounded-2xl mb-6 flex items-center justify-between group overflow-hidden relative"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+              <ArrowLeftRight className="w-6 h-6 text-sahay-blue" />
+            </div>
+            <div className="text-left">
+              <p className="text-lg font-bold text-foreground">Temporary Handover</p>
+              <p className="text-sm text-muted-foreground">Let someone else handle care for a few days</p>
+            </div>
+          </div>
+          <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${showHandoverSetup ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
+        </motion.button>
+
+        {/* Handover Setup Panel */}
+        <AnimatePresence>
+          {showHandoverSetup && (
+            <motion.div
+              className="bg-card border-2 border-border rounded-2xl p-5 mb-6 overflow-hidden"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+            >
+              <h4 className="text-lg font-bold mb-4">Handover Details</h4>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">Trusted Person&apos;s Name</label>
+                  <input
+                    type="text"
+                    value={handoverName}
+                    onChange={(e) => setHandoverName(e.target.value)}
+                    placeholder="e.g., Sibling Name"
+                    className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">For how many days?</label>
+                  <select
+                    value={handoverDays}
+                    onChange={(e) => setHandoverDays(e.target.value)}
+                    className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
+                  >
+                    <option value="3">3 days</option>
+                    <option value="5">5 days</option>
+                    <option value="7">1 week</option>
+                  </select>
+                </div>
+                <button
+                  onClick={() => {
+                    const date = new Date();
+                    date.setDate(date.getDate() + parseInt(handoverDays));
+                    startHandover(handoverName, date.toISOString());
+                    setShowHandoverSetup(false);
+                  }}
+                  disabled={!handoverName}
+                  className="w-full py-4 bg-sahay-blue text-white font-bold rounded-xl disabled:opacity-50"
+                >
+                  Confirm Handover
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Switch role button - moved to its own row */}
         <motion.button
@@ -523,7 +762,7 @@ export function CaregiverHome() {
                             {med.notes && ` · ${med.notes}`}
                           </p>
                           {med.streak && med.streak > 0 && (
-                            <motion.p 
+                            <motion.p
                               className="text-xs text-sahay-success font-medium mt-1"
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
