@@ -466,7 +466,7 @@ export const dummyAppData: AppData = {
     },
     {
       id: 'ec_002',
-      name: 'Rahul (Son)',
+      name: 'Ayushi (Daughter)',
       relationship: 'Family',
       phone: '+91 98765 12345',
       isPrimary: false,
@@ -537,7 +537,7 @@ export const dummyAppData: AppData = {
     {
       id: 'msg_002',
       from: 'caregiver',
-      text: 'Great job, Amma! I will call you this evening.',
+      text: 'Great job, Dad! I will call you this evening.',
       timestamp: daysAgo(0),
       isRead: true,
       isQuickMessage: false,
@@ -569,7 +569,7 @@ export const dummyAppData: AppData = {
     {
       id: 'msg_006',
       from: 'caregiver',
-      text: 'Calling you now, Amma.',
+      text: 'Calling you now, Dad.',
       timestamp: daysAgo(2),
       isRead: true,
       isQuickMessage: false,

@@ -6,8 +6,8 @@ import { Heart, Users } from 'lucide-react'
 
 /**
  * Role Selection Screen
- * First screen users see - allows them to choose their role
- * Design: Calm, centered, large touch targets (48px+), warm messaging
+ * Calm, welcoming, and easy to understand
+ * Designed for large touch targets and low cognitive load
  */
 export function RoleSelection() {
   const { setUserRole } = useSahay()
@@ -25,10 +25,11 @@ export function RoleSelection() {
           className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ type: "spring", delay: 0.2 }}
+          transition={{ type: 'spring', delay: 0.2 }}
         >
           <Heart className="w-10 h-10 text-primary" strokeWidth={1.5} />
         </motion.div>
+
         <motion.h1
           className="text-3xl font-semibold text-foreground mb-3 text-balance"
           initial={{ opacity: 0 }}
@@ -37,13 +38,14 @@ export function RoleSelection() {
         >
           Welcome to Sahay+
         </motion.h1>
+
         <motion.p
           className="text-lg text-muted-foreground max-w-sm text-pretty"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          Gentle medication care for you and your loved ones
+          Everyday care, made a little easier.
         </motion.p>
       </motion.div>
 
@@ -55,7 +57,7 @@ export function RoleSelection() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          How can we help you today?
+          How would you like to use Sahay+?
         </motion.p>
 
         {/* Caregiver option */}
@@ -65,10 +67,10 @@ export function RoleSelection() {
                      transition-colors duration-200 text-left group focus:outline-none focus:ring-2 
                      focus:ring-primary focus:ring-offset-2 focus:ring-offset-background
                      touch-manipulation"
-          aria-label="I help manage care for someone"
+          aria-label="I help care for someone"
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6, type: "spring" }}
+          transition={{ delay: 0.6, type: 'spring' }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -83,13 +85,13 @@ export function RoleSelection() {
                 strokeWidth={1.5}
               />
             </motion.div>
+
             <div className="flex-1 min-w-0">
               <h2 className="text-xl font-semibold text-foreground mb-1">
-                I help manage care for someone
+                I help care for someone
               </h2>
               <p className="text-muted-foreground text-base leading-relaxed">
-                Set up routines and stay reassured about your loved one&apos;s
-                care
+                Set things up and stay quietly reassured.
               </p>
             </div>
           </div>
@@ -102,10 +104,10 @@ export function RoleSelection() {
                      transition-colors duration-200 text-left group focus:outline-none focus:ring-2 
                      focus:ring-sahay-blue focus:ring-offset-2 focus:ring-offset-background
                      touch-manipulation"
-          aria-label="I manage my own care with family support"
+          aria-label="I manage my own care"
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.7, type: "spring" }}
+          transition={{ delay: 0.7, type: 'spring' }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -120,12 +122,13 @@ export function RoleSelection() {
                 strokeWidth={1.5}
               />
             </motion.div>
+
             <div className="flex-1 min-w-0">
               <h2 className="text-xl font-semibold text-foreground mb-1">
                 I manage my own care
               </h2>
               <p className="text-muted-foreground text-base leading-relaxed">
-                Simple reminders with support from your family
+                Simple reminders, with family support when needed.
               </p>
             </div>
           </div>
@@ -139,7 +142,7 @@ export function RoleSelection() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
       >
-        You can always change this later
+        You can change this anytime.
       </motion.p>
     </main>
   )

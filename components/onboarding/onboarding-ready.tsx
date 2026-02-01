@@ -45,31 +45,7 @@ export function OnboardingReady() {
                 Let&apos;s begin your journey to simpler care management.
             </motion.p>
 
-            <motion.div
-                className="mt-8 flex flex-col items-center gap-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-            >
-                <div className="flex gap-1">
-                    {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-                        <motion.div
-                            key={i}
-                            className="h-8 w-8 rounded-md bg-primary/20"
-                            initial={{ scale: 0 }}
-                            animate={{
-                                scale: 1,
-                                backgroundColor: i < 5 ? "var(--primary)" : undefined
-                            }}
-                            transition={{ delay: 0.7 + i * 0.05 }}
-                            style={{
-                                opacity: i < 5 ? 1 : 0.2,
-                            }}
-                        />
-                    ))}
-                </div>
-                <p className="text-xs text-muted-foreground">Your first week awaits</p>
-            </motion.div>
+            
         </div>
     )
 }

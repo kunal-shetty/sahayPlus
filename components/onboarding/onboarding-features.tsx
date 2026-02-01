@@ -6,52 +6,53 @@ import { Bell, Pill, Shield, Users } from "lucide-react"
 const features = [
     {
         icon: Pill,
-        title: "Medication Tracking",
-        description: "Keep track of schedules and never miss a dose",
+        title: "Daily routines, made easier",
+        description: "Clear, simple guidance for everyday medication.",
         color: "bg-sahay-sage",
         iconColor: "text-primary-foreground",
     },
     {
         icon: Users,
-        title: "Care Team",
-        description: "Coordinate with family and professional caregivers",
+        title: "Care, shared thoughtfully",
+        description: "Stay in sync with family or caregivers, without over-monitoring.",
         color: "bg-primary",
         iconColor: "text-primary-foreground",
     },
     {
         icon: Bell,
-        title: "Smart Reminders",
-        description: "Get timely alerts for meds and appointments",
+        title: "Gentle reminders",
+        description: "Soft nudges that blend into the day.",
         color: "bg-sahay-blue",
         iconColor: "text-primary-foreground",
     },
     {
         icon: Shield,
-        title: "Secure & Private",
-        description: "Your health data represents you, and we keep it safe",
+        title: "Your care stays yours",
+        description: "Private, respectful, and under your control.",
         color: "bg-accent",
         iconColor: "text-accent-foreground",
     },
 ]
 
+
 export function OnboardingFeatures() {
     return (
         <div className="flex h-full flex-col justify-center">
             <motion.h2
-                className="mb-2 text-center text-2xl font-bold text-foreground"
-                initial={{ opacity: 0, y: 20 }}
+                className="mb-2 text-center text-2xl font-semibold text-foreground"
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                Powerful Features
+                How Sahay+ supports you
             </motion.h2>
 
             <motion.p
                 className="mb-8 text-center text-muted-foreground"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
             >
-                Everything you need to succeed
+                Simple tools designed for real people and everyday care
             </motion.p>
 
             <div className="grid gap-4">
@@ -59,16 +60,22 @@ export function OnboardingFeatures() {
                     <motion.div
                         key={feature.title}
                         className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border"
-                        initial={{ opacity: 0, x: -20 }}
+                        initial={{ opacity: 0, x: -16 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 + index * 0.1 }}
                     >
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${feature.color}`}>
+                        <div
+                            className={`flex h-12 w-12 items-center justify-center rounded-xl ${feature.color}`}
+                        >
                             <feature.icon className={`h-6 w-6 ${feature.iconColor}`} />
                         </div>
                         <div>
-                            <h3 className="font-semibold text-foreground">{feature.title}</h3>
-                            <p className="text-sm text-muted-foreground">{feature.description}</p>
+                            <h3 className="font-medium text-foreground">
+                                {feature.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                {feature.description}
+                            </p>
                         </div>
                     </motion.div>
                 ))}
