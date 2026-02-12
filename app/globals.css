@@ -408,3 +408,59 @@ html {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Interactive card hover */
+.card-interactive {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card-interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.card-interactive:active {
+  transform: scale(0.98);
+}
+
+/* Button interactive */
+.button-interactive {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.button-interactive:active {
+  transform: scale(0.97);
+}
+
+/* Page transition */
+.page-enter {
+  animation: page-fade-in 0.3s ease-out forwards;
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth skeleton shimmer */
+@keyframes skeleton-shimmer {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.skeleton-shimmer > * {
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}

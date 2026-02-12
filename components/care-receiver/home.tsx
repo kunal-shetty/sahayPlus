@@ -46,6 +46,7 @@ export function CareReceiverHome() {
   const {
     data,
     isLoading,
+    isDataLoading,
     markMedicationTaken,
     isDayClosed,
     logout,
@@ -143,8 +144,8 @@ export function CareReceiverHome() {
 
   const isNight = isNightTime()
 
-  // Show skeleton during loading
-  if (isLoading) {
+  // Show skeleton during loading (both initial auth check and API data fetching)
+  if (isLoading || isDataLoading) {
     return <CareReceiverHomeSkeleton />
   }
 

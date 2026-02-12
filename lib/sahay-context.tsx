@@ -48,6 +48,7 @@ interface SahayContextValue {
   // State
   data: AppData
   isLoading: boolean
+  isDataLoading: boolean
 
   // Auth
   user: SahayUser | null
@@ -157,6 +158,7 @@ async function safeApiCall<T>(fn: () => Promise<T>): Promise<T | null> {
 export function SahayProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(defaultAppData)
   const [isLoading, setIsLoading] = useState(true)
+  const [isDataLoading, setIsDataLoading] = useState(false)
   const [user, setUser] = useState<SahayUser | null>(null)
 
   // Helper to get user ID safely
@@ -246,6 +248,8 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     const crId = user.care_relationship_id
     const userId = user.id
 
+    setIsDataLoading(true)
+
     async function loadData() {
       try {
         const [medsRes, timelineRes, notesRes, wellnessRes, dayRes, msgsRes, contactsRes] =
@@ -324,7 +328,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               timestamp: m.created_at,
               isRead: !!m.read_at,
               isQuickMessage: false,
-            }))
+            })).reverse()
             : prev.messages,
           emergencyContacts: contactsRes.status === 'fulfilled'
             ? contactsRes.value.contacts.map((c: any) => ({
@@ -338,6 +342,8 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         }))
       } catch (err) {
         console.error('[Sahay] Failed to load data from API, using fallback:', err)
+      } finally {
+        setIsDataLoading(false)
       }
     }
     loadData()
@@ -1101,6 +1107,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   const value: SahayContextValue = {
     data,
     isLoading,
+    isDataLoading,
     user,
     login,
     logout,

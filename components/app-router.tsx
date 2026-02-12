@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
 import { CaregiverOnboarding } from './caregiver/onboarding'
 import { CaregiverHome } from './caregiver/home'
@@ -13,81 +14,116 @@ import { EnterCareCode } from './enter-care-code'
 
 const ONBOARDING_KEY = 'sahay_onboarding_complete'
 
-/**
- * App Router
- * Client-side routing based on auth state, care code linking, and role
- */
 export function AppRouter() {
-  const { data, isLoading, user } = useSahay()
+  const { data, isLoading } = useSahay()
+
   const [showSplash, setShowSplash] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false)
+  const [user, setUser] = useState<any>(null)
 
-  // Check if user has completed onboarding
+  // ✅ Load user safely from localStorage (hydration safe)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hasCompletedOnboarding = localStorage.getItem(ONBOARDING_KEY) === 'true'
-      setShowOnboarding(!hasCompletedOnboarding)
-      setHasCheckedOnboarding(true)
+    const stored = localStorage.getItem('sahay_user')
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored))
+      } catch {
+        setUser(null)
+      }
     }
   }, [])
 
-  // Handle splash screen completion
+  // ✅ Check onboarding status
+  useEffect(() => {
+    const hasCompletedOnboarding =
+      localStorage.getItem(ONBOARDING_KEY) === 'true'
+
+    setShowOnboarding(!hasCompletedOnboarding)
+    setHasCheckedOnboarding(true)
+  }, [])
+
   const handleSplashComplete = () => {
     setShowSplash(false)
   }
 
-  // Handle onboarding completion
   const handleOnboardingComplete = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(ONBOARDING_KEY, 'true')
-    }
+    localStorage.setItem(ONBOARDING_KEY, 'true')
     setShowOnboarding(false)
   }
 
-  // Show splash screen first
+  // ✅ Derive setup completion from real DB data
+  const caregiverSetupComplete =
+    data?.medications?.length > 0
+
+  // ✅ Determine screen
+  const screenKey = useMemo(() => {
+    if (showSplash) return 'splash'
+    if (isLoading || !hasCheckedOnboarding) return 'loading'
+    if (showOnboarding) return 'onboarding'
+    if (!user) return 'login'
+    if (!user.care_relationship_id) return 'care-code'
+
+    if (user.role === 'caregiver') {
+      return caregiverSetupComplete
+        ? 'caregiver-home'
+        : 'caregiver-onboarding'
+    }
+
+    if (user.role === 'care_receiver') {
+      return 'care-receiver-home'
+    }
+
+    return 'login'
+  }, [
+    showSplash,
+    isLoading,
+    hasCheckedOnboarding,
+    showOnboarding,
+    user,
+    caregiverSetupComplete,
+  ])
+
   if (showSplash) {
     return <SplashScreen onComplete={handleSplashComplete} />
   }
 
-  // Show loading screen while checking state
   if (isLoading || !hasCheckedOnboarding) {
     return <LoadingScreen />
   }
 
-  // Show onboarding flow for first-time users
-  if (showOnboarding) {
-    return <OnboardingFlow onComplete={handleOnboardingComplete} />
-  }
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={screenKey}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25, ease: 'easeInOut' }}
+      >
+        {showOnboarding && (
+          <OnboardingFlow onComplete={handleOnboardingComplete} />
+        )}
 
-  // ─── Auth gates ───────────────────────────────────────────────────
+        {!showOnboarding && !user && <EmailLogin />}
 
-  // Not logged in → show email login
-  if (!user) {
-    return <EmailLogin />
-  }
+        {!showOnboarding && user && !user.care_relationship_id && (
+          <EnterCareCode />
+        )}
 
-  // Logged in but no care relationship → show care code screen
-  // Caregivers enter a code, care receivers see their code
-  if (!user.care_relationship_id) {
-    return <EnterCareCode />
-  }
+        {!showOnboarding &&
+          user?.care_relationship_id &&
+          user.role === 'caregiver' &&
+          (caregiverSetupComplete ? (
+            <CaregiverHome />
+          ) : (
+            <CaregiverOnboarding />
+          ))}
 
-  // ─── Role-based routing ───────────────────────────────────────────
-
-  // Caregiver flow
-  if (user.role === 'caregiver') {
-    if (!data.caregiver?.setupComplete) {
-      return <CaregiverOnboarding />
-    }
-    return <CaregiverHome />
-  }
-
-  // Care Receiver flow
-  if (user.role === 'care_receiver') {
-    return <CareReceiverHome />
-  }
-
-  // Fallback
-  return <EmailLogin />
+        {!showOnboarding &&
+          user?.care_relationship_id &&
+          user.role === 'care_receiver' && <CareReceiverHome />}
+      </motion.div>
+    </AnimatePresence>
+  )
 }

@@ -1,6 +1,13 @@
 'use client'
 
+import { motion } from 'motion/react'
 import { Skeleton } from '@/components/ui/skeleton'
+
+const fadeIn = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    transition: { duration: 0.4 },
+}
 
 /**
  * Caregiver Home Skeleton
@@ -8,7 +15,10 @@ import { Skeleton } from '@/components/ui/skeleton'
  */
 export function CaregiverHomeSkeleton() {
     return (
-        <main className="min-h-screen flex flex-col bg-background safe-top safe-bottom animate-in fade-in duration-300">
+        <motion.main
+            className="min-h-screen flex flex-col bg-background safe-top safe-bottom"
+            {...fadeIn}
+        >
             {/* Header skeleton */}
             <div className="p-6 pb-4">
                 <div className="flex items-start justify-between mb-4">
@@ -112,7 +122,7 @@ export function CaregiverHomeSkeleton() {
                     <Skeleton className="w-full h-14 rounded-xl" />
                 </div>
             </div>
-        </main>
+        </motion.main>
     )
 }
 
@@ -122,7 +132,10 @@ export function CaregiverHomeSkeleton() {
  */
 export function CareReceiverHomeSkeleton() {
     return (
-        <main className="min-h-screen flex flex-col bg-background animate-in fade-in duration-300">
+        <motion.main
+            className="min-h-screen flex flex-col bg-background"
+            {...fadeIn}
+        >
             {/* Header */}
             <header className="p-6 pb-4">
                 <div className="flex items-center justify-between">
@@ -177,6 +190,6 @@ export function CareReceiverHomeSkeleton() {
                     </div>
                 </div>
             </div>
-        </main>
+        </motion.main>
     )
 }

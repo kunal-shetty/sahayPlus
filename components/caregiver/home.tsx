@@ -216,6 +216,7 @@ export function CaregiverHome() {
   const {
     data,
     isLoading,
+    isDataLoading,
     getUnreadCount,
     getHumanInsights,
     getDoctorPrepSummary,
@@ -273,8 +274,8 @@ export function CaregiverHome() {
     return 'Good evening'
   }
 
-  // Show skeleton during loading
-  if (isLoading) {
+  // Show skeleton during loading (both initial auth check and API data fetching)
+  if (isLoading || isDataLoading) {
     return <CaregiverHomeSkeleton />
   }
 
@@ -418,87 +419,93 @@ export function CaregiverHome() {
 
   return (
     <main className="min-h-screen flex flex-col bg-background safe-top safe-bottom">
-      {/* Header */}
-      <motion.header
-        className="p-6 pb-4"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <p className="text-muted-foreground text-lg">
-              {getGreeting()}, {data.caregiver?.name}
-            </p>
-            <h1 className="text-2xl font-semibold text-foreground">
-              {data.careReceiver?.name}&apos;s Care
-            </h1>
-          </div>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
-                     hover:bg-secondary/80 active:scale-95 transition-all touch-manipulation
-                     focus:outline-none focus:ring-2 focus:ring-sahay-sage"
-            aria-label="Settings"
+      {/* Header - Only show for non-messaging tabs for a cleaner look */}
+      <AnimatePresence mode="wait">
+        {activeTab !== 'messages' && (
+          <motion.header
+            key="main-header"
+            className="p-6 pb-4"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            <Settings className="w-6 h-6 text-foreground" />
-          </button>
-        </div>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-muted-foreground text-lg">
+                  {getGreeting()}, {data.caregiver?.name}
+                </p>
+                <h1 className="text-2xl font-semibold text-foreground">
+                  {data.careReceiver?.name}&apos;s Care
+                </h1>
+              </div>
+              <button
+                onClick={() => setShowSettings(true)}
+                className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
+                         hover:bg-secondary/80 active:scale-95 transition-all touch-manipulation
+                         focus:outline-none focus:ring-2 focus:ring-sahay-sage"
+                aria-label="Settings"
+              >
+                <Settings className="w-6 h-6 text-foreground" />
+              </button>
+            </div>
 
-        {/* Status card */}
-        <motion.div
-          className={`p-5 rounded-2xl glass-card ${allTaken
-            ? 'bg-sahay-sage-light/80 border-2 border-sahay-sage/30'
-            : 'bg-card/80 border-2 border-border'
-            }`}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          {totalMeds === 0 ? (
-            <p className="text-lg text-muted-foreground">
-              No medications added yet
-            </p>
-          ) : allTaken ? (
-            <div className="flex items-center gap-3">
-              <motion.div
-                className="w-10 h-10 rounded-full bg-sahay-success/20 flex items-center justify-center"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", delay: 0.2 }}
-              >
-                <Check className="w-5 h-5 text-sahay-success" />
-              </motion.div>
-              <div>
-                <p className="text-lg font-medium text-foreground">
-                  Everything looks good today
+            {/* Status card */}
+            <motion.div
+              className={`p-5 rounded-2xl glass-card ${allTaken
+                ? 'bg-sahay-sage-light/80 border-2 border-sahay-sage/30'
+                : 'bg-card/80 border-2 border-border'
+                }`}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              {totalMeds === 0 ? (
+                <p className="text-lg text-muted-foreground">
+                  No medications added yet
                 </p>
-                <p className="text-muted-foreground">
-                  All {totalMeds} medications taken
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <motion.div
-                className="w-10 h-10 rounded-full bg-sahay-pending/20 flex items-center justify-center"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Clock className="w-5 h-5 text-sahay-pending" />
-              </motion.div>
-              <div>
-                <p className="text-lg font-medium text-foreground">
-                  {takenMeds} of {totalMeds} taken today
-                </p>
-                <p className="text-muted-foreground">
-                  {totalMeds - takenMeds} pending
-                </p>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </motion.header>
+              ) : allTaken ? (
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    className="w-10 h-10 rounded-full bg-sahay-success/20 flex items-center justify-center"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", delay: 0.2 }}
+                  >
+                    <Check className="w-5 h-5 text-sahay-success" />
+                  </motion.div>
+                  <div>
+                    <p className="text-lg font-medium text-foreground">
+                      Everything looks good today
+                    </p>
+                    <p className="text-muted-foreground">
+                      All {totalMeds} medications taken
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    className="w-10 h-10 rounded-full bg-sahay-pending/20 flex items-center justify-center"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Clock className="w-5 h-5 text-sahay-pending" />
+                  </motion.div>
+                  <div>
+                    <p className="text-lg font-medium text-foreground">
+                      {takenMeds} of {totalMeds} taken today
+                    </p>
+                    <p className="text-muted-foreground">
+                      {totalMeds - takenMeds} pending
+                    </p>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.header>
+        )}
+      </AnimatePresence>
 
       {/* Feature 3: Active Handover Banner */}
       {data.caregiver?.handover?.isActive && (
@@ -512,11 +519,27 @@ export function CaregiverHome() {
       )}
 
       {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto px-6 pb-24">
+      <div className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden' : 'overflow-y-auto px-6 pb-24 overflow-x-hidden'}`}>
 
         {/* ═══ HOME TAB ═══ */}
         {activeTab === 'home' && (
           <>
+            {/* Add medication button - MOVED TO TOP */}
+            <motion.button
+              onClick={() => setShowAddForm(true)}
+              className="w-full py-4 px-6 mb-6 bg-primary text-primary-foreground text-lg font-semibold 
+                       rounded-xl flex items-center justify-center gap-2 shadow-sm touch-manipulation button-interactive
+                       focus:outline-none focus:ring-2 focus:ring-sahay-sage"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Plus className="w-5 h-5" />
+              Add medication
+            </motion.button>
+
             {/* Feature 4: Help Requested Alert */}
             {data.timeline.find(e => e.type === 'help_requested' && !e.note?.includes('resolved')) && (
               <motion.div
@@ -539,7 +562,7 @@ export function CaregiverHome() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <button onClick={() => setShowEmergency(true)} className="flex items-center justify-center gap-2 py-3 px-4 bg-sahay-blue text-white font-bold rounded-xl"><Phone className="w-5 h-5" /> Call</button>
-                  <button onClick={() => { setActiveTab('messages'); setShowMessages(true) }} className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl"><MessageCircle className="w-5 h-5" /> Message</button>
+                  <button onClick={() => setActiveTab('messages')} className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl"><MessageCircle className="w-5 h-5" /> Message</button>
                 </div>
               </motion.div>
             )}
@@ -575,7 +598,7 @@ export function CaregiverHome() {
                     Call Them
                   </button>
                   <button
-                    onClick={() => { setActiveTab('messages'); setShowMessages(true) }}
+                    onClick={() => setActiveTab('messages')}
                     className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl border-2 border-border"
                   >
                     <MessageCircle className="w-5 h-5" />
@@ -725,15 +748,17 @@ export function CaregiverHome() {
                                 {med.dosage}
                                 {med.notes && ` · ${med.notes}`}
                               </p>
-                              {med.streak && med.streak > 0 && (
-                                <motion.p
-                                  className="text-xs text-sahay-success font-medium mt-1"
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                >
-                                  🔥 {med.streak} day streak
-                                </motion.p>
-                              )}
+                              <motion.p
+                                className="text-xs font-medium mt-1 flex items-center gap-1"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                              >
+                                {med.streak && med.streak > 0 ? (
+                                  <span className="text-sahay-success">🔥 {med.streak} day streak</span>
+                                ) : (
+                                  <span className="text-muted-foreground italic">No streak yet 🔥</span>
+                                )}
+                              </motion.p>
                             </div>
                           </div>
                           <motion.div
@@ -760,23 +785,10 @@ export function CaregiverHome() {
 
             {/* Daily closure ritual */}
             {totalMeds > 0 && (
-              <div className="mt-6">
+              <div className="mt-6 mb-8">
                 <DailyClosure />
               </div>
             )}
-
-            {/* Add medication button (inside home tab, above bottom nav) */}
-            <motion.button
-              onClick={() => setShowAddForm(true)}
-              className="w-full py-4 px-6 mt-4 mb-2 bg-primary text-primary-foreground text-lg font-semibold 
-                       rounded-xl flex items-center justify-center gap-2 shadow-lg touch-manipulation button-interactive
-                       focus:outline-none focus:ring-2 focus:ring-sahay-sage focus:ring-offset-2"
-              whileHover={{ scale: 1.02, boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15)' }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Plus className="w-5 h-5" />
-              Add medication
-            </motion.button>
           </>
         )}
 
@@ -962,7 +974,7 @@ export function CaregiverHome() {
 
         {/* ═══ MESSAGES TAB ═══ */}
         {activeTab === 'messages' && (
-          <div className="pt-2 -mx-6 -mb-24">
+          <div className="h-full">
             <Messages onClose={() => setActiveTab('home')} />
           </div>
         )}
