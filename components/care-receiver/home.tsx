@@ -29,6 +29,7 @@ import { WellnessCheckin } from './wellness-checkin'
 import { QuickMessages } from './quick-messages'
 import { EmergencyCall } from './emergency-call'
 import { SafetyCheckPrompt } from './safety-check-prompt'
+import { CareReceiverHomeSkeleton } from '../skeletons'
 
 /**
  * Care Receiver Home Screen
@@ -44,10 +45,10 @@ import { SafetyCheckPrompt } from './safety-check-prompt'
 export function CareReceiverHome() {
   const {
     data,
+    isLoading,
     markMedicationTaken,
-    clearRole,
     isDayClosed,
-    switchRole,
+    logout,
     triggerSafetyCheck,
     completeDailyCheckIn,
     requestHelp,
@@ -142,6 +143,11 @@ export function CareReceiverHome() {
 
   const isNight = isNightTime()
 
+  // Show skeleton during loading
+  if (isLoading) {
+    return <CareReceiverHomeSkeleton />
+  }
+
   // Show wellness check-in
   if (showWellness) {
     return <WellnessCheckin onClose={() => setShowWellness(false)} />
@@ -179,7 +185,7 @@ export function CareReceiverHome() {
                 setShowSettings(false)
               }}
               className="w-full py-4 px-6 bg-secondary text-foreground text-xl font-medium 
-                       rounded-2xl transition-all touch-manipulation flex items-center justify-center gap-3
+                       rounded-2xl transition-all active:scale-[0.97] touch-manipulation flex items-center justify-center gap-3
                        focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             >
               <Heart className="w-6 h-6 text-sahay-sage" />
@@ -187,19 +193,19 @@ export function CareReceiverHome() {
             </button>
 
             <button
-              onClick={switchRole}
+              onClick={logout}
               className="w-full py-4 px-6 bg-secondary text-foreground text-xl font-medium 
-                       rounded-2xl transition-all touch-manipulation flex items-center justify-center gap-3
+                       rounded-2xl transition-all active:scale-[0.97] touch-manipulation flex items-center justify-center gap-3
                        focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             >
               <ArrowLeftRight className="w-6 h-6" />
-              Switch to caregiver view
+              Sign Out
             </button>
 
             <button
               onClick={() => setShowSettings(false)}
               className="w-full py-4 px-6 bg-primary text-primary-foreground text-xl font-semibold 
-                       rounded-2xl transition-all touch-manipulation
+                       rounded-2xl transition-all active:scale-[0.97] touch-manipulation
                        focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             >
               Go back

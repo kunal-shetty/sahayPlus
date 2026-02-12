@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useSahay } from '@/lib/sahay-context'
-import { ArrowLeft, Send, Heart } from 'lucide-react'
+import { ArrowLeft, Send, Heart, Check, CheckCheck } from 'lucide-react'
 
 interface MessagesProps {
   onClose: () => void
@@ -78,6 +78,11 @@ export function Messages({ onClose }: MessagesProps) {
             <p className="text-sm text-muted-foreground">
               Stay connected with gentle words
             </p>
+            {getUnreadCount() > 0 && (
+              <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded-full bg-sahay-blue/10 text-sahay-blue text-xs font-medium">
+                {getUnreadCount()} unread
+              </span>
+            )}
           </div>
           <div className="w-12 h-12 rounded-full bg-sahay-sage-light flex items-center justify-center">
             <Heart className="w-5 h-5 text-sahay-sage" />
@@ -90,33 +95,54 @@ export function Messages({ onClose }: MessagesProps) {
         <div className="space-y-4">
           {messages.map((message) => {
             const isFromMe = message.from === 'caregiver'
+            const isUnread = !message.isRead && !isFromMe
             return (
               <div
                 key={message.id}
                 className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}
               >
+                {/* Unread dot for incoming messages */}
+                {isUnread && (
+                  <div className="flex items-center mr-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-sahay-blue animate-pulse" />
+                  </div>
+                )}
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                    isFromMe
-                      ? 'bg-sahay-sage text-primary-foreground rounded-br-md'
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${isFromMe
+                    ? 'bg-sahay-sage text-primary-foreground rounded-br-md'
+                    : isUnread
+                      ? 'bg-card border-2 border-sahay-blue/40 text-foreground rounded-bl-md'
                       : 'bg-card border-2 border-border text-foreground rounded-bl-md'
-                  }`}
+                    }`}
                 >
                   {message.isQuickMessage && !isFromMe && (
                     <span className="text-xs text-muted-foreground block mb-1">
                       Quick message
                     </span>
                   )}
-                  <p className={`text-base ${isFromMe ? 'text-primary-foreground' : 'text-foreground'}`}>
+                  <p className={`text-base ${isFromMe
+                    ? 'text-primary-foreground'
+                    : isUnread
+                      ? 'text-foreground font-semibold'
+                      : 'text-foreground'
+                    }`}>
                     {message.text}
                   </p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      isFromMe ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {formatTime(message.timestamp)}
-                  </p>
+                  <div className={`flex items-center gap-1 mt-1 ${isFromMe ? 'justify-end' : ''
+                    }`}>
+                    <p
+                      className={`text-xs ${isFromMe ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                        }`}
+                    >
+                      {formatTime(message.timestamp)}
+                    </p>
+                    {/* Read receipt for sent messages */}
+                    {isFromMe && (
+                      message.isRead
+                        ? <CheckCheck className="w-3.5 h-3.5 text-primary-foreground/70" />
+                        : <Check className="w-3.5 h-3.5 text-primary-foreground/50" />
+                    )}
+                  </div>
                 </div>
               </div>
             )

@@ -16,13 +16,13 @@ type OnboardingStep = 'names' | 'medication'
  * Design: One action per screen, large inputs, warm messaging
  */
 export function CaregiverOnboarding() {
-  const { data, setCaregiver, setCareReceiver, addMedication, clearRole } = useSahay()
+  const { data, setCaregiver, setCareReceiver, addMedication, logout } = useSahay()
   const [step, setStep] = useState<OnboardingStep>('names')
-  
+
   // Names step state
   const [caregiverName, setCaregiverName] = useState(data.caregiver?.name || '')
   const [careReceiverName, setCareReceiverName] = useState(data.careReceiver?.name || '')
-  
+
   // Medication step state
   const [medName, setMedName] = useState('')
   const [medDosage, setMedDosage] = useState('')
@@ -62,7 +62,7 @@ export function CaregiverOnboarding() {
     if (step === 'medication') {
       setStep('names')
     } else {
-      clearRole()
+      logout()
     }
   }
 
@@ -218,11 +218,10 @@ export function CaregiverOnboarding() {
                         onClick={() => setMedTimeOfDay(time)}
                         className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
                                   touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage
-                                  ${
-                                    isSelected
-                                      ? 'border-sahay-sage bg-sahay-sage-light'
-                                      : 'border-border bg-card hover:border-sahay-sage/50'
-                                  }`}
+                                  ${isSelected
+                            ? 'border-sahay-sage bg-sahay-sage-light'
+                            : 'border-border bg-card hover:border-sahay-sage/50'
+                          }`}
                         aria-pressed={isSelected}
                       >
                         <Icon
@@ -274,7 +273,7 @@ export function CaregiverOnboarding() {
               disabled={!caregiverName.trim() || !careReceiverName.trim()}
               className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold 
                        rounded-xl flex items-center justify-center gap-2 transition-all
-                       hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed
+                       hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed
                        touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage focus:ring-offset-2"
             >
               Continue
@@ -288,7 +287,7 @@ export function CaregiverOnboarding() {
               disabled={!medName.trim() || !medDosage.trim()}
               className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold 
                        rounded-xl flex items-center justify-center gap-2 transition-all
-                       hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed
+                       hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed
                        touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage focus:ring-offset-2"
             >
               <Check className="w-5 h-5" />

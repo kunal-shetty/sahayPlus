@@ -32,6 +32,7 @@ import {
   AlertTriangle,
   Smile,
   ArrowLeft,
+  Pill,
 } from 'lucide-react'
 import { MedicationForm } from './medication-form'
 import { SettingsPanel } from './settings-panel'
@@ -47,6 +48,164 @@ import { Messages } from './messages'
 import { WellnessOverview } from './wellness-overview'
 import { MedicationHistory } from './medication-history'
 import { QuickPillActions } from './quick-pill-actions'
+import { CaregiverHomeSkeleton } from '../skeletons'
+import { CaregiverBottomNav, type CaregiverTab } from './bottom-nav'
+
+/**
+ * Inline pharmacist form for the pharmacist panel
+ */
+function PharmacistInlineForm() {
+  const { data, updatePharmacist } = useSahay()
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(data.pharmacist?.name || '')
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = () => {
+    setSaving(true)
+    updatePharmacist({ name: name.trim() || undefined })
+    setTimeout(() => {
+      setSaving(false)
+      setEditing(false)
+    }, 300)
+  }
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        className="w-full py-3 px-4 bg-secondary text-foreground font-medium 
+                 rounded-xl transition-all active:scale-[0.97] touch-manipulation
+                 hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        {data.pharmacist?.name ? 'Edit Pharmacist' : '+ Add Pharmacist'}
+      </button>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Pharmacist name"
+        className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
+        autoFocus
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={() => setEditing(false)}
+          className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium 
+                   rounded-xl transition-all active:scale-[0.97] touch-manipulation"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex-1 py-3 px-4 bg-primary text-primary-foreground font-medium 
+                   rounded-xl transition-all active:scale-[0.97] touch-manipulation
+                   disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {saving ? (
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}>
+              <Clock className="w-4 h-4" />
+            </motion.div>
+          ) : (
+            'Save'
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Per-medication pharmacist note entry
+ */
+function MedPharmacistNote({ med }: { med: Medication }) {
+  const { addPharmacistNote } = useSahay()
+  const [expanded, setExpanded] = useState(false)
+  const [note, setNote] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = () => {
+    if (!note.trim()) return
+    setSaving(true)
+    addPharmacistNote(med.id, note.trim())
+    setTimeout(() => {
+      setSaving(false)
+      setNote('')
+      setExpanded(false)
+    }, 300)
+  }
+
+  return (
+    <div className="border-2 border-border rounded-xl overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full p-3 flex items-center justify-between text-left
+                 hover:bg-secondary/50 active:scale-[0.99] transition-all touch-manipulation"
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${med.taken ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}>
+            {med.taken ? <Check className="w-3 h-3 text-sahay-success" /> : <Clock className="w-3 h-3 text-sahay-pending" />}
+          </div>
+          <div>
+            <p className="font-medium text-foreground">{med.name}</p>
+            {med.pharmacistNote && (
+              <p className="text-xs text-sahay-blue mt-0.5">Has pharmacist note</p>
+            )}
+          </div>
+        </div>
+        <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-3 pt-0 space-y-2">
+              {med.pharmacistNote && (
+                <div className="p-2 bg-sahay-blue/10 rounded-lg">
+                  <p className="text-sm text-sahay-blue font-medium">Current note:</p>
+                  <p className="text-sm text-foreground">{med.pharmacistNote}</p>
+                </div>
+              )}
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Add note from pharmacist..."
+                rows={2}
+                className="w-full p-2 bg-secondary rounded-lg border border-border text-sm
+                         focus:outline-none focus:ring-2 focus:ring-sahay-blue resize-none"
+              />
+              <button
+                onClick={handleSave}
+                disabled={!note.trim() || saving}
+                className="w-full py-2 px-3 bg-sahay-blue text-white font-medium text-sm
+                         rounded-lg transition-all active:scale-[0.97] touch-manipulation
+                         disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {saving ? (
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}>
+                    <Clock className="w-3 h-3" />
+                  </motion.div>
+                ) : (
+                  'Save Note'
+                )}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 /**
  * Caregiver Home Screen
@@ -56,8 +215,8 @@ import { QuickPillActions } from './quick-pill-actions'
 export function CaregiverHome() {
   const {
     data,
+    isLoading,
     getUnreadCount,
-    switchRole,
     getHumanInsights,
     getDoctorPrepSummary,
     endHandover,
@@ -75,9 +234,11 @@ export function CaregiverHome() {
   const [showWellness, setShowWellness] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showDoctorPrep, setShowDoctorPrep] = useState(false)
+  const [showPharmacist, setShowPharmacist] = useState(false)
   const [showHandoverSetup, setShowHandoverSetup] = useState(false)
   const [handoverName, setHandoverName] = useState('')
   const [handoverDays, setHandoverDays] = useState('3')
+  const [activeTab, setActiveTab] = useState<CaregiverTab>('home')
 
   const unreadMessages = getUnreadCount()
 
@@ -110,6 +271,11 @@ export function CaregiverHome() {
     if (hour < 12) return 'Good morning'
     if (hour < 17) return 'Good afternoon'
     return 'Good evening'
+  }
+
+  // Show skeleton during loading
+  if (isLoading) {
+    return <CaregiverHomeSkeleton />
   }
 
   // Show medication form if adding or editing
@@ -170,6 +336,70 @@ export function CaregiverHome() {
     return <MedicationHistory onClose={() => setShowHistory(false)} />
   }
 
+  // Show pharmacist panel
+  if (showPharmacist) {
+    return (
+      <main className="min-h-screen flex flex-col bg-background p-6">
+        <header className="flex items-center gap-4 mb-8">
+          <button
+            onClick={() => setShowPharmacist(false)}
+            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center
+                     hover:bg-secondary/80 active:scale-95 transition-all touch-manipulation
+                     focus:outline-none focus:ring-2 focus:ring-sahay-sage"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <h1 className="text-2xl font-bold">Pharmacist</h1>
+        </header>
+
+        <div className="space-y-6 max-w-md mx-auto w-full">
+          {/* Current pharmacist info */}
+          <section className="p-5 bg-card rounded-2xl border-2 border-border">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-sahay-blue-light flex items-center justify-center">
+                <Pill className="w-5 h-5 text-sahay-blue" />
+              </div>
+              <div>
+                <h2 className="text-lg font-medium text-foreground">Local Pharmacist</h2>
+                <p className="text-sm text-muted-foreground">A silent helper for refill notes</p>
+              </div>
+            </div>
+
+            {data.pharmacist?.name ? (
+              <div className="mb-4 p-3 bg-secondary/50 rounded-xl">
+                <p className="text-foreground font-medium">{data.pharmacist.name}</p>
+                {data.pharmacist.lastRefillConfirm && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Last refill: {new Date(data.pharmacist.lastRefillConfirm).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-muted-foreground mb-4">No pharmacist added yet</p>
+            )}
+
+            <PharmacistInlineForm />
+          </section>
+
+          {/* Medication-specific notes from pharmacist */}
+          {data.medications.length > 0 && (
+            <section className="p-5 bg-card rounded-2xl border-2 border-border">
+              <h3 className="text-lg font-medium text-foreground mb-4">Medication Notes</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Add notes from your pharmacist for specific medications
+              </p>
+              <div className="space-y-3">
+                {data.medications.map((med) => (
+                  <MedPharmacistNote key={med.id} med={med} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      </main>
+    )
+  }
+
   // Doctor Visit Prep Modal (Feature 9)
   if (showDoctorPrep) {
     return (
@@ -207,7 +437,7 @@ export function CaregiverHome() {
           <button
             onClick={() => setShowSettings(true)}
             className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
-                     hover:bg-secondary/80 transition-colors touch-manipulation
+                     hover:bg-secondary/80 active:scale-95 transition-all touch-manipulation
                      focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             aria-label="Settings"
           >
@@ -283,548 +513,470 @@ export function CaregiverHome() {
 
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto px-6 pb-24">
-        {/* Feature 4: Help Requested Alert */}
-        {data.timeline.find(e => e.type === 'help_requested' && !e.note?.includes('resolved')) && (
-          <motion.div
-            className="bg-sahay-blue/10 border-2 border-sahay-blue/30 rounded-2xl p-6 mb-6 shadow-lg shadow-sahay-blue/10"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-sahay-blue/20 flex items-center justify-center shrink-0">
-                <Heart className="w-7 h-7 text-sahay-blue" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-sahay-blue mb-1">
-                  Check-in Requested
-                </h3>
-                <p className="text-foreground leading-snug">
-                  {data.careReceiver?.name} just tapped &quot;I need help&quot;. No alarm was triggered, but they&apos;d appreciate a check-in.
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => setShowEmergency(true)} className="flex items-center justify-center gap-2 py-3 px-4 bg-sahay-blue text-white font-bold rounded-xl"><Phone className="w-5 h-5" /> Call</button>
-              <button onClick={() => setShowMessages(true)} className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl"><MessageCircle className="w-5 h-5" /> Message</button>
-            </div>
-          </motion.div>
-        )}
 
-        {/* Safety Check Escalation Alert */}
-        {data.safetyCheck.status === 'escalating' && (
-          <motion.div
-            className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-6 mb-6 shadow-lg shadow-destructive/10"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", damping: 15 }}
-          >
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
-                <ShieldAlert className="w-7 h-7 text-destructive" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-destructive mb-1">
-                  Safety Alert: No Response
-                </h3>
-                <p className="text-foreground leading-snug">
-                  {data.careReceiver?.name} did not respond to the safety check.
-                  Please try to reach them immediately.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setShowEmergency(true)}
-                className="flex items-center justify-center gap-2 py-3 px-4 bg-destructive text-destructive-foreground font-bold rounded-xl"
-              >
-                <Phone className="w-5 h-5" />
-                Call Them
-              </button>
-              <button
-                onClick={() => setShowMessages(true)}
-                className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl border-2 border-border"
-              >
-                <MessageCircle className="w-5 h-5" />
-                Message
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Medication Streak Counter - NEW FEATURE */}
-        {totalMeds > 0 && (
-          <motion.div
-            className="bg-gradient-to-br from-sahay-sage/10 to-sahay-success/10 rounded-2xl p-5 mb-6 border-2 border-sahay-sage/20 card-interactive"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Current Streak</p>
-                <div className="flex items-baseline gap-2">
-                  <h3 className="text-3xl font-bold text-sahay-sage">{data.currentStreak}</h3>
-                  <span className="text-lg text-muted-foreground">days</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Best: {data.longestStreak} days
-                </p>
-              </div>
+        {/* ═══ HOME TAB ═══ */}
+        {activeTab === 'home' && (
+          <>
+            {/* Feature 4: Help Requested Alert */}
+            {data.timeline.find(e => e.type === 'help_requested' && !e.note?.includes('resolved')) && (
               <motion.div
-                className="w-16 h-16 rounded-full bg-sahay-success/20 flex items-center justify-center"
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                className="bg-sahay-blue/10 border-2 border-sahay-blue/30 rounded-2xl p-6 mb-6 shadow-lg shadow-sahay-blue/10"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
               >
-                <span className="text-2xl">🔥</span>
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Quick Pill Actions - NEW FEATURE */}
-        {totalMeds > 0 && <QuickPillActions />}
-
-        {/* Feature 1: "I'm Fine Today" Status */}
-        {data.lastFineCheckIn?.startsWith(new Date().toISOString().split('T')[0]) && (
-          <motion.div
-            className="bg-sahay-success/10 border-2 border-sahay-success/20 rounded-2xl p-5 mb-6 flex items-center gap-4"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="w-12 h-12 rounded-full bg-sahay-success/20 flex items-center justify-center">
-              <Smile className="w-6 h-6 text-sahay-success" />
-            </div>
-            <div>
-              <p className="text-lg font-bold text-foreground">{data.careReceiver?.name} checked in</p>
-              <p className="text-muted-foreground">They tapped &quot;I&apos;m fine today&quot; at {new Date(data.lastFineCheckIn!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Feature 2: Pattern Insights */}
-        {getHumanInsights().length > 0 && (
-          <div className="space-y-3 mb-6">
-            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest pl-1">Daily Insights</h3>
-            {getHumanInsights().map((insight, idx) => (
-              <motion.div
-                key={idx}
-                className="bg-card border-2 border-border rounded-2xl p-5 flex items-start gap-4"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <div className="w-10 h-10 rounded-full bg-sahay-warm/10 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5 text-sahay-warm" />
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-sahay-blue/20 flex items-center justify-center shrink-0">
+                    <Heart className="w-7 h-7 text-sahay-blue" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-sahay-blue mb-1">
+                      Check-in Requested
+                    </h3>
+                    <p className="text-foreground leading-snug">
+                      {data.careReceiver?.name} just tapped &quot;I need help&quot;. No alarm was triggered, but they&apos;d appreciate a check-in.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-lg font-medium text-foreground leading-snug pt-1">{insight}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => setShowEmergency(true)} className="flex items-center justify-center gap-2 py-3 px-4 bg-sahay-blue text-white font-bold rounded-xl"><Phone className="w-5 h-5" /> Call</button>
+                  <button onClick={() => { setActiveTab('messages'); setShowMessages(true) }} className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl"><MessageCircle className="w-5 h-5" /> Message</button>
+                </div>
               </motion.div>
+            )}
+
+            {/* Safety Check Escalation Alert */}
+            {data.safetyCheck.status === 'escalating' && (
+              <motion.div
+                className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-6 mb-6 shadow-lg shadow-destructive/10"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", damping: 15 }}
+              >
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
+                    <ShieldAlert className="w-7 h-7 text-destructive" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-destructive mb-1">
+                      Safety Alert: No Response
+                    </h3>
+                    <p className="text-foreground leading-snug">
+                      {data.careReceiver?.name} did not respond to the safety check.
+                      Please try to reach them immediately.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setShowEmergency(true)}
+                    className="flex items-center justify-center gap-2 py-3 px-4 bg-destructive text-destructive-foreground font-bold rounded-xl"
+                  >
+                    <Phone className="w-5 h-5" />
+                    Call Them
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('messages'); setShowMessages(true) }}
+                    className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl border-2 border-border"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    Message
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Medication Streak Counter */}
+            {totalMeds > 0 && (
+              <motion.div
+                className="bg-gradient-to-br from-sahay-sage/10 to-sahay-success/10 rounded-2xl p-5 mb-6 border-2 border-sahay-sage/20 card-interactive"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Current Streak</p>
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-3xl font-bold text-sahay-sage">{data.currentStreak}</h3>
+                      <span className="text-lg text-muted-foreground">days</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Best: {data.longestStreak} days
+                    </p>
+                  </div>
+                  <motion.div
+                    className="w-16 h-16 rounded-full bg-sahay-success/20 flex items-center justify-center"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <span className="text-2xl">🔥</span>
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Quick Pill Actions */}
+            {totalMeds > 0 && <QuickPillActions />}
+
+            {/* Feature 1: "I'm Fine Today" Status */}
+            {data.lastFineCheckIn?.startsWith(new Date().toISOString().split('T')[0]) && (
+              <motion.div
+                className="bg-sahay-success/10 border-2 border-sahay-success/20 rounded-2xl p-5 mb-6 flex items-center gap-4"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <div className="w-12 h-12 rounded-full bg-sahay-success/20 flex items-center justify-center">
+                  <Smile className="w-6 h-6 text-sahay-success" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-foreground">{data.careReceiver?.name} checked in</p>
+                  <p className="text-muted-foreground">They tapped &quot;I&apos;m fine today&quot; at {new Date(data.lastFineCheckIn!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Refill awareness */}
+            {data.medications.some(
+              (m) => m.refillDaysLeft !== undefined && m.refillDaysLeft <= 7
+            ) && (
+                <div className="bg-sahay-pending/10 border-2 border-sahay-pending/30 rounded-2xl p-4 mb-6">
+                  <div className="flex items-center gap-3">
+                    <RefreshCw className="w-5 h-5 text-sahay-pending" />
+                    <div>
+                      <p className="font-medium text-foreground">
+                        Refill may be needed soon
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {data.medications
+                          .filter((m) => m.refillDaysLeft !== undefined && m.refillDaysLeft <= 7)
+                          .map((m) => m.name)
+                          .join(', ')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            {/* Medication list grouped by time */}
+            {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map((timeOfDay) => {
+              const meds = groupedMeds[timeOfDay]
+              if (meds.length === 0) return null
+
+              const Icon = timeIcons[timeOfDay]
+              const isCurrent = timeOfDay === currentTimeOfDay
+
+              return (
+                <section key={timeOfDay} className="mb-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon
+                      className={`w-5 h-5 ${isCurrent ? 'text-sahay-sage' : 'text-muted-foreground'}`}
+                      strokeWidth={1.5}
+                    />
+                    <h2
+                      className={`text-lg font-medium ${isCurrent ? 'text-foreground' : 'text-muted-foreground'}`}
+                    >
+                      {timeOfDayLabels[timeOfDay]}
+                    </h2>
+                    {isCurrent && (
+                      <span className="px-2 py-0.5 text-xs font-medium bg-sahay-sage-light text-sahay-sage rounded-full">
+                        Now
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    {meds.map((med, idx) => (
+                      <motion.button
+                        key={med.id}
+                        onClick={() => setEditingMed(med)}
+                        className="w-full p-4 bg-card rounded-xl border-2 border-border 
+                                 hover:border-sahay-sage/50 active:bg-sahay-sage/5 text-left
+                                 touch-manipulation button-interactive focus:outline-none focus:ring-2 focus:ring-sahay-sage"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 + idx * 0.05, duration: 0.4 }}
+                        whileHover={{ x: 4, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)' }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 flex-1">
+                            <motion.div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center
+                                        ${med.taken ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}
+                              animate={med.taken ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            >
+                              {med.taken ? (
+                                <motion.div
+                                  animate={{ scale: [0, 1] }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <Check className="w-4 h-4 text-sahay-success" />
+                                </motion.div>
+                              ) : (
+                                <Clock className="w-4 h-4 text-sahay-pending" />
+                              )}
+                            </motion.div>
+                            <div>
+                              <p className={`text-lg font-medium ${med.taken ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                                {med.name}
+                              </p>
+                              <p className="text-muted-foreground">
+                                {med.dosage}
+                                {med.notes && ` · ${med.notes}`}
+                              </p>
+                              {med.streak && med.streak > 0 && (
+                                <motion.p
+                                  className="text-xs text-sahay-success font-medium mt-1"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                >
+                                  🔥 {med.streak} day streak
+                                </motion.p>
+                              )}
+                            </div>
+                          </div>
+                          <motion.div
+                            animate={{ x: [0, 4, 0] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                          </motion.div>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
+
+            {totalMeds === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-lg mb-4">
+                  Add your first medication to get started
+                </p>
+              </div>
+            )}
+
+            {/* Daily closure ritual */}
+            {totalMeds > 0 && (
+              <div className="mt-6">
+                <DailyClosure />
+              </div>
+            )}
+
+            {/* Add medication button (inside home tab, above bottom nav) */}
+            <motion.button
+              onClick={() => setShowAddForm(true)}
+              className="w-full py-4 px-6 mt-4 mb-2 bg-primary text-primary-foreground text-lg font-semibold 
+                       rounded-xl flex items-center justify-center gap-2 shadow-lg touch-manipulation button-interactive
+                       focus:outline-none focus:ring-2 focus:ring-sahay-sage focus:ring-offset-2"
+              whileHover={{ scale: 1.02, boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15)' }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Plus className="w-5 h-5" />
+              Add medication
+            </motion.button>
+          </>
+        )}
+
+        {/* ═══ ACTIVITY TAB ═══ */}
+        {activeTab === 'activity' && (
+          <div className="space-y-3 pt-2">
+            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Activity & Insights</h2>
+
+            {/* Pattern Insights - inline */}
+            {getHumanInsights().length > 0 && (
+              <div className="space-y-3 mb-4">
+                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest pl-1">Daily Insights</h3>
+                {getHumanInsights().map((insight, idx) => (
+                  <motion.div
+                    key={idx}
+                    className="bg-card border-2 border-border rounded-2xl p-5 flex items-start gap-4"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-sahay-warm/10 flex items-center justify-center shrink-0">
+                      <FileText className="w-5 h-5 text-sahay-warm" />
+                    </div>
+                    <p className="text-lg font-medium text-foreground leading-snug pt-1">{insight}</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Gentle check-in */}
+            <GentleCheckIn />
+
+            {/* Care confidence */}
+            {totalMeds > 0 && (
+              <motion.div
+                className="mb-3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <CareConfidence />
+              </motion.div>
+            )}
+
+            {/* Activity action cards */}
+            {[
+              { label: 'Care Timeline', desc: 'Full history of care events', icon: BookOpen, bgColor: 'bg-sahay-sage/10', iconColor: 'text-sahay-sage', action: () => setShowTimeline(true) },
+              { label: 'Analytics', desc: 'Charts, trends & patterns', icon: BarChart3, bgColor: 'bg-sahay-blue/10', iconColor: 'text-sahay-blue', action: () => setShowAnalytics(true) },
+              { label: 'Wellness Log', desc: 'Track how they\'re feeling', icon: Heart, bgColor: 'bg-sahay-success/10', iconColor: 'text-sahay-success', action: () => setShowWellness(true) },
+              { label: 'Medication History', desc: 'Past medications & changes', icon: History, bgColor: 'bg-sahay-blue/10', iconColor: 'text-sahay-blue', action: () => setShowHistory(true) },
+            ].map((item, idx) => (
+              <motion.button
+                key={item.label}
+                onClick={item.action}
+                className="w-full p-4 bg-card border-2 border-border rounded-2xl flex items-center justify-between group
+                         hover:border-border/80 active:scale-[0.98] transition-all touch-manipulation"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 * idx }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl ${item.bgColor} flex items-center justify-center`}>
+                    <item.icon className={`w-5 h-5 ${item.iconColor}`} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-semibold text-foreground">{item.label}</p>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+              </motion.button>
             ))}
           </div>
         )}
 
-        {/* Gentle check-in suggestion */}
-        <GentleCheckIn />
+        {/* ═══ CARE TAB ═══ */}
+        {activeTab === 'care' && (
+          <div className="space-y-3 pt-2">
+            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Care Tools</h2>
 
-        {/* Care confidence indicator */}
-        {totalMeds > 0 && (
-          <motion.div
-            className="mb-6"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <CareConfidence />
-          </motion.div>
-        )}
-
-        {/* Quick actions - row 1 */}
-        <div className="grid grid-cols-4 gap-3 mb-3">
-          <motion.button
-            onClick={() => setShowTimeline(true)}
-            className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-sage/50 active:bg-sahay-sage/5 transition-all touch-manipulation button-interactive
-                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-1"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              animate={{ y: [0, -2, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <BookOpen className="w-5 h-5 text-sahay-sage" />
-            </motion.div>
-            <span className="text-xs font-medium text-foreground">Timeline</span>
-          </motion.button>
-          <motion.button
-            onClick={() => setShowAnalytics(true)}
-            className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-blue/50 active:bg-sahay-blue/5 transition-all touch-manipulation button-interactive
-                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-2"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              animate={{ y: [0, -2, 0] }}
-              transition={{ duration: 2, repeat: Infinity, delay: 0.2 }}
-            >
-              <BarChart3 className="w-5 h-5 text-sahay-blue" />
-            </motion.div>
-            <span className="text-xs font-medium text-foreground">Insights</span>
-          </motion.button>
-          <motion.button
-            onClick={() => setShowMessages(true)}
-            className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-warm/50 active:bg-sahay-warm/5 transition-all touch-manipulation button-interactive relative
-                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-3"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              animate={{ y: [0, -2, 0] }}
-              transition={{ duration: 2, repeat: Infinity, delay: 0.4 }}
-            >
-              <MessageCircle className="w-5 h-5 text-sahay-warm" />
-            </motion.div>
-            <span className="text-xs font-medium text-foreground">Messages</span>
-            {unreadMessages > 0 && (
-              <motion.span
-                className="absolute top-2 right-2 w-5 h-5 bg-sahay-sage text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 0.5, repeat: Infinity }}
+            {/* Care action cards */}
+            {[
+              { label: 'Contextual Notes', desc: 'Quick notes about care', icon: FileText, bgColor: 'bg-sahay-warm/10', iconColor: 'text-sahay-warm', action: () => setShowNotes(true) },
+              { label: 'Care Roles', desc: 'Manage who helps with care', icon: Users, bgColor: 'bg-sahay-blue/10', iconColor: 'text-sahay-blue', action: () => setShowRoleStatus(true) },
+              { label: 'Emergency Contacts', desc: 'Quick-dial important numbers', icon: Phone, bgColor: 'bg-destructive/10', iconColor: 'text-destructive', action: () => setShowEmergency(true) },
+              { label: 'Pharmacist', desc: 'Pharmacist info & med notes', icon: Pill, bgColor: 'bg-sahay-blue/10', iconColor: 'text-sahay-blue', action: () => setShowPharmacist(true) },
+              { label: 'Doctor Visit Prep', desc: 'Summary for your next visit', icon: BookOpen, bgColor: 'bg-sahay-sage/10', iconColor: 'text-sahay-sage', action: () => setShowDoctorPrep(true) },
+            ].map((item, idx) => (
+              <motion.button
+                key={item.label}
+                onClick={item.action}
+                className="w-full p-4 bg-card border-2 border-border rounded-2xl flex items-center justify-between group
+                         hover:border-border/80 active:scale-[0.98] transition-all touch-manipulation"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 * idx }}
+                whileTap={{ scale: 0.98 }}
               >
-                {unreadMessages}
-              </motion.span>
-            )}
-          </motion.button>
-          <motion.button
-            onClick={() => setShowWellness(true)}
-            className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-success/50 active:bg-sahay-success/5 transition-all touch-manipulation button-interactive
-                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-4"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              animate={{ y: [0, -2, 0] }}
-              transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
-            >
-              <Heart className="w-5 h-5 text-sahay-success" />
-            </motion.div>
-            <span className="text-xs font-medium text-foreground">Wellness</span>
-          </motion.button>
-        </div>
-
-        {/* Quick actions - row 2 */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          <motion.button
-            onClick={() => setShowRoleStatus(true)}
-            className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-blue/50 active:bg-sahay-blue/5 transition-all touch-manipulation button-interactive
-                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-2"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Users className="w-5 h-5 text-sahay-blue" />
-            <span className="text-xs font-medium text-foreground">Roles</span>
-          </motion.button>
-          <motion.button
-            onClick={() => setShowNotes(true)}
-            className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-warm/50 active:bg-sahay-warm/5 transition-all touch-manipulation button-interactive
-                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-3"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <FileText className="w-5 h-5 text-sahay-warm" />
-            <span className="text-xs font-medium text-foreground">Notes</span>
-          </motion.button>
-          <motion.button
-            onClick={() => setShowEmergency(true)}
-            className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-destructive/50 active:bg-destructive/5 transition-all touch-manipulation button-interactive
-                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-4"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Phone className="w-5 h-5 text-destructive" />
-            <span className="text-xs font-medium text-foreground">Emergency</span>
-          </motion.button>
-          <motion.button
-            onClick={() => setShowHistory(true)}
-            className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5
-                     hover:border-sahay-blue/50 active:bg-sahay-blue/5 transition-all touch-manipulation button-interactive
-                     focus:outline-none focus:ring-2 focus:ring-ring stagger-item-5"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <History className="w-5 h-5 text-sahay-blue" />
-            <span className="text-xs font-medium text-foreground">History</span>
-          </motion.button>
-        </div>
-
-        {/* Feature 9: Doctor Visit Prep Button */}
-        <motion.button
-          onClick={() => setShowDoctorPrep(true)}
-          className="w-full py-4 px-5 bg-sahay-sage-light/30 border-2 border-sahay-sage/20 rounded-2xl mb-3 flex items-center justify-between group overflow-hidden relative"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
-              <BookOpen className="w-6 h-6 text-sahay-sage" />
-            </div>
-            <div className="text-left">
-              <p className="text-lg font-bold text-foreground">Prepare for Doctor Visit</p>
-              <p className="text-sm text-muted-foreground">See key routine patterns and notes</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-          <div className="absolute top-0 right-0 w-32 h-32 bg-sahay-sage/5 rounded-full -mr-16 -mt-16" />
-        </motion.button>
-
-        {/* Feature 3: Handover Button */}
-        <motion.button
-          onClick={() => setShowHandoverSetup(!showHandoverSetup)}
-          className="w-full py-4 px-5 bg-sahay-blue/10 border-2 border-sahay-blue/20 rounded-2xl mb-6 flex items-center justify-between group overflow-hidden relative"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
-              <ArrowLeftRight className="w-6 h-6 text-sahay-blue" />
-            </div>
-            <div className="text-left">
-              <p className="text-lg font-bold text-foreground">Temporary Handover</p>
-              <p className="text-sm text-muted-foreground">Let someone else handle care for a few days</p>
-            </div>
-          </div>
-          <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${showHandoverSetup ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
-        </motion.button>
-
-        {/* Handover Setup Panel */}
-        <AnimatePresence>
-          {showHandoverSetup && (
-            <motion.div
-              className="bg-card border-2 border-border rounded-2xl p-5 mb-6 overflow-hidden"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-            >
-              <h4 className="text-lg font-bold mb-4">Handover Details</h4>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">Trusted Person&apos;s Name</label>
-                  <input
-                    type="text"
-                    value={handoverName}
-                    onChange={(e) => setHandoverName(e.target.value)}
-                    placeholder="e.g., Sibling Name"
-                    className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
-                  />
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl ${item.bgColor} flex items-center justify-center`}>
+                    <item.icon className={`w-5 h-5 ${item.iconColor}`} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-semibold text-foreground">{item.label}</p>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">For how many days?</label>
-                  <select
-                    value={handoverDays}
-                    onChange={(e) => setHandoverDays(e.target.value)}
-                    className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+              </motion.button>
+            ))}
+
+            {/* Handover section - inline */}
+            <div className="mt-4">
+              <motion.button
+                onClick={() => setShowHandoverSetup(!showHandoverSetup)}
+                className="w-full p-4 bg-sahay-blue/5 border-2 border-sahay-blue/20 rounded-2xl flex items-center justify-between group"
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-sahay-blue/10 flex items-center justify-center">
+                    <ArrowLeftRight className="w-5 h-5 text-sahay-blue" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-semibold text-foreground">Temporary Handover</p>
+                    <p className="text-sm text-muted-foreground">Let someone else handle care</p>
+                  </div>
+                </div>
+                <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${showHandoverSetup ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
+              </motion.button>
+
+              <AnimatePresence>
+                {showHandoverSetup && (
+                  <motion.div
+                    className="bg-card border-2 border-border rounded-2xl p-5 mt-3 overflow-hidden"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
                   >
-                    <option value="3">3 days</option>
-                    <option value="5">5 days</option>
-                    <option value="7">1 week</option>
-                  </select>
-                </div>
-                <button
-                  onClick={() => {
-                    const date = new Date();
-                    date.setDate(date.getDate() + parseInt(handoverDays));
-                    startHandover(handoverName, date.toISOString());
-                    setShowHandoverSetup(false);
-                  }}
-                  disabled={!handoverName}
-                  className="w-full py-4 bg-sahay-blue text-white font-bold rounded-xl disabled:opacity-50"
-                >
-                  Confirm Handover
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Switch role button - moved to its own row */}
-        <motion.button
-          onClick={switchRole}
-          className="w-full py-3 px-4 bg-card border-2 border-border rounded-xl flex items-center justify-center gap-2
-                   hover:border-muted-foreground/50 active:bg-muted/10 transition-all touch-manipulation button-interactive
-                   focus:outline-none focus:ring-2 focus:ring-ring mb-6"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <ArrowLeftRight className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">Switch to {data.careReceiver?.name}&apos;s View</span>
-        </motion.button>
-
-        {/* Refill awareness - show if any meds need refill soon */}
-        {data.medications.some(
-          (m) => m.refillDaysLeft !== undefined && m.refillDaysLeft <= 7
-        ) && (
-            <div className="bg-sahay-pending/10 border-2 border-sahay-pending/30 rounded-2xl p-4 mb-6">
-              <div className="flex items-center gap-3">
-                <RefreshCw className="w-5 h-5 text-sahay-pending" />
-                <div>
-                  <p className="font-medium text-foreground">
-                    Refill may be needed soon
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {data.medications
-                      .filter(
-                        (m) =>
-                          m.refillDaysLeft !== undefined && m.refillDaysLeft <= 7
-                      )
-                      .map((m) => m.name)
-                      .join(', ')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-        {/* Medication list grouped by time */}
-        {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map((timeOfDay) => {
-          const meds = groupedMeds[timeOfDay]
-          if (meds.length === 0) return null
-
-          const Icon = timeIcons[timeOfDay]
-          const isCurrent = timeOfDay === currentTimeOfDay
-
-          return (
-            <section key={timeOfDay} className="mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Icon
-                  className={`w-5 h-5 ${isCurrent ? 'text-sahay-sage' : 'text-muted-foreground'}`}
-                  strokeWidth={1.5}
-                />
-                <h2
-                  className={`text-lg font-medium ${isCurrent ? 'text-foreground' : 'text-muted-foreground'}`}
-                >
-                  {timeOfDayLabels[timeOfDay]}
-                </h2>
-                {isCurrent && (
-                  <span className="px-2 py-0.5 text-xs font-medium bg-sahay-sage-light text-sahay-sage rounded-full">
-                    Now
-                  </span>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                {meds.map((med, idx) => (
-                  <motion.button
-                    key={med.id}
-                    onClick={() => setEditingMed(med)}
-                    className="w-full p-4 bg-card rounded-xl border-2 border-border 
-                             hover:border-sahay-sage/50 active:bg-sahay-sage/5 text-left
-                             touch-manipulation button-interactive focus:outline-none focus:ring-2 focus:ring-sahay-sage"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + idx * 0.05, duration: 0.4 }}
-                    whileHover={{ x: 4, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)' }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1">
-                        <motion.div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center
-                                    ${med.taken ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}
-                          animate={med.taken ? { scale: [1, 1.1, 1] } : { scale: 1 }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          {med.taken ? (
-                            <motion.div
-                              animate={{ scale: [0, 1] }}
-                              transition={{ duration: 0.3 }}
-                            >
-                              <Check className="w-4 h-4 text-sahay-success" />
-                            </motion.div>
-                          ) : (
-                            <Clock className="w-4 h-4 text-sahay-pending" />
-                          )}
-                        </motion.div>
-                        <div>
-                          <p className={`text-lg font-medium ${med.taken ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                            {med.name}
-                          </p>
-                          <p className="text-muted-foreground">
-                            {med.dosage}
-                            {med.notes && ` · ${med.notes}`}
-                          </p>
-                          {med.streak && med.streak > 0 && (
-                            <motion.p
-                              className="text-xs text-sahay-success font-medium mt-1"
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                            >
-                              🔥 {med.streak} day streak
-                            </motion.p>
-                          )}
-                        </div>
+                    <h4 className="text-lg font-bold mb-4">Handover Details</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">Trusted Person&apos;s Name</label>
+                        <input
+                          type="text"
+                          value={handoverName}
+                          onChange={(e) => setHandoverName(e.target.value)}
+                          placeholder="e.g., Sibling Name"
+                          className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
+                        />
                       </div>
-                      <motion.div
-                        animate={{ x: [0, 4, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">For how many days?</label>
+                        <select
+                          value={handoverDays}
+                          onChange={(e) => setHandoverDays(e.target.value)}
+                          className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
+                        >
+                          <option value="3">3 days</option>
+                          <option value="5">5 days</option>
+                          <option value="7">1 week</option>
+                        </select>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const date = new Date();
+                          date.setDate(date.getDate() + parseInt(handoverDays));
+                          startHandover(handoverName, date.toISOString());
+                          setShowHandoverSetup(false);
+                        }}
+                        disabled={!handoverName}
+                        className="w-full py-4 bg-sahay-blue text-white font-bold rounded-xl disabled:opacity-50 active:scale-[0.97] transition-all"
                       >
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                      </motion.div>
+                        Confirm Handover
+                      </button>
                     </div>
-                  </motion.button>
-                ))}
-              </div>
-            </section>
-          )
-        })}
-
-        {totalMeds === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg mb-4">
-              Add your first medication to get started
-            </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         )}
 
-        {/* Daily closure ritual */}
-        {totalMeds > 0 && (
-          <div className="mt-6">
-            <DailyClosure />
+        {/* ═══ MESSAGES TAB ═══ */}
+        {activeTab === 'messages' && (
+          <div className="pt-2 -mx-6 -mb-24">
+            <Messages onClose={() => setActiveTab('home')} />
           </div>
         )}
       </div>
 
-      {/* Floating add button */}
-      <div className="fixed bottom-6 left-0 right-0 px-6">
-        <div className="max-w-md mx-auto">
-          <motion.button
-            onClick={() => setShowAddForm(true)}
-            className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold 
-                     rounded-xl flex items-center justify-center gap-2 shadow-lg touch-manipulation button-interactive
-                     focus:outline-none focus:ring-2 focus:ring-sahay-sage focus:ring-offset-2"
-            whileHover={{ scale: 1.05, boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15)' }}
-            whileTap={{ scale: 0.98 }}
-            animate={{ y: [0, -2, 0] }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
-            <motion.div
-              animate={{ rotate: [0, 90, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <Plus className="w-5 h-5" />
-            </motion.div>
-            Add medication
-          </motion.button>
-        </div>
-      </div>
+      {/* Bottom navigation */}
+      <CaregiverBottomNav
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab)
+        }}
+        unreadMessages={unreadMessages}
+      />
     </main>
   )
 }
+

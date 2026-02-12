@@ -14,7 +14,7 @@ interface SettingsPanelProps {
  * Design: Calm, minimal, clear actions
  */
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
-  const { data, clearRole, resetApp, updatePharmacist, addPharmacistNote } =
+  const { data, logout, resetApp, updatePharmacist, addPharmacistNote } =
     useSahay()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showPharmacistForm, setShowPharmacistForm] = useState(false)
@@ -27,7 +27,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const [pharmacistNote, setPharmacistNote] = useState('')
 
   const handleSwitchRole = () => {
-    clearRole()
+    logout()
   }
 
   const handleReset = () => {
@@ -54,7 +54,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         <button
           onClick={onClose}
           className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
-                   hover:bg-secondary/80 transition-colors touch-manipulation
+                   hover:bg-secondary/80 active:scale-95 transition-all touch-manipulation
                    focus:outline-none focus:ring-2 focus:ring-sahay-sage"
           aria-label="Go back"
         >
@@ -124,7 +124,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 <button
                   onClick={() => setShowPharmacistForm(true)}
                   className="w-full py-3 px-4 bg-secondary text-foreground font-medium 
-                           rounded-xl transition-colors touch-manipulation
+                           rounded-xl transition-all active:scale-[0.97] touch-manipulation
                            hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   {data.pharmacist?.name
@@ -146,7 +146,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   <button
                     onClick={() => setShowPharmacistForm(false)}
                     className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium 
-                             rounded-xl transition-colors touch-manipulation
+                             rounded-xl transition-all active:scale-[0.97] touch-manipulation
                              focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     Cancel
@@ -154,7 +154,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   <button
                     onClick={handleSavePharmacist}
                     className="flex-1 py-3 px-4 bg-primary text-primary-foreground font-medium 
-                             rounded-xl transition-colors touch-manipulation
+                             rounded-xl transition-all active:scale-[0.97] touch-manipulation
                              focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     Save
@@ -240,7 +240,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             <button
               onClick={handleSwitchRole}
               className="w-full p-4 bg-card rounded-xl border-2 border-border 
-                       hover:border-sahay-sage/50 transition-all text-left
+                       hover:border-sahay-sage/50 transition-all active:scale-[0.97] text-left
                        touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             >
               <div className="flex items-center gap-4">
@@ -263,7 +263,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               <button
                 onClick={() => setShowResetConfirm(true)}
                 className="w-full p-4 bg-card rounded-xl border-2 border-border 
-                         hover:border-destructive/50 transition-all text-left
+                         hover:border-destructive/50 transition-all active:scale-[0.97] text-left
                          touch-manipulation focus:outline-none focus:ring-2 focus:ring-destructive"
               >
                 <div className="flex items-center gap-4">
