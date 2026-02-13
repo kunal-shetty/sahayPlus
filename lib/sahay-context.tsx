@@ -30,6 +30,8 @@ import {
   STORAGE_KEY,
 } from './types'
 import { api } from './api'
+import { showNotification } from './notifications'
+import { supabase } from './supabase'
 
 // localStorage key for persisting auth
 const AUTH_STORAGE_KEY = 'sahay_user'
@@ -160,6 +162,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isDataLoading, setIsDataLoading] = useState(false)
   const [user, setUser] = useState<SahayUser | null>(null)
+  const [caregiverId, setCaregiverId] = useState<string | null>(null)
 
   // Helper to get user ID safely
   const getUserId = useCallback(() => user?.id || '', [user])
@@ -252,7 +255,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
 
     async function loadData() {
       try {
-        const [medsRes, timelineRes, notesRes, wellnessRes, dayRes, msgsRes, contactsRes] =
+        const [medsRes, timelineRes, notesRes, wellnessRes, dayRes, msgsRes, contactsRes, relRes] =
           await Promise.allSettled([
             api.medications.list(crId),
             api.timeline.list(crId),
@@ -261,7 +264,15 @@ export function SahayProvider({ children }: { children: ReactNode }) {
             api.day.history(crId),
             api.messages.list(crId),
             api.emergencyContacts.list(crId),
+            api.careRelationships.get(crId),
           ])
+
+        if (relRes.status === 'fulfilled') {
+          const rel = relRes.value.relationship
+          if (rel) {
+            setCaregiverId(rel.caregiver_id)
+          }
+        }
 
         setData((prev) => ({
           ...prev,
@@ -310,6 +321,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               level: w.level as WellnessLevel,
               note: w.note || undefined,
               timestamp: w.created_at,
+              isRead: false,
             }))
             : prev.wellnessEntries,
           dayClosures: dayRes.status === 'fulfilled'
@@ -479,8 +491,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const markMedicationTaken = useCallback((id: string, taken: boolean) => {
+    const med = data.medications.find((m) => m.id === id)
+
     setData((prev) => {
-      const med = prev.medications.find((m) => m.id === id)
       const newTimeline: TimelineEvent = {
         id: generateId(),
         type: taken ? 'medication_taken' : 'medication_skipped',
@@ -502,11 +515,25 @@ export function SahayProvider({ children }: { children: ReactNode }) {
 
     const userId = getUserId()
     if (taken) {
+      // 1. Mark as taken
       safeApiCall(() => api.medications.take(id, userId))
+
+      // 2. Notify Caregiver via DB
+      if (caregiverId) {
+        const medName = med?.name || 'Medicine'
+        const careReceiverName = data.careReceiver?.name || 'Care Receiver'
+        safeApiCall(() => api.notifications.create({
+          user_id: caregiverId,
+          type: 'medication_taken',
+          title: 'Medication Taken',
+          body: `${careReceiverName} took ${medName}`
+        }))
+        showNotification('Medication Taken', `Notified caregiver that you took ${medName}`)
+      }
     } else {
       safeApiCall(() => api.medications.skip(id, userId))
     }
-  }, [getUserId])
+  }, [getUserId, caregiverId, data.careReceiver?.name, data.medications])
 
   const updateRefillStatus = useCallback((id: string, daysLeft: number) => {
     setData((prev) => ({
@@ -925,7 +952,10 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     if (crId) {
       safeApiCall(() => api.safetyCheck.trigger(crId))
     }
-  }, [getCareRelId])
+    if (caregiverId && by === 'manual') {
+      showNotification('Safety Check', 'Safety check initiated.')
+    }
+  }, [getCareRelId, caregiverId])
 
   const dismissSafetyCheck = useCallback(() => {
     setData((prev) => {
@@ -959,7 +989,17 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         timeline: [...prev.timeline, newEvent],
       }
     })
-  }, [])
+
+    if (caregiverId) {
+      safeApiCall(() => api.notifications.create({
+        user_id: caregiverId,
+        type: 'safety_escalation',
+        title: 'Emergency Alert',
+        body: `Safety check escalated! ${data.careReceiver?.name || 'Care Receiver'} needs attention.`
+      }))
+      showNotification('Emergency Alert', 'Caregiver has been notified of your situation. Hang tight.')
+    }
+  }, [caregiverId, data.careReceiver?.name])
 
   // ─── Daily check-in ───────────────────────────────────────────────
 
@@ -977,7 +1017,17 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         timeline: [...prev.timeline, newEvent],
       }
     })
-  }, [])
+
+    if (caregiverId) {
+      safeApiCall(() => api.notifications.create({
+        user_id: caregiverId,
+        type: 'check_in',
+        title: 'Check-in Complete',
+        body: `${data.careReceiver?.name || 'Care Receiver'} checked in as fine.`
+      }))
+      showNotification('Check-in Complete', 'Thanks for checking in! Caregiver updated.')
+    }
+  }, [caregiverId, data.careReceiver?.name])
 
   const requestHelp = useCallback(() => {
     setData((prev) => {
@@ -989,7 +1039,17 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       }
       return { ...prev, timeline: [...prev.timeline, newEvent] }
     })
-  }, [])
+
+    if (caregiverId) {
+      safeApiCall(() => api.notifications.create({
+        user_id: caregiverId,
+        type: 'help_request',
+        title: 'Help Requested',
+        body: `${data.careReceiver?.name || 'Care Receiver'} requested help.`
+      }))
+      showNotification('Help Requested', 'Caregiver has been alerted. Help is on the way.')
+    }
+  }, [caregiverId, data.careReceiver?.name])
 
   // ─── Handover ─────────────────────────────────────────────────────
 
@@ -1042,7 +1102,11 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         timeline: [...prev.timeline, newEvent],
       }
     })
-  }, [])
+    const crId = getCareRelId()
+    if (crId) {
+      // api call to end handover if needed
+    }
+  }, [getCareRelId])
 
   // ─── Pattern Insights (pure getter) ───────────────────────────────
 
@@ -1104,6 +1168,37 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       return () => clearTimeout(timer)
     }
   }, [data.safetyCheck.status, escalateSafetyCheck])
+
+  // ─── Realtime Notifications (Caregiver Side) ──────────────────────
+  useEffect(() => {
+    if (!user || user.role !== 'caregiver') return
+
+    const channel = supabase
+      .channel('caregiver-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log("Notification received:", payload)
+          if (payload.new) {
+            showNotification(
+              payload.new.title,
+              payload.new.body
+            )
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, user?.role])
 
   // ─── Context value ────────────────────────────────────────────────
 
