@@ -1,5 +1,5 @@
 interface AndroidInterface {
-    showNotification(title: string, message: string): void;
+    createNotification(title: string, message: string): void;
 }
 
 declare global {
@@ -10,6 +10,6 @@ declare global {
 
 export const showNotification = (title: string, message: string) => {
     if (window.Android) {
-        window.Android.showNotification(title, message);
+        window.Android.createNotification(title, message);
     }
 }
