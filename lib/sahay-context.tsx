@@ -31,7 +31,7 @@ import {
 } from './types'
 import { api } from './api'
 import { showNotification } from './notifications'
-import { supabase } from './supabase'
+import { supabase } from './supabase-client'
 
 // localStorage key for persisting auth
 const AUTH_STORAGE_KEY = 'sahay_user'
