@@ -6,7 +6,7 @@ import { ShieldAlert, Heart, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 
 export function SafetyCheckPrompt() {
-    const { data, dismissSafetyCheck } = useSahay()
+    const { data, dismissSafetyCheck, triggerSafetyCheck } = useSahay()
     const [countdown, setCountdown] = useState(300) // 5 minutes in seconds
 
     useEffect(() => {
@@ -35,6 +35,36 @@ export function SafetyCheckPrompt() {
     const minutes = Math.floor(countdown / 60)
     const seconds = countdown % 60
     const progress = (countdown / 300) * 100
+
+    useEffect(() => {
+  let lastTriggerTime = 0;
+
+  const handleMotion = (event: DeviceMotionEvent) => {
+    const acc = event.accelerationIncludingGravity;
+    if (!acc) return;
+
+    const x = acc.x || 0;
+    const y = acc.y || 0;
+    const z = acc.z || 0;
+
+    const magnitude = Math.sqrt(x * x + y * y + z * z);
+    const now = Date.now();
+
+    // Shake threshold
+    if (magnitude > 20 && now - lastTriggerTime > 5000) {
+      lastTriggerTime = now;
+
+      triggerSafetyCheck('motion');
+    }
+  };
+
+  window.addEventListener("devicemotion", handleMotion);
+
+  return () => {
+    window.removeEventListener("devicemotion", handleMotion);
+  };
+}, [triggerSafetyCheck]);
+
 
     return (
         <AnimatePresence>

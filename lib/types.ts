@@ -100,6 +100,7 @@ export interface Medication {
   name: string
   dosage: string
   timeOfDay: TimeOfDay
+  time?: string // Specific time (e.g. "08:30")
   notes?: string
   taken: boolean
   lastUpdated: string // ISO date string

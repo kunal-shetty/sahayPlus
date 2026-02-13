@@ -27,6 +27,7 @@ export function CaregiverOnboarding() {
   const [medName, setMedName] = useState('')
   const [medDosage, setMedDosage] = useState('')
   const [medTimeOfDay, setMedTimeOfDay] = useState<TimeOfDay>('morning')
+  const [medTime, setMedTime] = useState('')
   const [medNotes, setMedNotes] = useState('')
 
   const handleNamesSubmit = () => {
@@ -47,6 +48,7 @@ export function CaregiverOnboarding() {
         name: medName.trim(),
         dosage: medDosage.trim(),
         timeOfDay: medTimeOfDay,
+        time: medTime || undefined,
         notes: medNotes.trim() || undefined,
       })
       // Mark setup as complete
@@ -237,6 +239,25 @@ export function CaregiverOnboarding() {
                     )
                   })}
                 </div>
+              </div>
+
+              {/* Exact time (optional) */}
+              <div>
+                <label
+                  htmlFor="medTime"
+                  className="block text-lg font-medium text-foreground mb-2"
+                >
+                  Exact time <span className="text-muted-foreground font-normal">(optional)</span>
+                </label>
+                <input
+                  id="medTime"
+                  type="time"
+                  value={medTime}
+                  onChange={(e) => setMedTime(e.target.value)}
+                  className="w-full px-4 py-4 text-lg bg-input border-2 border-border rounded-xl
+                           focus:outline-none focus:border-sahay-sage focus:ring-2 focus:ring-sahay-sage/20
+                           placeholder:text-muted-foreground/60"
+                />
               </div>
 
               {/* Notes (optional) */}

@@ -271,6 +271,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               name: m.name,
               dosage: m.dosage,
               timeOfDay: m.time_of_day as TimeOfDay,
+              time: m.time || undefined,
               notes: m.notes || undefined,
               taken: false,
               lastUpdated: m.updated_at || m.created_at,
@@ -421,6 +422,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
             name: med.name,
             dosage: med.dosage,
             time_of_day: med.timeOfDay,
+            time: med.time,
             notes: med.notes,
             simple_explanation: med.simpleExplanation,
             refill_days_left: med.refillDaysLeft,
@@ -454,6 +456,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       if (updates.name !== undefined) dbUpdates.name = updates.name
       if (updates.dosage !== undefined) dbUpdates.dosage = updates.dosage
       if (updates.timeOfDay !== undefined) dbUpdates.time_of_day = updates.timeOfDay
+      if (updates.time !== undefined) dbUpdates.time = updates.time
       if (updates.notes !== undefined) dbUpdates.notes = updates.notes
       if (updates.simpleExplanation !== undefined) dbUpdates.simple_explanation = updates.simpleExplanation
       if (updates.refillDaysLeft !== undefined) dbUpdates.refill_days_left = updates.refillDaysLeft

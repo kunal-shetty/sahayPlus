@@ -744,9 +744,23 @@ export function CaregiverHome() {
                               <p className={`text-lg font-medium ${med.taken ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                                 {med.name}
                               </p>
-                              <p className="text-muted-foreground">
-                                {med.dosage}
-                                {med.notes && ` · ${med.notes}`}
+                              <p className="text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                                <span>{med.dosage}</span>
+                                {med.time && (
+                                  <>
+                                    <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                                    <span className="flex items-center gap-1 text-sahay-blue font-medium">
+                                      <Clock className="w-3 h-3" />
+                                      {med.time}
+                                    </span>
+                                  </>
+                                )}
+                                {med.notes && (
+                                  <>
+                                    <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                                    <span>{med.notes}</span>
+                                  </>
+                                )}
                               </p>
                               <motion.p
                                 className="text-xs font-medium mt-1 flex items-center gap-1"

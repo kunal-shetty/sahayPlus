@@ -34,6 +34,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
     medication?.timeOfDay || 'morning'
   )
   const [notes, setNotes] = useState(medication?.notes || '')
+  const [time, setTime] = useState(medication?.time || '')
   const [refillDaysLeft, setRefillDaysLeft] = useState<number | undefined>(
     medication?.refillDaysLeft
   )
@@ -47,6 +48,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
         name: name.trim(),
         dosage: dosage.trim(),
         timeOfDay,
+        time: time || undefined,
         notes: notes.trim() || undefined,
         refillDaysLeft,
       })
@@ -58,6 +60,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
         name: name.trim(),
         dosage: dosage.trim(),
         timeOfDay,
+        time: time || undefined,
         notes: notes.trim() || undefined,
         refillDaysLeft,
       })
@@ -157,11 +160,10 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
                     onClick={() => setTimeOfDay(time)}
                     className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
                               touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage
-                              ${
-                                isSelected
-                                  ? 'border-sahay-sage bg-sahay-sage-light'
-                                  : 'border-border bg-card hover:border-sahay-sage/50'
-                              }`}
+                              ${isSelected
+                        ? 'border-sahay-sage bg-sahay-sage-light'
+                        : 'border-border bg-card hover:border-sahay-sage/50'
+                      }`}
                     aria-pressed={isSelected}
                   >
                     <Icon
@@ -177,6 +179,28 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
                 )
               })}
             </div>
+          </div>
+
+          {/* Specific Time (optional) */}
+          <div>
+            <label
+              htmlFor="medTime"
+              className="block text-lg font-medium text-foreground mb-2"
+            >
+              Exact time <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <input
+              id="medTime"
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full px-4 py-4 text-lg bg-input border-2 border-border rounded-xl
+                       focus:outline-none focus:border-sahay-sage focus:ring-2 focus:ring-sahay-sage/20
+                       placeholder:text-muted-foreground/60"
+            />
+            <p className="text-muted-foreground text-sm mt-2">
+              Helps us send more precise reminders
+            </p>
           </div>
 
           {/* Notes (optional) */}

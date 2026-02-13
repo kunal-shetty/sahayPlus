@@ -11,6 +11,7 @@ import {
 import {
   Heart,
   Check,
+  Clock,
   Sun,
   Cloud,
   Moon,
@@ -55,6 +56,19 @@ export function CareReceiverHome() {
     requestHelp,
     dismissChangeIndicator,
   } = useSahay()
+
+  useEffect(() => {
+  if (typeof window !== "undefined") {
+    window.triggerMotionSafetyCheck = () => {
+      triggerSafetyCheck('motion');
+    };
+  }
+
+  return () => {
+    window.triggerMotionSafetyCheck = null;
+  };
+}, [triggerSafetyCheck]);
+
   const [confirmedMed, setConfirmedMed] = useState<Medication | null>(null)
   const [showUndo, setShowUndo] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -431,8 +445,9 @@ export function CareReceiverHome() {
               className="w-6 h-6 text-sahay-sage"
               strokeWidth={1.5}
             />
-            <span className={`text-lg ${isNight ? 'text-slate-400' : 'text-muted-foreground'}`}>
+            <span className={`text-lg font-medium ${isNight ? 'text-slate-400' : 'text-muted-foreground'}`}>
               {timeOfDayLabels[nextMed!.timeOfDay]}
+              {nextMed?.time && ` at ${nextMed.time}`}
             </span>
           </div>
 
@@ -447,6 +462,12 @@ export function CareReceiverHome() {
             <h2 className="text-3xl font-semibold mb-2 text-balance">
               {nextMed!.name}
             </h2>
+            {nextMed?.time && (
+              <div className="flex items-center justify-center gap-2 mb-2 text-sahay-blue">
+                <Clock className="w-5 h-5" strokeWidth={2.5} />
+                <span className="text-2xl font-bold">{nextMed.time}</span>
+              </div>
+            )}
             <p className={`text-2xl ${isNight ? 'text-slate-300' : 'text-muted-foreground'}`}>{nextMed!.dosage}</p>
 
             {/* Feature 5: Simple Medication Explanations */}
