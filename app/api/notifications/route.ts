@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
             "wellness_reminder",
             "message",
             "check_in_suggestion",
+            "medication_taken"
         ];
         if (!validTypes.includes(type)) {
             return NextResponse.json(
