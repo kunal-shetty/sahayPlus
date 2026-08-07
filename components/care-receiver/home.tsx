@@ -7,6 +7,7 @@ import {
   type Medication,
   getCurrentTimeOfDay,
   timeOfDayLabels,
+  formatTime12h,
 } from '@/lib/types'
 import {
   Heart,
@@ -78,6 +79,30 @@ export function CareReceiverHome() {
   const [isListening, setIsListening] = useState(false)
   const [showHelpConfirmed, setShowHelpConfirmed] = useState(false)
 
+  // Theme: user picks light, dark, or auto (auto = dark after 9pm).
+  // Default is light so first-time users aren't surprised by a dark screen.
+  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saved = window.localStorage.getItem('sahay_receiver_theme')
+    if (saved === 'light' || saved === 'dark' || saved === 'auto') {
+      setTheme(saved)
+    }
+  }, [])
+
+  const updateTheme = (next: 'light' | 'dark' | 'auto') => {
+    setTheme(next)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('sahay_receiver_theme', next)
+    }
+  }
+
+  // Effective dark state: explicit dark always wins, auto follows the clock.
+  const hour = new Date().getHours()
+  const isAutoNight = hour >= 21 || hour < 6
+  const isNight = theme === 'dark' || (theme === 'auto' && isAutoNight)
+
   // Find the current/next medication to show
   const currentTimeOfDay = getCurrentTimeOfDay()
 
@@ -144,19 +169,12 @@ export function CareReceiverHome() {
   }
 
   const getGreeting = () => {
-    const hour = new Date().getHours()
     if (hour < 12) return 'Good morning'
     if (hour < 17) return 'Good afternoon'
     return 'Good evening'
   }
 
-  // Feature 10: Quiet Night Mode
-  const isNightTime = () => {
-    const hour = new Date().getHours()
-    return hour >= 21 || hour < 6
-  }
-
-  const isNight = isNightTime()
+  // isNight is computed above from the user's theme preference.
 
   // Show skeleton during loading (both initial auth check and API data fetching)
   if (isLoading || isDataLoading) {
@@ -194,12 +212,45 @@ export function CareReceiverHome() {
           </p>
 
           <div className="w-full space-y-3">
+            <div className="w-full">
+              <p className="text-sm font-medium text-muted-foreground mb-2 text-center uppercase tracking-wider">
+                Appearance
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {(['light', 'auto', 'dark'] as const).map((opt) => {
+                  const active = theme === opt
+                  const Icon = opt === 'light' ? Sun : opt === 'dark' ? Moon : Cloud
+                  const label = opt === 'light' ? 'Light' : opt === 'dark' ? 'Dark' : 'Auto'
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => updateTheme(opt)}
+                      className={`py-4 px-3 rounded-xl text-base font-medium flex flex-col items-center gap-2
+                                  transition-all active:scale-[0.97] touch-manipulation
+                                  focus:outline-none focus:ring-2 focus:ring-sahay-sage
+                                  ${active
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-secondary text-foreground'}`}
+                    >
+                      <Icon className="w-5 h-5" strokeWidth={1.5} />
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+              {theme === 'auto' && (
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Auto: dark between 9pm and 6am
+                </p>
+              )}
+            </div>
+
             <button
               onClick={() => {
                 triggerSafetyCheck('manual')
                 setShowSettings(false)
               }}
-              className="w-full py-4 px-6 bg-secondary text-foreground text-xl font-medium 
+              className="w-full py-4 px-6 bg-secondary text-foreground text-xl font-medium
                        rounded-2xl transition-all active:scale-[0.97] touch-manipulation flex items-center justify-center gap-3
                        focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             >
@@ -209,7 +260,7 @@ export function CareReceiverHome() {
 
             <button
               onClick={logout}
-              className="w-full py-4 px-6 bg-secondary text-foreground text-xl font-medium 
+              className="w-full py-4 px-6 bg-secondary text-foreground text-xl font-medium
                        rounded-2xl transition-all active:scale-[0.97] touch-manipulation flex items-center justify-center gap-3
                        focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             >
@@ -447,7 +498,7 @@ export function CareReceiverHome() {
             />
             <span className={`text-lg font-medium ${isNight ? 'text-slate-400' : 'text-muted-foreground'}`}>
               {timeOfDayLabels[nextMed!.timeOfDay]}
-              {nextMed?.time && ` at ${nextMed.time}`}
+              {nextMed?.time && ` at ${formatTime12h(nextMed.time)}`}
             </span>
           </div>
 
@@ -465,7 +516,7 @@ export function CareReceiverHome() {
             {nextMed?.time && (
               <div className="flex items-center justify-center gap-2 mb-2 text-sahay-blue">
                 <Clock className="w-5 h-5" strokeWidth={2.5} />
-                <span className="text-2xl font-bold">{nextMed.time}</span>
+                <span className="text-2xl font-bold">{formatTime12h(nextMed.time)}</span>
               </div>
             )}
             <p className={`text-2xl ${isNight ? 'text-slate-300' : 'text-muted-foreground'}`}>{nextMed!.dosage}</p>
