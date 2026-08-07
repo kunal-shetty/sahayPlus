@@ -133,6 +133,9 @@ interface SahayContextValue {
 
   // Utility
   resetApp: () => void
+
+  // Manual refresh of medication/timeline data (e.g. on focus, on pull-to-refresh)
+  refreshRelationshipData: () => Promise<void>
 }
 
 const SahayContext = createContext<SahayContextValue | null>(null)
@@ -188,6 +191,46 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(false)
   }, [])
+
+  // ─── Re-fetch the user row from the DB ────────────────────────────
+  // Used to pick up a new care_relationship_id that was created by the
+  // caregiver's device while this device was on the care-code screen.
+  // Goes through the server API (service-role client) because the browser-
+  // side Supabase client has no auth session and can't read users via RLS.
+  const refreshUserFromDb = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      const res = await fetch(
+        `/api/care-relationships/me?user_id=${encodeURIComponent(user.id)}`
+      )
+      if (!res.ok) return
+      const payload = await res.json()
+      const freshUser = payload?.user
+      const rel = payload?.relationship
+      if (!freshUser) return
+
+      const updated: SahayUser = {
+        ...user,
+        email: freshUser.email || user.email,
+        name: freshUser.name || user.name,
+        role: (freshUser.role as SahayUser['role']) || user.role,
+        care_code: freshUser.care_code || user.care_code,
+        care_relationship_id: rel ? String(rel.id) : user.care_relationship_id,
+      }
+
+      // Only update state if something actually changed — avoids extra renders
+      if (
+        updated.care_relationship_id !== user.care_relationship_id ||
+        updated.care_code !== user.care_code ||
+        updated.name !== user.name
+      ) {
+        setUser(updated)
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated))
+      }
+    } catch (err) {
+      console.error('[Sahay] refreshUserFromDb failed:', err)
+    }
+  }, [user])
 
   // ─── Login ────────────────────────────────────────────────────────
   const login = useCallback((userData: any, careRelationship: any) => {
@@ -267,16 +310,56 @@ export function SahayProvider({ children }: { children: ReactNode }) {
             api.careRelationships.get(crId),
           ])
 
+        // Resolve the other party's user row so we can show their name on
+        // the caregiver's home (and the caregiver's name on the care
+        // receiver's home).  Query via the new /me endpoint with the
+        // relationship's user id.
+        let otherPartyName: string | undefined
         if (relRes.status === 'fulfilled') {
           const rel = relRes.value.relationship
           if (rel) {
             setCaregiverId(rel.caregiver_id)
+            const otherId = user!.role === 'caregiver'
+              ? rel.care_receiver_id
+              : rel.caregiver_id
+            if (otherId) {
+              try {
+                const otherRes = await fetch(
+                  `/api/care-relationships/me?user_id=${encodeURIComponent(otherId)}`
+                )
+                if (otherRes.ok) {
+                  const otherPayload = await otherRes.json()
+                  otherPartyName = otherPayload?.user?.name
+                }
+              } catch {
+                // best-effort — UI will fall back to a generic name
+              }
+            }
           }
         }
 
-        setData((prev) => ({
-          ...prev,
-          medications: medsRes.status === 'fulfilled'
+        // Fetch today's medication_logs so the caregiver sees the
+        // "taken" status that the care receiver logged on their device.
+        const today = new Date().toISOString().split('T')[0]
+        let takenMedIds = new Set<string>()
+        try {
+          const logsRes = await fetch(
+            `/api/medication-logs?care_relationship_id=${crId}&date=${today}`
+          )
+          if (logsRes.ok) {
+            const logsPayload = await logsRes.json()
+            const logs: any[] = logsPayload?.logs || []
+            takenMedIds = new Set(
+              logs.filter((l) => l.taken).map((l) => String(l.medication_id))
+            )
+          }
+        } catch {
+          // best-effort
+        }
+
+        setData((prev) => {
+          // Apply taken status from today's logs
+          const medsWithTaken = (medsRes.status === 'fulfilled'
             ? medsRes.value.medications.map((m: any) => ({
               id: String(m.id),
               name: m.name,
@@ -284,7 +367,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               timeOfDay: m.time_of_day as TimeOfDay,
               time: m.time || undefined,
               notes: m.notes || undefined,
-              taken: false,
+              taken: takenMedIds.has(String(m.id)),
               lastUpdated: m.updated_at || m.created_at,
               refillDaysLeft: m.refill_days_left || undefined,
               pharmacistNote: m.pharmacist_note || undefined,
@@ -292,67 +375,82 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               streak: 0,
               totalTaken: 0,
             }))
-            : prev.medications,
-          timeline: timelineRes.status === 'fulfilled'
-            ? timelineRes.value.events.map((e: any) => ({
-              id: String(e.id),
-              type: e.type as TimelineEventType,
-              timestamp: e.created_at,
-              medicationId: e.medication_id ? String(e.medication_id) : undefined,
-              note: e.note || undefined,
-              actor: e.actor_type as any,
+            : prev.medications.map((m) => ({
+              ...m,
+              taken: takenMedIds.has(m.id) || m.taken,
             }))
-            : prev.timeline,
-          contextualNotes: notesRes.status === 'fulfilled'
-            ? notesRes.value.notes.map((n: any) => ({
-              id: String(n.id),
-              text: n.text,
-              createdAt: n.created_at,
-              linkedTo: n.linked_type
-                ? { type: n.linked_type, id: n.linked_medication_id ? String(n.linked_medication_id) : undefined }
-                : undefined,
-              fadingAt: new Date(new Date(n.created_at).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            }))
-            : prev.contextualNotes,
-          wellnessEntries: wellnessRes.status === 'fulfilled'
-            ? wellnessRes.value.entries.map((w: any) => ({
-              id: String(w.id),
-              date: w.date,
-              level: w.level as WellnessLevel,
-              note: w.note || undefined,
-              timestamp: w.created_at,
-              isRead: false,
-            }))
-            : prev.wellnessEntries,
-          dayClosures: dayRes.status === 'fulfilled'
-            ? dayRes.value.closures.map((d: any) => ({
-              date: d.date,
-              closedAt: d.closed_at,
-              allTaken: d.all_taken,
-              totalMeds: d.total_meds,
-              takenCount: d.taken_count,
-            }))
-            : prev.dayClosures,
-          messages: msgsRes.status === 'fulfilled'
-            ? msgsRes.value.messages.map((m: any) => ({
-              id: String(m.id),
-              from: m.from_user_id === userId ? (user!.role === 'caregiver' ? 'caregiver' : 'careReceiver') : (user!.role === 'caregiver' ? 'careReceiver' : 'caregiver') as any,
-              text: m.text,
-              timestamp: m.created_at,
-              isRead: !!m.read_at,
-              isQuickMessage: false,
-            })).reverse()
-            : prev.messages,
-          emergencyContacts: contactsRes.status === 'fulfilled'
-            ? contactsRes.value.contacts.map((c: any) => ({
-              id: String(c.id),
-              name: c.name,
-              relationship: c.relationship || '',
-              phone: c.phone,
-              isPrimary: c.is_primary,
-            }))
-            : prev.emergencyContacts,
-        }))
+          )
+
+          return {
+            ...prev,
+            medications: medsWithTaken,
+            timeline: timelineRes.status === 'fulfilled'
+              ? timelineRes.value.events.map((e: any) => ({
+                id: String(e.id),
+                type: e.type as TimelineEventType,
+                timestamp: e.created_at,
+                medicationId: e.medication_id ? String(e.medication_id) : undefined,
+                note: e.note || undefined,
+                actor: e.actor_type as any,
+              }))
+              : prev.timeline,
+            contextualNotes: notesRes.status === 'fulfilled'
+              ? notesRes.value.notes.map((n: any) => ({
+                id: String(n.id),
+                text: n.text,
+                createdAt: n.created_at,
+                linkedTo: n.linked_type
+                  ? { type: n.linked_type, id: n.linked_medication_id ? String(n.linked_medication_id) : undefined }
+                  : undefined,
+                fadingAt: new Date(new Date(n.created_at).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              }))
+              : prev.contextualNotes,
+            wellnessEntries: wellnessRes.status === 'fulfilled'
+              ? wellnessRes.value.entries.map((w: any) => ({
+                id: String(w.id),
+                date: w.date,
+                level: w.level as WellnessLevel,
+                note: w.note || undefined,
+                timestamp: w.created_at,
+                isRead: false,
+              }))
+              : prev.wellnessEntries,
+            dayClosures: dayRes.status === 'fulfilled'
+              ? dayRes.value.closures.map((d: any) => ({
+                date: d.date,
+                closedAt: d.closed_at,
+                allTaken: d.all_taken,
+                totalMeds: d.total_meds,
+                takenCount: d.taken_count,
+              }))
+              : prev.dayClosures,
+            messages: msgsRes.status === 'fulfilled'
+              ? msgsRes.value.messages.map((m: any) => ({
+                id: String(m.id),
+                from: m.from_user_id === userId ? (user!.role === 'caregiver' ? 'caregiver' : 'careReceiver') : (user!.role === 'caregiver' ? 'careReceiver' : 'caregiver') as any,
+                text: m.text,
+                timestamp: m.created_at,
+                isRead: !!m.read_at,
+                isQuickMessage: false,
+              })).reverse()
+              : prev.messages,
+            emergencyContacts: contactsRes.status === 'fulfilled'
+              ? contactsRes.value.contacts.map((c: any) => ({
+                id: String(c.id),
+                name: c.name,
+                relationship: c.relationship || '',
+                phone: c.phone,
+                isPrimary: c.is_primary,
+              }))
+              : prev.emergencyContacts,
+            // Set the other party's name so the UI shows "John's Care"
+            // on the caregiver's home and "Alice's care" on the receiver's.
+            ...(user!.role === 'caregiver'
+              ? { careReceiver: { name: otherPartyName || 'Care Receiver', preferVoiceConfirm: false } }
+              : { caregiver: prev.caregiver || (otherPartyName ? { name: otherPartyName, setupComplete: true, roleStatus: 'active' as CareRoleStatus } : null) }
+            ),
+          }
+        })
       } catch (err) {
         console.error('[Sahay] Failed to load data from API, using fallback:', err)
       } finally {
@@ -1200,6 +1298,95 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id, user?.role])
 
+  // ─── Poll: Care Receiver gets linked ────────────────────────
+  // When a caregiver enters the care code on their device, the link API
+  // INSERTs a row into care_relationships.  The care receiver's device
+  // doesn't have a Supabase auth session, so realtime channels are blocked
+  // by RLS.  We poll the server endpoint every 3s while the care-receiver
+  // is on the care-code screen, and also re-fetch on focus/visibility so
+  // coming back to the tab clears the screen immediately.
+  useEffect(() => {
+    if (!user || user.role !== 'care_receiver') return
+    if (user.care_relationship_id) return // already linked — no need to poll
+
+    const poll = () => {
+      refreshUserFromDb()
+    }
+
+    // Fire one immediately so a returning user doesn't wait 3s
+    poll()
+    const interval = setInterval(poll, 3000)
+    window.addEventListener('focus', poll)
+    document.addEventListener('visibilitychange', poll)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', poll)
+      document.removeEventListener('visibilitychange', poll)
+    }
+  }, [user?.id, user?.role, user?.care_relationship_id, refreshUserFromDb])
+
+  // ─── Poll: Caregiver sees care-receiver's actions ─────────────
+  // The caregiver's UI doesn't have realtime either (no auth session),
+  // so we re-fetch medication logs + timeline every 10s while a
+  // relationship is active.  This is what makes "medication taken"
+  // show up on the caregiver's screen without a manual refresh.
+  const refreshRelationshipData = useCallback(async () => {
+    if (!user?.care_relationship_id) return
+    const crId = user.care_relationship_id
+    const today = new Date().toISOString().split('T')[0]
+
+    try {
+      const [logsRes, timelineRes] = await Promise.allSettled([
+        fetch(`/api/medication-logs?care_relationship_id=${crId}&date=${today}`).then((r) => (r.ok ? r.json() : null)),
+        api.timeline.list(crId),
+      ])
+
+      const takenMedIds = new Set<string>()
+      if (logsRes.status === 'fulfilled' && logsRes.value?.logs) {
+        for (const l of logsRes.value.logs) {
+          if (l.taken) takenMedIds.add(String(l.medication_id))
+        }
+      }
+
+      setData((prev) => ({
+        ...prev,
+        medications: prev.medications.map((m) => ({
+          ...m,
+          taken: takenMedIds.has(m.id) ? true : m.taken,
+        })),
+        timeline: timelineRes.status === 'fulfilled'
+          ? timelineRes.value.events.map((e: any) => ({
+            id: String(e.id),
+            type: e.type as TimelineEventType,
+            timestamp: e.created_at,
+            medicationId: e.medication_id ? String(e.medication_id) : undefined,
+            note: e.note || undefined,
+            actor: e.actor_type as any,
+          }))
+          : prev.timeline,
+      }))
+    } catch (err) {
+      console.error('[Sahay] refreshRelationshipData failed:', err)
+    }
+  }, [user?.care_relationship_id])
+
+  useEffect(() => {
+    if (!user?.care_relationship_id) return
+
+    refreshRelationshipData()
+    const interval = setInterval(refreshRelationshipData, 10000)
+    const onFocus = () => refreshRelationshipData()
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
+  }, [user?.care_relationship_id, refreshRelationshipData])
+
   // ─── Context value ────────────────────────────────────────────────
 
   const value: SahayContextValue = {
@@ -1250,6 +1437,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     getHumanInsights,
     getDoctorPrepSummary,
     dismissChangeIndicator,
+    refreshRelationshipData,
   }
 
   return <SahayContext.Provider value={value}>{children}</SahayContext.Provider>
