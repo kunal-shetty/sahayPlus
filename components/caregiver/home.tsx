@@ -8,6 +8,7 @@ import {
   type Medication,
   timeOfDayLabels,
   getCurrentTimeOfDay,
+  formatTime12h,
 } from '@/lib/types'
 import {
   Sun,
@@ -751,7 +752,7 @@ export function CaregiverHome() {
                                     <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
                                     <span className="flex items-center gap-1 text-sahay-blue font-medium">
                                       <Clock className="w-3 h-3" />
-                                      {med.time}
+                                      {formatTime12h(med.time)}
                                     </span>
                                   </>
                                 )}
