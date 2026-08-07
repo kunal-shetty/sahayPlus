@@ -677,3 +677,25 @@ export function getCurrentTimeOfDay(): TimeOfDay {
   if (hour < 17) return 'afternoon'
   return 'evening'
 }
+
+// Format a 24-hour time string ("14:30", "14:30:00", or a Date) into a
+// 12-hour "h:mm AM/PM" label.  Anything we can't parse falls back to the
+// input string so the UI never goes blank.
+export function formatTime12h(time: string | Date | null | undefined): string {
+  if (!time) return ''
+  let h = 0
+  let m = 0
+  if (time instanceof Date) {
+    h = time.getHours()
+    m = time.getMinutes()
+  } else {
+    const match = /^\s*(\d{1,2}):(\d{2})(?::\d{2})?\s*$/.exec(String(time))
+    if (!match) return String(time)
+    h = parseInt(match[1], 10)
+    m = parseInt(match[2], 10)
+  }
+  if (Number.isNaN(h) || Number.isNaN(m)) return String(time)
+  const suffix = h >= 12 ? 'PM' : 'AM'
+  const hh = ((h + 11) % 12) + 1
+  return `${hh}:${String(m).padStart(2, '0')} ${suffix}`
+}
