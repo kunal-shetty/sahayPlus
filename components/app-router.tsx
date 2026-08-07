@@ -15,26 +15,21 @@ import { EnterCareCode } from './enter-care-code'
 const ONBOARDING_KEY = 'sahay_onboarding_complete'
 
 export function AppRouter() {
-  const { data, isLoading } = useSahay()
+  // Single source of truth for the user — was duplicated in local state before,
+  // which is why the router never re-rendered after login().
+  const { data, isLoading, user } = useSahay()
 
   const [showSplash, setShowSplash] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false)
-  const [user, setUser] = useState<any>(null)
 
-  // ✅ Load user safely from localStorage (hydration safe)
+  // First-mount splash
   useEffect(() => {
-    const stored = localStorage.getItem('sahay_user')
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored))
-      } catch {
-        setUser(null)
-      }
-    }
+    const t = setTimeout(() => setShowSplash(false), 1500)
+    return () => clearTimeout(t)
   }, [])
 
-  // ✅ Check onboarding status
+  // Check onboarding status once on the client
   useEffect(() => {
     const hasCompletedOnboarding =
       localStorage.getItem(ONBOARDING_KEY) === 'true'
@@ -43,20 +38,17 @@ export function AppRouter() {
     setHasCheckedOnboarding(true)
   }, [])
 
-  const handleSplashComplete = () => {
-    setShowSplash(false)
-  }
-
+  const handleSplashComplete = () => setShowSplash(false)
   const handleOnboardingComplete = () => {
     localStorage.setItem(ONBOARDING_KEY, 'true')
     setShowOnboarding(false)
   }
 
-  // ✅ Derive setup completion from real DB data
-  const caregiverSetupComplete =
-    data?.medications?.length > 0
+  // Derive caregiver setup completion from real DB data
+  const caregiverSetupComplete = data?.medications?.length > 0
 
-  // ✅ Determine screen
+  // Determine which screen to render.  `user` now comes from useSahay(),
+  // so this re-runs whenever login()/logout()/linkCareCode() updates the context.
   const screenKey = useMemo(() => {
     if (showSplash) return 'splash'
     if (isLoading || !hasCheckedOnboarding) return 'loading'
@@ -65,15 +57,11 @@ export function AppRouter() {
     if (!user.care_relationship_id) return 'care-code'
 
     if (user.role === 'caregiver') {
-      return caregiverSetupComplete
-        ? 'caregiver-home'
-        : 'caregiver-onboarding'
+      return caregiverSetupComplete ? 'caregiver-home' : 'caregiver-onboarding'
     }
-
     if (user.role === 'care_receiver') {
       return 'care-receiver-home'
     }
-
     return 'login'
   }, [
     showSplash,
