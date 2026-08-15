@@ -72,9 +72,16 @@ do $$ begin
     'safety_alert',
     'wellness_reminder',
     'message',
-    'check_in_suggestion'
+    'check_in_suggestion',
+    'medication_taken'
   );
 exception when duplicate_object then null; end $$;
+
+-- Migration: extend the enum on an existing DB.  Run this snippet if
+-- the type was already created without 'medication_taken'.
+do $$ begin
+  alter type public.notification_type add value if not exists 'medication_taken';
+exception when others then null; end $$;
 
 -- =============================================================================
 -- 1. users
@@ -88,13 +95,17 @@ create table if not exists public.users (
   name                varchar(100) not null,
   nickname            varchar(100),
   role                user_role,
+  -- 6-char alphanumeric code that caregivers enter to link to this
+  -- care receiver.  Only set for users whose role is 'care_receiver'.
+  care_code           varchar(6)  unique,
   prefer_voice_confirm boolean    not null default false,
   push_token          text,
   created_at          timestamptz not null default now(),
   updated_at          timestamptz not null default now()
 );
 
-create index if not exists users_phone_idx on public.users (phone);
+create index if not exists users_phone_idx   on public.users (phone);
+create index if not exists users_care_code_idx on public.users (care_code);
 
 -- Keep updated_at fresh
 create or replace function public.tg_set_updated_at()
