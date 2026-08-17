@@ -62,7 +62,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type safety_check_status as enum ('pending', 'dismissed', 'escalated');
+  create type safety_check_status as enum ('idle', 'pending_check', 'escalating');
 exception when duplicate_object then null; end $$;
 
 do $$ begin
@@ -330,7 +330,7 @@ create index if not exists handovers_rel_active_idx
 create table if not exists public.safety_checks (
   id                    uuid                 primary key default gen_random_uuid(),
   care_relationship_id  uuid                 not null references public.care_relationships(id) on delete cascade,
-  status                safety_check_status  not null default 'pending',
+  status                safety_check_status  not null default 'pending_check',
   triggered_at          timestamptz          not null default now(),
   resolved_at           timestamptz,
   escalated_to          uuid                 references public.users(id) on delete set null

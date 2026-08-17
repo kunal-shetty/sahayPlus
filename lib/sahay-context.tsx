@@ -159,6 +159,26 @@ async function safeApiCall<T>(fn: () => Promise<T>): Promise<T | null> {
   }
 }
 
+async function currentHandoverId(crId: string): Promise<string | null> {
+  try {
+    const res = await api.handover.current(crId)
+    return res?.handover?.id ?? null
+  } catch {
+    return null
+  }
+}
+
+async function resolveSafetyCheckId(crId: string, triggeredAt: string): Promise<string | null> {
+  try {
+    const res = await fetch(`/api/safety-checks?care_relationship_id=${crId}&triggered_at=${encodeURIComponent(triggeredAt)}`)
+    if (!res.ok) return null
+    const payload = await res.json()
+    return payload?.safety_check?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 // Provider component — calls API routes, falls back to local state
 export function SahayProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(defaultAppData)
@@ -1070,7 +1090,17 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         timeline: [...prev.timeline, newEvent],
       }
     })
-  }, [])
+
+    const crId = getCareRelId()
+    if (crId && data.safetyCheck.lastTriggered) {
+      safeApiCall(async () => {
+        const checkId = await resolveSafetyCheckId(crId, data.safetyCheck.lastTriggered!)
+        if (checkId) {
+          await api.safetyCheck.dismiss(checkId)
+        }
+      })
+    }
+  }, [getCareRelId, data.safetyCheck])
 
   const escalateSafetyCheck = useCallback(() => {
     setData((prev) => {
@@ -1200,11 +1230,18 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         timeline: [...prev.timeline, newEvent],
       }
     })
+
     const crId = getCareRelId()
-    if (crId) {
-      // api call to end handover if needed
+    const userId = getUserId()
+    if (crId && userId) {
+      safeApiCall(async () => {
+        const hId = await currentHandoverId(crId)
+        if (hId) {
+          await api.handover.end(hId)
+        }
+      })
     }
-  }, [getCareRelId])
+  }, [getCareRelId, getUserId])
 
   // ─── Pattern Insights (pure getter) ───────────────────────────────
 
@@ -1272,7 +1309,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     if (!user || user.role !== 'caregiver') return
 
     const channel = supabase
-      .channel('caregiver-notifications')
+      .channel(`caregiver-notifications-${user.id}`)
       .on(
         'postgres_changes',
         {

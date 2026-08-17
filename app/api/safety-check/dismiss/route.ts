@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
         const { data, error } = await supabase
             .from("safety_checks")
             .update({
-                status: "dismissed",
+                status: "idle",
                 resolved_at: new Date().toISOString(),
             })
             .eq("id", safety_check_id)
@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
                 care_relationship_id: data.care_relationship_id,
                 type: "safety_check_dismissed",
                 note: "Safety check dismissed",
+                actor_type: "careReceiver",
+                actor_id: null as any,
             });
         }
 

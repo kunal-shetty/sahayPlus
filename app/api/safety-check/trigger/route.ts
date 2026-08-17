@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
             .from("safety_checks")
             .insert({
                 care_relationship_id,
-                status: "pending",
+                status: "pending_check",
                 triggered_at: new Date().toISOString(),
             })
             .select()
@@ -28,12 +28,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        // Add timeline event
-        await supabase.from("timeline_events").insert({
-            care_relationship_id,
-            type: "safety_check_triggered",
-            note: "Safety check triggered",
-        });
+        if (data) {
+            await supabase.from("timeline_events").insert({
+                care_relationship_id,
+                type: "safety_check_triggered",
+                note: "Safety check triggered",
+                actor_type: "careReceiver",
+                actor_id: null as any,
+            });
+        }
 
         return NextResponse.json(
             { message: "Safety check triggered", safetyCheck: data },

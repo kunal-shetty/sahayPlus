@@ -5,20 +5,23 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const careRelationshipId = searchParams.get("care_relationship_id");
+    const triggeredAt = searchParams.get("triggered_at");
 
-    if (!careRelationshipId) {
+    if (!careRelationshipId || !triggeredAt) {
       return NextResponse.json(
-        { error: "Missing required query param: care_relationship_id" },
+        { error: "Missing required query params: care_relationship_id, triggered_at" },
         { status: 400 }
       );
     }
 
     const { data, error } = await supabase
-      .from("handovers")
+      .from("safety_checks")
       .select("*")
       .eq("care_relationship_id", careRelationshipId)
-      .eq("is_active", true)
-      .order("start_date", { ascending: false })
+      .eq("status", "pending_check")
+      .gte("triggered_at", new Date(new Date(triggeredAt).getTime() - 60000).toISOString())
+      .lte("triggered_at", new Date(new Date(triggeredAt).getTime() + 60000).toISOString())
+      .order("triggered_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -26,10 +29,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ handover: data }, { status: 200 });
+    return NextResponse.json({ safety_check: data }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch current handover" },
+      { error: "Failed to fetch safety check" },
       { status: 500 }
     );
   }
