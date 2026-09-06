@@ -1,5 +1,14 @@
 'use client'
 
+/**
+ * @file page.tsx
+ * @description The Care Receiver's home page.
+ * Designed for elderly users, this page provides an extremely simplified interface
+ * focused on medication adherence, daily wellness check-ins, and emergency assistance.
+ * It features a dynamic theme that automatically switches to a dark "Night Mode"
+ * to reduce eye strain and signal a wind-down period.
+ */
+
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
@@ -35,8 +44,9 @@ import { CareReceiverHomeSkeleton } from '@/components/skeletons'
 import { useRouter } from 'next/navigation'
 
 /**
- * Care Receiver Home Page
- * Extremely simple interface for elderly users
+ * CareReceiverPage component.
+ * Provides the primary interface for the care receiver, featuring large buttons,
+ * a clear "next medication" focus, and quick access to emergency help.
  */
 export default function CareReceiverPage() {
   const {
@@ -53,6 +63,10 @@ export default function CareReceiverPage() {
   } = useSahay()
   const router = useRouter()
 
+  /**
+   * Sets up a global function on the window object to allow external triggers
+   * (e.g., from a motion sensor integration) to initiate a safety check.
+   */
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.triggerMotionSafetyCheck = () => {
@@ -65,6 +79,7 @@ export default function CareReceiverPage() {
     };
   }, [triggerSafetyCheck]);
 
+  // UI State
   const [confirmedMed, setConfirmedMed] = useState<Medication | null>(null)
   const [showUndo, setShowUndo] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -74,9 +89,10 @@ export default function CareReceiverPage() {
   const [isListening, setIsListening] = useState(false)
   const [showHelpConfirmed, setShowHelpConfirmed] = useState(false)
 
-  // Theme: user picks light, dark, or auto (auto = dark after 9pm).
+  /** Theme state: 'light', 'dark', or 'auto' (automatic night mode). */
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light')
 
+  /** Restore theme preference from localStorage on mount. */
   useEffect(() => {
     if (typeof window === 'undefined') return
     const saved = window.localStorage.getItem('sahay_receiver_theme')
@@ -85,6 +101,7 @@ export default function CareReceiverPage() {
     }
   }, [])
 
+  /** Updates the theme preference and persists it to localStorage. */
   const updateTheme = (next: 'light' | 'dark' | 'auto') => {
     setTheme(next)
     if (typeof window !== 'undefined') {
@@ -98,6 +115,11 @@ export default function CareReceiverPage() {
 
   const currentTimeOfDay = getCurrentTimeOfDay()
 
+  /**
+   * Determines the next medication that needs to be taken.
+   * Prioritizes medications for the current time of day, then follows
+   * the natural sequence (morning -> afternoon -> evening).
+   */
   const getNextMedication = useCallback((): Medication | null => {
     const pendingMeds = data.medications.filter((m) => !m.taken)
     if (pendingMeds.length === 0) return null
@@ -122,6 +144,7 @@ export default function CareReceiverPage() {
     data.medications.every((m) => m.taken)
   const dayClosed = isDayClosed()
 
+  /** Marks the current medication as taken and triggers a temporary undo state. */
   const handleTookIt = () => {
     if (nextMed) {
       markMedicationTaken(nextMed.id, true)
@@ -130,6 +153,7 @@ export default function CareReceiverPage() {
     }
   }
 
+  /** Reverts a medication marking if the user accidentally tapped "I took it". */
   const handleUndo = () => {
     if (confirmedMed) {
       markMedicationTaken(confirmedMed.id, false)
@@ -138,6 +162,7 @@ export default function CareReceiverPage() {
     }
   }
 
+  /** Timer to automatically clear the undo state and confirmation screen. */
   useEffect(() => {
     if (showUndo) {
       const timer = setTimeout(() => {
@@ -154,6 +179,7 @@ export default function CareReceiverPage() {
     evening: Moon,
   }
 
+  /** Returns a time-appropriate greeting. */
   const getGreeting = () => {
     if (hour < 12) return 'Good morning'
     if (hour < 17) return 'Good afternoon'
@@ -176,6 +202,7 @@ export default function CareReceiverPage() {
     return <EmergencyCall onClose={() => setShowEmergency(false)} />
   }
 
+  /** Render settings overlay for appearance and account management. */
   if (showSettings) {
     return (
       <main className="min-h-screen flex flex-col bg-background p-6">
@@ -264,6 +291,7 @@ export default function CareReceiverPage() {
     )
   }
 
+  /** Confirmation screen shown immediately after marking a med as taken. */
   if (showUndo && confirmedMed) {
     return (
       <main className="min-h-screen flex flex-col bg-sahay-sage-light p-6">
@@ -298,6 +326,7 @@ export default function CareReceiverPage() {
     )
   }
 
+  /** "Day Closed" screen shown when all meds for the day are complete. */
   if (dayClosed) {
     return (
       <main className="min-h-screen flex flex-col bg-sahay-sage-light p-6">
@@ -327,6 +356,7 @@ export default function CareReceiverPage() {
     )
   }
 
+  /** "All Done" screen shown when all current meds are taken, but day isn't formally closed. */
   if (allDone) {
     return (
       <main className="min-h-screen flex flex-col bg-background p-6">
@@ -357,6 +387,7 @@ export default function CareReceiverPage() {
     )
   }
 
+  /** Screen shown when no medications have been set up yet. */
   if (data.medications.length === 0) {
     return (
       <main className="min-h-screen flex flex-col bg-background p-6">
