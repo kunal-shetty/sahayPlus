@@ -1,5 +1,14 @@
 'use client'
 
+/**
+ * @file care-timeline.tsx
+ * @description The Care Timeline component for Caregivers.
+ * Instead of a rigid checklist of "missed" tasks, this component presents
+ * medication and wellness activities as a "Care Story." It focuses on a
+ * chronological narrative where past events gently fade in opacity,
+ * emphasizing the current state of care over past failures.
+ */
+
 import { useSahay } from '@/lib/sahay-context'
 import { type TimelineEvent } from '@/lib/types'
 import {
@@ -16,14 +25,17 @@ import {
 } from 'lucide-react'
 
 /**
- * Shared Care Timeline
- * A living story of care, not a checklist
- * Past events gently fade, no red "missed" states
+ * CareTimeline component.
+ * Renders a vertical timeline of all recorded care events, grouped by date
+ * and sorted by timestamp.
+ *
+ * @param { { onClose: () => void } } props - Component props.
+ * @returns {JSX.Element} The chronological care story interface.
  */
 export function CareTimeline({ onClose }: { onClose: () => void }) {
   const { data } = useSahay()
 
-  // Group events by day
+  /** Grouping events by date (YYYY-MM-DD) for structural rendering. */
   const groupedEvents: Record<string, TimelineEvent[]> = {}
 
   for (const event of data.timeline) {
@@ -34,12 +46,18 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
     groupedEvents[date].push(event)
   }
 
-  // Sort days descending (most recent first)
+  /** Sort dates in descending order (most recent first). */
   const sortedDays = Object.keys(groupedEvents).sort(
     (a, b) => new Date(b).getTime() - new Date(a).getTime()
   )
 
-  // Calculate opacity based on age (older = more faded)
+  /**
+   * Calculates opacity for a given date to create a "fading past" effect.
+   * More recent dates are opaque, while older dates gradually fade.
+   *
+   * @param {string} date - The date string (YYYY-MM-DD).
+   * @returns {number} Opacity value between 0.4 and 1.0.
+   */
   const getOpacity = (date: string) => {
     const now = new Date()
     const eventDate = new Date(date)
@@ -53,6 +71,12 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
     return 0.4
   }
 
+  /**
+   * Maps an event type to its corresponding visual icon.
+   *
+   * @param {TimelineEvent['type']} type - The event type slug.
+   * @returns {typeof Check | typeof AlertCircle | ...} The Lucide icon component.
+   */
   const getEventIcon = (type: TimelineEvent['type']) => {
     switch (type) {
       case 'medication_taken':
@@ -82,6 +106,12 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
     }
   }
 
+  /**
+   * Generates a human-readable summary for a specific timeline event.
+   *
+   * @param {TimelineEvent} event - The timeline event object.
+   * @returns {string} A descriptive message of the activity.
+   */
   const getEventMessage = (event: TimelineEvent): string => {
     switch (event.type) {
       case 'medication_taken':
@@ -113,6 +143,12 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
     }
   }
 
+  /**
+   * Formats a date string into a friendly relative label (Today, Yesterday, etc.).
+   *
+   * @param {string} dateStr - The ISO date string.
+   * @returns {string} The formatted date label.
+   */
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     const today = new Date()
@@ -132,6 +168,12 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
     })
   }
 
+  /**
+   * Formats a timestamp into a concise time string (e.g., "10:30 AM").
+   *
+   * @param {string} timestamp - The ISO timestamp string.
+   * @returns {string} The formatted time.
+   */
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -146,7 +188,7 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-4">
           <button
             onClick={onClose}
-            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
+            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center
                      hover:bg-secondary/80 transition-colors touch-manipulation
                      focus:outline-none focus:ring-2 focus:ring-ring"
             aria-label="Go back"
