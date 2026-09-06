@@ -1,8 +1,23 @@
 "use client"
 
+/**
+ * @file onboarding-welcome.tsx
+ * @description The OnboardingWelcome component for Sahay+.
+ * This is the entry point of the onboarding flow. It serves as a visual
+ * introduction to the application's core values: love (Heart), activity (Activity),
+ * and community (Users). It uses a set of coordinated spring animations to
+ * create a friendly and welcoming first impression.
+ */
+
 import { motion } from "motion/react"
 import { Activity, Heart, Users } from "lucide-react"
 
+/**
+ * OnboardingWelcome component.
+ * Renders a welcoming screen with animated brand icons and introductory text.
+ *
+ * @returns {JSX.Element} The welcome screen interface.
+ */
 export function OnboardingWelcome() {
     return (
         <div className="flex h-full flex-col items-center justify-center text-center">
