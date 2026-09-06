@@ -1,5 +1,19 @@
 'use client'
 
+/**
+ * @file messages.tsx
+ * @description The Messaging component for Caregivers.
+ * This component provides a real-time communication channel between the caregiver
+ * and the care receiver. It handles sending messages, marking them as read,
+ * and presents a conversation history grouped by date.
+ *
+ * Key features include:
+ * - Auto-scrolling to the latest message.
+ * - Visual differentiation between sent and received messages.
+ * - Support for "quick messages" sent by the care receiver.
+ * - Read receipts for messages sent by the caregiver.
+ */
+
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
@@ -10,6 +24,12 @@ interface MessagesProps {
   onClose: () => void
 }
 
+/**
+ * MessagesSkeleton component.
+ * Renders a loading state for the messaging interface to prevent layout shift.
+ *
+ * @returns {JSX.Element} A series of skeleton loading placeholders.
+ */
 function MessagesSkeleton() {
   return (
     <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -28,6 +48,13 @@ function MessagesSkeleton() {
   )
 }
 
+/**
+ * Messages component.
+ * The main chat interface for interacting with the care receiver.
+ *
+ * @param {MessagesProps} props - Component props.
+ * @returns {JSX.Element} The messaging interface.
+ */
 export function Messages({ onClose }: MessagesProps) {
   const { data, isDataLoading, sendMessage, markMessageRead, getUnreadCount } = useSahay()
   const [newMessage, setNewMessage] = useState('')
@@ -38,13 +65,18 @@ export function Messages({ onClose }: MessagesProps) {
   const messages = data.messages || []
   const careReceiverName = data.careReceiver?.name || 'Care Receiver'
 
-  // Mark messages as read when viewing
+  /**
+   * Marks all currently viewed messages from the care receiver as read.
+   * This side-effect ensures unread counts are updated when the user opens the chat.
+   */
   useEffect(() => {
     const unread = messages.filter((m) => !m.isRead && m.from === 'careReceiver')
     unread.forEach((m) => markMessageRead(m.id))
   }, [messages, markMessageRead])
 
-  // Scroll to bottom on mount and on new messages
+  /**
+   * Initial scroll to bottom when the component mounts to show the most recent messages.
+   */
   useEffect(() => {
     const scrollToBottom = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -54,10 +86,17 @@ export function Messages({ onClose }: MessagesProps) {
     return () => clearTimeout(timer)
   }, [])
 
+  /**
+   * Auto-scrolls to bottom whenever the length of the messages array changes.
+   */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 
+  /**
+   * Handles sending a new message.
+   * Triggers a loading state and clears the input field after successful transmission.
+   */
   const handleSend = useCallback(() => {
     if (newMessage.trim() && !isSending) {
       setIsSending(true)
@@ -70,6 +109,12 @@ export function Messages({ onClose }: MessagesProps) {
     }
   }, [newMessage, isSending, sendMessage])
 
+  /**
+   * Formats a timestamp into a human-readable string.
+   *
+   * @param {string} timestamp - ISO timestamp of the message.
+   * @returns {string} A formatted time or date (e.g., "10:30 AM", "Yesterday", "Tue, Sep 5").
+   */
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp)
     const now = new Date()
@@ -93,7 +138,12 @@ export function Messages({ onClose }: MessagesProps) {
     }
   }
 
-  // Group messages by date for date separators
+  /**
+   * Returns a date label for grouping messages in the conversation view.
+   *
+   * @param {string} timestamp - ISO timestamp of the message.
+   * @returns {string} The date label (e.g., "Today", "Yesterday", "Monday, Sep 1").
+   */
   const getDateLabel = (timestamp: string) => {
     const date = new Date(timestamp)
     const now = new Date()
