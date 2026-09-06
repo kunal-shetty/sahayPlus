@@ -1,5 +1,13 @@
 'use client'
 
+/**
+ * @file emergency-contacts.tsx
+ * @description The Emergency Contacts management interface for Caregivers.
+ * Allows caregivers to maintain a list of critical contacts (family, doctors, clinics)
+ * for the care receiver. Features include designating a primary contact for one-tap
+ * emergency calling and a streamlined form for adding new contacts.
+ */
+
 import { useState } from 'react'
 import { useSahay } from '@/lib/sahay-context'
 import {
@@ -13,19 +21,37 @@ import {
   Stethoscope,
 } from 'lucide-react'
 
+/**
+ * Props for the EmergencyContacts component.
+ * @interface EmergencyContactsProps
+ * @property {() => void} onClose - Callback to close the contacts screen and return to the main view.
+ */
 interface EmergencyContactsProps {
   onClose: () => void
 }
 
+/**
+ * EmergencyContacts component.
+ * Manages the list of emergency contacts, including adding, removing, and
+ * setting a primary contact.
+ *
+ * @param {EmergencyContactsProps} props - Component props.
+ * @returns {JSX.Element} The emergency contacts management interface.
+ */
 export function EmergencyContacts({ onClose }: EmergencyContactsProps) {
   const { data, addEmergencyContact, removeEmergencyContact, setPrimaryContact } =
     useSahay()
 
+  // Form state for adding a new contact
   const [showAddForm, setShowAddForm] = useState(false)
   const [newName, setNewName] = useState('')
   const [newPhone, setNewPhone] = useState('')
   const [newRelationship, setNewRelationship] = useState('')
 
+  /**
+   * Validates and adds a new emergency contact to the receiver's profile.
+   * Automatically sets the first added contact as the primary contact.
+   */
   const handleAdd = () => {
     if (newName.trim() && newPhone.trim()) {
       addEmergencyContact({
@@ -41,6 +67,12 @@ export function EmergencyContacts({ onClose }: EmergencyContactsProps) {
     }
   }
 
+  /**
+   * Determines the most appropriate icon based on the contact's relationship.
+   *
+   * @param {string} relationship - The relationship description.
+   * @returns {JSX.Element} The corresponding Lucide icon.
+   */
   const getRelationshipIcon = (relationship: string) => {
     const lower = relationship.toLowerCase()
     if (lower.includes('doctor') || lower.includes('dr.')) {
@@ -79,7 +111,7 @@ export function EmergencyContacts({ onClose }: EmergencyContactsProps) {
       </header>
 
       <div className="flex-1 overflow-y-auto px-6 pb-8">
-        {/* Primary contact highlight */}
+        {/* Primary contact highlight: Displayed prominently for immediate access. */}
         {contacts.find((c) => c.isPrimary) && (
           <div className="mb-6">
             {contacts
@@ -126,7 +158,7 @@ export function EmergencyContacts({ onClose }: EmergencyContactsProps) {
           </div>
         )}
 
-        {/* Other contacts */}
+        {/* Other contacts: A list of all non-primary emergency contacts. */}
         <section className="mb-6">
           <h2 className="text-lg font-medium text-foreground mb-4">
             All Contacts
@@ -196,7 +228,7 @@ export function EmergencyContacts({ onClose }: EmergencyContactsProps) {
           </div>
         </section>
 
-        {/* Add form */}
+        {/* Add Contact Form: Rendered when showAddForm is true. */}
         {showAddForm ? (
           <div className="bg-card rounded-2xl border-2 border-border p-5 space-y-4">
             <h3 className="font-semibold text-foreground">Add Contact</h3>
