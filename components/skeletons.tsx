@@ -1,8 +1,23 @@
 'use client'
 
+/**
+ * @file skeletons.tsx
+ * @description The Skeletons component library for Sahay+.
+ * This file contains the skeleton loading states for the primary dashboards
+ * (Caregiver and Care Receiver). Skeletons are used to provide a perceived
+ * performance boost by showing a structural blueprint of the content
+ * before the actual data is loaded from the backend.
+ *
+ * All skeletons use the `Skeleton` primitive from the UI library and are
+ * wrapped in Framer Motion components for a smooth fade-in effect.
+ */
+
 import { motion } from 'motion/react'
 import { Skeleton } from '@/components/ui/skeleton'
 
+/**
+ * Default fade-in animation configuration for skeleton screens.
+ */
 const fadeIn = {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
@@ -10,8 +25,12 @@ const fadeIn = {
 }
 
 /**
- * Caregiver Home Skeleton
- * Shown while data is loading on the caregiver dashboard
+ * CaregiverHomeSkeleton component.
+ * Renders a structural placeholder for the Caregiver's home dashboard,
+ * including the header, status card, streak tracker, quick actions,
+ * and the medication list.
+ *
+ * @returns {JSX.Element} The skeleton loading state for the Caregiver home.
  */
 export function CaregiverHomeSkeleton() {
     return (
@@ -127,8 +146,12 @@ export function CaregiverHomeSkeleton() {
 }
 
 /**
- * Care Receiver Home Skeleton
- * Minimal skeleton for the elderly-friendly interface
+ * CareReceiverHomeSkeleton component.
+ * Renders a structural placeholder for the Care Receiver's home dashboard,
+ * optimized for an elderly-friendly interface with larger elements and
+ * a centered layout.
+ *
+ * @returns {JSX.Element} The skeleton loading state for the Care Receiver home.
  */
 export function CareReceiverHomeSkeleton() {
     return (
