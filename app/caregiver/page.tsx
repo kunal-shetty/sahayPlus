@@ -55,7 +55,7 @@ import { CaregiverBottomNav } from '@/components/caregiver/bottom-nav'
 
 /**
  * Caregiver Page
- * Implements a dual-view: App View (Mobile) and Dashboard View (Desktop).
+ * Mobile-first App View. Desktop users are encouraged to use /dashboard
  */
 export default function CaregiverPage() {
   const {
@@ -63,10 +63,7 @@ export default function CaregiverPage() {
     isLoading,
     isDataLoading,
     getUnreadCount,
-    getHumanInsights,
-    getDoctorPrepSummary,
     endHandover,
-    startHandover,
   } = useSahay()
 
   const router = useRouter()
@@ -84,9 +81,6 @@ export default function CaregiverPage() {
   const [showHistory, setShowHistory] = useState(false)
   const [showDoctorPrep, setShowDoctorPrep] = useState(false)
   const [showPharmacist, setShowPharmacist] = useState(false)
-  const [showHandoverSetup, setShowHandoverSetup] = useState(false)
-  const [handoverName, setHandoverName] = useState('')
-  const [handoverDays, setHandoverDays] = useState('3')
 
   const unreadMessages = getUnreadCount()
   const currentTimeOfDay = getCurrentTimeOfDay()
@@ -100,9 +94,6 @@ export default function CaregiverPage() {
   const totalMeds = data.medications.length
   const takenMeds = data.medications.filter((m) => m.taken).length
   const allTaken = totalMeds > 0 && takenMeds === totalMeds
-  const adherencePercent = totalMeds > 0 ? Math.round((takenMeds / totalMeds) * 100) : 0
-  const confidence = calculateConfidence(data.timeline, data.dayClosures)
-  const confidenceMsg = getConfidenceMessage(confidence)
 
   const timeIcons: Record<TimeOfDay, any> = { morning: Sun, afternoon: Cloud, evening: Moon }
 
@@ -128,8 +119,7 @@ export default function CaregiverPage() {
   if (showHistory) return <MedicationHistory onClose={() => setShowHistory(false)} />
 
   return (
-    <main className="min-h-screen bg-background safe-top safe-bottom flex flex-col">
-      {/* Responsive Header */}
+    <main className="min-h-screen flex flex-col bg-background safe-top safe-bottom">
       <header className="p-6 pb-4 flex items-center justify-between">
         <div>
           <p className="text-muted-foreground text-lg">{getGreeting()}, {data.caregiver?.name}</p>
@@ -143,7 +133,6 @@ export default function CaregiverPage() {
         </button>
       </header>
 
-      {/* Active Handover Banner */}
       {data.caregiver?.handover?.isActive && (
         <div className="bg-sahay-blue border-b border-sahay-blue/20 p-2 overflow-hidden text-center">
           <p className="text-xs font-bold text-white uppercase tracking-widest flex items-center justify-center gap-2">
@@ -154,219 +143,124 @@ export default function CaregiverPage() {
         </div>
       )}
 
-      {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-6 pb-24">
+        <motion.button
+          onClick={() => setShowAddForm(true)}
+          className="w-full py-4 px-6 mb-6 bg-primary text-primary-foreground text-lg font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm"
+        >
+          <Plus className="w-5 h-5" /> Add medication
+        </motion.button>
 
-        {/* --- DESKTOP VIEW (Hidden on mobile) --- */}
-        <div className="hidden lg:grid grid-cols-12 gap-6">
-          {/* Left Column: Profile & Quick Actions */}
-          <div className="lg:col-span-3 space-y-6">
-            <section className="p-6 bg-card rounded-2xl border-2 border-border space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-sahay-sage-light flex items-center justify-center">
-                  <Heart className="w-6 h-6 text-sahay-sage" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Care Confidence</p>
-                  <p className="font-semibold text-foreground">{confidenceMsg}</p>
-                </div>
+        {data.timeline.find(e => e.type === 'help_requested' && !e.note?.includes('resolved')) && (
+          <div className="bg-sahay-blue/10 border-2 border-sahay-blue/30 rounded-2xl p-6 mb-6 shadow-lg shadow-sahay-blue/10">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-sahay-blue/20 flex items-center justify-center shrink-0">
+                <Heart className="w-7 h-7 text-sahay-blue" />
               </div>
-              <div className="pt-4 border-t border-border">
-                <p className="text-sm text-muted-foreground mb-2">Quick Actions</p>
-                <div className="grid grid-cols-1 gap-2">
-                  <button onClick={() => setShowAddForm(true)} className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-primary/90 transition-all">
-                    <Plus className="w-4 h-4" /> Add Medication
-                  </button>
-                  <button onClick={() => router.push('/caregiver/messages')} className="w-full py-2 px-4 bg-secondary text-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-secondary/80 transition-all">
-                    <MessageCircle className="w-4 h-4" /> Message Receiver
-                  </button>
-                  <button onClick={() => setShowEmergency(true)} className="w-full py-2 px-4 bg-destructive/10 text-destructive rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-destructive/20 transition-all">
-                    <Phone className="w-4 h-4" /> Emergency Call
-                  </button>
-                </div>
+              <div>
+                <h3 className="text-xl font-bold text-sahay-blue mb-1">Check-in Requested</h3>
+                <p className="text-foreground">{data.careReceiver?.name} just tapped "I need help".</p>
               </div>
-            </section>
-
-            <section className="p-6 bg-card rounded-2xl border-2 border-border space-y-4">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Quick Tools</h3>
-              <div className="space-y-2">
-                {[
-                  { label: 'Timeline', icon: BookOpen, action: () => setShowTimeline(true) },
-                  { label: 'Wellness', icon: Heart, action: () => setShowWellness(true) },
-                  { label: 'History', icon: History, action: () => setShowHistory(true) },
-                  { label: 'Notes', icon: FileText, action: () => setShowNotes(true) },
-                ].map(item => (
-                  <button key={item.label} onClick={item.action} className="w-full p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-all flex items-center gap-3 text-sm font-medium text-foreground">
-                    <item.icon className="w-4 h-4 text-muted-foreground" /> {item.label}
-                  </button>
-                ))}
-              </div>
-            </section>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => setShowEmergency(true)} className="flex items-center justify-center gap-2 py-3 px-4 bg-sahay-blue text-white font-bold rounded-xl"><Phone className="w-5 h-5" /> Call</button>
+              <button onClick={() => router.push('/caregiver/messages')} className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl"><MessageCircle className="w-5 h-5" /> Message</button>
+            </div>
           </div>
+        )}
 
-          {/* Center Column: Checklist & Alerts */}
-          <div className="lg:col-span-6 space-y-6">
-            {/* Alerts */}
-            {data.timeline.find(e => e.type === 'help_requested' && !e.note?.includes('resolved')) && (
-              <div className="bg-sahay-blue/10 border-2 border-sahay-blue/30 rounded-2xl p-6 flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-sahay-blue/20 flex items-center justify-center shrink-0">
-                  <Heart className="w-7 h-7 text-sahay-blue" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-sahay-blue">Check-in Requested</h3>
-                  <p className="text-foreground">{data.careReceiver?.name} just tapped "I need help".</p>
-                </div>
+        {data.safetyCheck.status === 'escalating' && (
+          <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-6 mb-6 shadow-lg shadow-destructive/10">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-7 h-7 text-destructive" />
               </div>
-            )}
-
-            {/* Medication List */}
-            <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Today's Checklist</h2>
-                <span className="px-3 py-1 bg-sahay-sage-light text-sahay-sage rounded-full text-xs font-bold">
-                  {takenMeds}/{totalMeds} Taken
-                </span>
+              <div>
+                <h3 className="text-xl font-bold text-destructive mb-1">Safety Alert: No Response</h3>
+                <p className="text-foreground">{data.careReceiver?.name} did not respond to the safety check.</p>
               </div>
-              <div className="space-y-4">
-                {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map(time => {
-                  const meds = groupedMeds[time]
-                  if (meds.length === 0) return null
-                  const Icon = timeIcons[time]
-                  return (
-                    <div key={time} className="space-y-2">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Icon className="w-4 h-4" />
-                        <span className="text-sm font-medium">{timeOfDayLabels[time]}</span>
-                      </div>
-                      <div className="grid grid-cols-1 gap-2">
-                        {meds.map(med => (
-                          <button key={med.id} onClick={() => setEditingMed(med)} className="p-4 bg-card border-2 border-border rounded-xl flex items-center justify-between hover:border-sahay-sage/50 transition-all">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${med.taken ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}>
-                                {med.taken ? <Check className="w-3 h-3 text-sahay-success" /> : <Clock className="w-3 h-3 text-sahay-pending" />}
-                              </div>
-                              <div className="text-left">
-                                <p className={`font-medium ${med.taken ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{med.name}</p>
-                                <p className="text-xs text-muted-foreground">{med.dosage} • {med.time ? formatTime12h(med.time) : ''}</p>
-                              </div>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => setShowEmergency(true)} className="flex items-center justify-center gap-2 py-3 px-4 bg-destructive text-destructive-foreground font-bold rounded-xl"><Phone className="w-5 h-5" /> Call Them</button>
+              <button onClick={() => router.push('/caregiver/messages')} className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl border-2 border-border"><MessageCircle className="w-5 h-5" /> Message</button>
+            </div>
           </div>
+        )}
 
-          {/* Right Column: Insights & Wellness */}
-          <div className="lg:col-span-3 space-y-6">
-            <section className="p-6 bg-card rounded-2xl border-2 border-border space-y-4">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">AI Insights</h3>
-              <div className="space-y-3">
-                {getHumanInsights().length > 0 ? getHumanInsights().map((insight, i) => (
-                  <div key={i} className="p-3 bg-secondary/50 rounded-lg text-sm text-foreground leading-relaxed">
-                    {insight}
-                  </div>
-                )) : <p className="text-sm text-muted-foreground">No new insights today.</p>}
-              </div>
-            </section>
-
-            <section className="p-6 bg-card rounded-2xl border-2 border-border space-y-4">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Wellness</h3>
-              <div className="text-center py-4">
-                <Smile className="w-10 h-10 text-sahay-success mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Check in on their mood</p>
-                <button onClick={() => setShowWellness(true)} className="mt-3 w-full py-2 bg-secondary rounded-lg text-sm font-medium hover:bg-secondary/80 transition-all">
-                  Open Log
-                </button>
-              </div>
-            </section>
-          </div>
-        </div>
-
-        {/* --- MOBILE VIEW (Hidden on desktop) --- */}
-        <div className="lg:hidden space-y-6">
-          <motion.button
-            onClick={() => setShowAddForm(true)}
-            className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm"
-          >
-            <Plus className="w-5 h-5" /> Add medication
-          </motion.button>
-
-          {/* Status card */}
-          <div className={`p-5 rounded-2xl glass-card ${allTaken ? 'bg-sahay-sage-light/80 border-2 border-sahay-sage/30' : 'bg-card/80 border-2 border-border'}`}>
-            {totalMeds === 0 ? <p className="text-lg text-muted-foreground">No medications added yet</p> :
-              allTaken ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-sahay-success/20 flex items-center justify-center"><Check className="w-5 h-5 text-sahay-success" /></div>
-                  <div><p className="text-lg font-medium">Everything looks good today</p><p className="text-muted-foreground">All {totalMeds} medications taken</p></div>
+        {totalMeds > 0 && (
+          <div className="bg-gradient-to-br from-sahay-sage/10 to-sahay-success/10 rounded-2xl p-5 mb-6 border-2 border-sahay-sage/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Current Streak</p>
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-3xl font-bold text-sahay-sage">{data.currentStreak}</h3>
+                  <span className="text-lg text-muted-foreground">days</span>
                 </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-sahay-pending/20 flex items-center justify-center"><Clock className="w-5 h-5 text-sahay-pending" /></div>
-                  <div><p className="text-lg font-medium">{takenMeds} of {totalMeds} taken today</p><p className="text-muted-foreground">{totalMeds - takenMeds} pending</p></div>
-                </div>
-              )
-            }
+              </div>
+              <div className="w-16 h-16 rounded-full bg-sahay-success/20 flex items-center justify-center text-2xl">🔥</div>
+            </div>
           </div>
+        )}
 
-          <QuickPillActions />
+        <QuickPillActions />
 
-          {/* Medication list */}
-          <div className="space-y-6">
-            {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map(time => {
-              const meds = groupedMeds[time]
-              if (meds.length === 0) return null
-              const Icon = timeIcons[time]
-              return (
-                <section key={time} className="space-y-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Icon className="w-5 h-5 text-muted-foreground" />
-                    <h2 className="text-lg font-medium text-muted-foreground">{timeOfDayLabels[time]}</h2>
-                  </div>
-                  <div className="space-y-2">
-                    {meds.map((med, idx) => (
-                      <button key={med.id} onClick={() => setEditingMed(med)} className="w-full p-4 bg-card rounded-xl border-2 border-border text-left flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${med.taken ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}>
-                            {med.taken ? <Check className="w-4 h-4 text-sahay-success" /> : <Clock className="w-4 h-4 text-sahay-pending" />}
-                          </div>
-                          <div>
-                            <p className={`text-lg font-medium ${med.taken ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{med.name}</p>
-                            <p className="text-sm text-muted-foreground">{med.dosage} • {med.time ? formatTime12h(med.time) : ''}</p>
-                          </div>
+        {data.lastFineCheckIn?.startsWith(new Date().toISOString().split('T')[0]) && (
+          <div className="bg-sahay-success/10 border-2 border-sahay-success/20 rounded-2xl p-5 mb-6 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-sahay-success/20 flex items-center justify-center"><Smile className="w-6 h-6 text-sahay-success" /></div>
+            <div>
+              <p className="text-lg font-bold text-foreground">{data.careReceiver?.name} checked in</p>
+              <p className="text-muted-foreground">They tapped "I'm fine today" at {new Date(data.lastFineCheckIn!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-6">
+          {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map(time => {
+            const meds = groupedMeds[time]
+            if (meds.length === 0) return null
+            const Icon = timeIcons[time]
+            return (
+              <section key={time} className="space-y-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon className="w-5 h-5 text-muted-foreground" />
+                  <h2 className="text-lg font-medium text-muted-foreground">{timeOfDayLabels[time]}</h2>
+                </div>
+                <div className="space-y-2">
+                  {meds.map((med, idx) => (
+                    <button key={med.id} onClick={() => setEditingMed(med)} className="w-full p-4 bg-card rounded-xl border-2 border-border text-left flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${med.taken ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}>
+                          {med.taken ? <Check className="w-4 h-4 text-sahay-success" /> : <Clock className="w-4 h-4 text-sahay-pending" />}
                         </div>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              )
-            })}
-          </div>
+                        <div>
+                          <p className={`text-lg font-medium ${med.taken ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{med.name}</p>
+                          <p className="text-sm text-muted-foreground">{med.dosage} • {med.time ? formatTime12h(med.time) : ''}</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )
+          })}
+        </div>
 
-          <div className="mt-6 mb-8">
-            <DailyClosure />
-          </div>
+        <div className="mt-6 mb-8">
+          <DailyClosure />
         </div>
       </div>
 
-      {/* Mobile Bottom Nav */}
-      <div className="lg:hidden">
-        <CaregiverBottomNav
-          activeTab={pathname.includes('analytics') ? 'activity' : 'home'}
-          onTabChange={(tab) => {
-            if (tab === 'home') router.push('/caregiver')
-            if (tab === 'activity') router.push('/caregiver/analytics')
-            if (tab === 'care') setShowNotes(true) // Simplified
-            if (tab === 'messages') router.push('/caregiver/messages')
-          }}
-          unreadMessages={unreadMessages}
-        />
-      </div>
+      <CaregiverBottomNav
+        activeTab={pathname.includes('analytics') ? 'activity' : 'home'}
+        onTabChange={(tab) => {
+          if (tab === 'home') router.push('/caregiver')
+          if (tab === 'activity') router.push('/caregiver/analytics')
+          if (tab === 'care') router.push('/caregiver/notes') // Default to notes
+          if (tab === 'messages') router.push('/caregiver/messages')
+        }}
+        unreadMessages={unreadMessages}
+      />
     </main>
   )
 }
