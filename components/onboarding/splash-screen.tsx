@@ -1,16 +1,45 @@
 "use client"
 
+/**
+ * @file splash-screen.tsx
+ * @description The SplashScreen component for Sahay+.
+ * This component provides the initial branded experience when the application
+ * first loads. It features a coordinated set of animations: a pulsing heart logo,
+ * a springy entry effect, and a simulated progress bar to manage the transition
+ * from the app launch to the actual user experience.
+ *
+ * The splash screen ensures that any background initialization occurs while the
+ * user is presented with a polished, branded interface.
+ */
+
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { Heart } from "lucide-react"
 
+/**
+ * Props for the SplashScreen component.
+ * @interface SplashScreenProps
+ * @property {() => void} onComplete - Callback triggered once the splash sequence is finished.
+ */
 interface SplashScreenProps {
     onComplete: () => void
 }
 
+/**
+ * SplashScreen component.
+ * Renders a high-impact branded loading screen with a progress indicator.
+ *
+ * @param {SplashScreenProps} props - Component props.
+ * @returns {JSX.Element} The branded splash screen interface.
+ */
 export function SplashScreen({ onComplete }: SplashScreenProps) {
     const [progress, setProgress] = useState(0)
 
+    /**
+     * Simulation of a loading process.
+     * Uses a fixed duration and interval to increment a progress percentage,
+     * eventually calling the onComplete callback to exit the splash screen.
+     */
     useEffect(() => {
         const duration = 2000
         const interval = 20
