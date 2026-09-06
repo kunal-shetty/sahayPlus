@@ -1,5 +1,17 @@
 'use client'
 
+/**
+ * @file medication-form.tsx
+ * @description The Medication Form component for Caregivers.
+ * This component provides a comprehensive interface for adding new medications
+ * or editing existing ones. It includes fields for dosage, time of day,
+ * specific timing, notes, and refill awareness.
+ *
+ * The form is designed with large, accessible inputs and clear actions to
+ * minimize cognitive load for caregivers who may be adding medications in
+ * stressful or hurried situations.
+ */
+
 import { useState } from 'react'
 import { useSahay } from '@/lib/sahay-context'
 import { type TimeOfDay, type Medication, timeOfDayLabels } from '@/lib/types'
@@ -13,15 +25,25 @@ import {
   RefreshCw,
 } from 'lucide-react'
 
+/**
+ * Props for the MedicationForm component.
+ *
+ * @interface MedicationFormProps
+ * @property {Medication | null} [medication] - The medication object to edit. If omitted, the form is in "add" mode.
+ * @property {() => void} onClose - Callback function to close the form and return to the previous view.
+ */
 interface MedicationFormProps {
   medication?: Medication | null
   onClose: () => void
 }
 
 /**
- * Medication Form
- * Add or edit a medication
- * Design: Simple form with large inputs, clear actions
+ * MedicationForm component.
+ * Provides a full-screen form for managing medications. It handles both
+ * the creation of new medication entries and the updating of existing ones.
+ *
+ * @param {MedicationFormProps} props - Component props.
+ * @returns {JSX.Element} The medication entry/edit interface.
  */
 export function MedicationForm({ medication, onClose }: MedicationFormProps) {
   const { addMedication, updateMedication, removeMedication, updateRefillStatus } =
@@ -40,6 +62,11 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
   )
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+  /**
+   * Validates and persists the medication data.
+   * If in edit mode, updates the existing medication; otherwise, adds a new one.
+   * Also updates the refill status if a refill value is provided.
+   */
   const handleSubmit = () => {
     if (!name.trim() || !dosage.trim()) return
 
@@ -68,6 +95,9 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
     onClose()
   }
 
+  /**
+   * Removes the current medication from the system and closes the form.
+   */
   const handleDelete = () => {
     if (medication) {
       removeMedication(medication.id)
@@ -75,6 +105,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
     }
   }
 
+  /** Mapping of time of day slugs to their corresponding Lucide icons. */
   const timeIcons: Record<TimeOfDay, typeof Sun> = {
     morning: Sun,
     afternoon: Cloud,
@@ -87,7 +118,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
       <header className="flex items-center gap-4 p-4 border-b border-border">
         <button
           onClick={onClose}
-          className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
+          className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center
                    hover:bg-secondary/80 transition-colors touch-manipulation
                    focus:outline-none focus:ring-2 focus:ring-sahay-sage"
           aria-label="Go back"
@@ -278,7 +309,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
-              className="w-full py-3 px-4 text-destructive text-lg font-medium 
+              className="w-full py-3 px-4 text-destructive text-lg font-medium
                        rounded-xl border-2 border-destructive/30 bg-destructive/5
                        hover:bg-destructive/10 transition-colors touch-manipulation
                        focus:outline-none focus:ring-2 focus:ring-destructive"
@@ -297,7 +328,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium 
+                  className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium
                            rounded-xl transition-colors touch-manipulation
                            focus:outline-none focus:ring-2 focus:ring-sahay-sage"
                 >
@@ -306,7 +337,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="flex-1 py-3 px-4 bg-destructive text-destructive-foreground font-medium 
+                  className="flex-1 py-3 px-4 bg-destructive text-destructive-foreground font-medium
                            rounded-xl flex items-center justify-center gap-2 transition-colors touch-manipulation
                            focus:outline-none focus:ring-2 focus:ring-destructive"
                 >
@@ -325,7 +356,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
           <button
             onClick={handleSubmit}
             disabled={!name.trim() || !dosage.trim()}
-            className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold 
+            className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold
                      rounded-xl flex items-center justify-center gap-2 transition-all
                      hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed
                      touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage focus:ring-offset-2"
