@@ -1,14 +1,35 @@
 'use client'
 
+/**
+ * @file quick-messages.tsx
+ * @description The Quick Messages interface for Care Receivers.
+ * Allows elderly users to quickly communicate common needs or statuses to
+ * their caregiver via a set of pre-defined "tap-to-send" buttons or a
+ * custom text input. Features high-contrast buttons and immediate visual feedback.
+ */
+
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
 import { ArrowLeft, Send, Check, MessageCircle } from 'lucide-react'
 
+/**
+ * Props for the QuickMessages component.
+ * @interface QuickMessagesProps
+ * @property {() => void} onClose - Callback to close the messages screen and return to home.
+ */
 interface QuickMessagesProps {
   onClose: () => void
 }
 
+/**
+ * QuickMessages component.
+ * Provides a streamlined messaging experience for care receivers,
+ * reducing the friction of typing by offering a library of quick-send options.
+ *
+ * @param {QuickMessagesProps} props - Component props.
+ * @returns {JSX.Element} The messaging interface.
+ */
 export function QuickMessages({ onClose }: QuickMessagesProps) {
   const { data, sendMessage } = useSahay()
   const [sentMessage, setSentMessage] = useState<string | null>(null)
@@ -16,6 +37,11 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
   const [sendingIndex, setSendingIndex] = useState<number | null>(null)
 
   const caregiverName = data.caregiver?.name || 'your caregiver'
+
+  /**
+   * The list of pre-defined messages.
+   * Uses user-specific messages if available, otherwise defaults to a general set.
+   */
   const quickMessages = data.careReceiver?.quickMessages || [
     'I took my medicine',
     'Feeling good today',
@@ -24,6 +50,13 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
     'All done for the day',
   ]
 
+  /**
+   * Handles sending a pre-defined quick message.
+   * Includes a small artificial delay for visual feedback (sending state).
+   *
+   * @param {string} message - The content of the message to send.
+   * @param {number} index - The index of the message in the list for UI tracking.
+   */
   const handleSendQuick = (message: string, index: number) => {
     setSendingIndex(index)
     setTimeout(() => {
@@ -33,6 +66,9 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
     }, 400)
   }
 
+  /**
+   * Handles sending a user-typed custom message.
+   */
   const handleSendCustom = () => {
     if (customMessage.trim()) {
       sendMessage(customMessage.trim(), false)
@@ -41,7 +77,11 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
     }
   }
 
-  // Success view after sending
+  /**
+   * Success View.
+   * Rendered after a message has been successfully sent, providing clear
+   * confirmation of what was sent and who will receive it.
+   */
   if (sentMessage) {
     return (
       <main className="min-h-screen flex flex-col bg-sahay-sage-light p-6">
@@ -191,7 +231,7 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
           </AnimatePresence>
         </div>
 
-        {/* Custom message */}
+        {/* Custom message input area */}
         <motion.div
           className="mt-auto"
           initial={{ opacity: 0, y: 20 }}
