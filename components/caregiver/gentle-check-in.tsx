@@ -1,35 +1,58 @@
 'use client'
 
+/**
+ * @file gentle-check-in.tsx
+ * @description The Gentle Check-In component for Caregivers.
+ * Instead of using aggressive automated reminders, this component suggests a
+ * "human check-in" (a call or message) when the system detects pending
+ * medications. This approach preserves the dignity of the care receiver and
+ * reduces the anxiety associated with robotic alerts.
+ */
+
 import { useState } from 'react'
 import { useSahay } from '@/lib/sahay-context'
 import { Phone, MessageCircle, X, Heart } from 'lucide-react'
 
 /**
- * Gentle Human Check-In
- * Replace aggressive reminders with suggested human check-ins
- * Preserves dignity and reduces anxiety
+ * GentleCheckIn component.
+ * Displays a suggestion to check in with the care receiver based on their
+ * current medication status.
+ *
+ * @returns {JSX.Element | null} The check-in suggestion UI or null if no suggestion is active.
  */
 export function GentleCheckIn() {
   const { getSuggestedCheckIn, dismissCheckInSuggestion, addTimelineEvent, data } =
     useSahay()
   const [isVisible, setIsVisible] = useState(true)
 
+  /** The suggested check-in message (e.g., "Maybe a quick call?"). */
   const suggestion = getSuggestedCheckIn()
 
   if (!suggestion || !isVisible) return null
 
+  /**
+   * Handles the "Call" action.
+   * Logs the activity to the care timeline and dismisses the suggestion.
+   */
   const handleCall = () => {
     addTimelineEvent('check_in', undefined, 'Called to check in')
     dismissCheckInSuggestion()
     setIsVisible(false)
   }
 
+  /**
+   * Handles the "Message" action.
+   * Logs the activity to the care timeline and dismisses the suggestion.
+   */
   const handleMessage = () => {
     addTimelineEvent('check_in', undefined, 'Sent a message to check in')
     dismissCheckInSuggestion()
     setIsVisible(false)
   }
 
+  /**
+   * Dismisses the suggestion without logging a check-in activity.
+   */
   const handleDismiss = () => {
     dismissCheckInSuggestion()
     setIsVisible(false)
@@ -52,7 +75,7 @@ export function GentleCheckIn() {
         </div>
         <button
           onClick={handleDismiss}
-          className="w-8 h-8 rounded-lg bg-card/50 flex items-center justify-center 
+          className="w-8 h-8 rounded-lg bg-card/50 flex items-center justify-center
                    hover:bg-card transition-colors touch-manipulation
                    focus:outline-none focus:ring-2 focus:ring-ring"
           aria-label="Dismiss suggestion"
@@ -61,11 +84,11 @@ export function GentleCheckIn() {
         </button>
       </div>
 
-      {/* Action buttons */}
+      {/* Action buttons: Offer a choice between a phone call, a message, or deferring. */}
       <div className="flex gap-3">
         <button
           onClick={handleCall}
-          className="flex-1 py-3 px-4 bg-sahay-blue text-accent-foreground font-medium 
+          className="flex-1 py-3 px-4 bg-sahay-blue text-accent-foreground font-medium
                    rounded-xl flex items-center justify-center gap-2 transition-all
                    hover:opacity-90 touch-manipulation
                    focus:outline-none focus:ring-2 focus:ring-sahay-blue"
@@ -75,7 +98,7 @@ export function GentleCheckIn() {
         </button>
         <button
           onClick={handleMessage}
-          className="flex-1 py-3 px-4 bg-card text-foreground font-medium 
+          className="flex-1 py-3 px-4 bg-card text-foreground font-medium
                    rounded-xl flex items-center justify-center gap-2 transition-all border-2 border-border
                    hover:bg-secondary touch-manipulation
                    focus:outline-none focus:ring-2 focus:ring-ring"
@@ -85,7 +108,7 @@ export function GentleCheckIn() {
         </button>
         <button
           onClick={handleDismiss}
-          className="py-3 px-4 bg-card/50 text-muted-foreground font-medium 
+          className="py-3 px-4 bg-card/50 text-muted-foreground font-medium
                    rounded-xl transition-all
                    hover:bg-secondary touch-manipulation
                    focus:outline-none focus:ring-2 focus:ring-ring"
