@@ -1,12 +1,22 @@
 'use client'
 
+/**
+ * @file loading-screen.tsx
+ * @description The Loading Screen component for Sahay+.
+ * This component is displayed during application initialization, data fetching,
+ * or transitions between major views. It uses a clean, minimal design featuring
+ * a pulsing heart logo and animated loading indicators to maintain a calm
+ * and reassuring atmosphere while the user waits.
+ */
+
 import { motion } from 'motion/react'
 import { Heart } from 'lucide-react'
 
 /**
- * Loading Screen
- * Shown while app is initializing or loading data
- * Clean, minimal design with animated heart and progress
+ * LoadingScreen component.
+ * Renders a full-screen loading state with coordinated animations.
+ *
+ * @returns {JSX.Element} The application loading interface.
  */
 export function LoadingScreen() {
   return (
