@@ -1,6 +1,19 @@
+/**
+ * @file route.ts
+ * @description API routes for managing pharmacist contacts.
+ * Provides endpoints to list, create, and delete pharmacist contact information.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
+/**
+ * GET /api/pharmacist-contacts
+ * Retrieves a list of pharmacist contacts for a given care relationship.
+ *
+ * @param {NextRequest} req - The incoming request containing `care_relationship_id` as a query parameter.
+ * @returns {Promise<NextResponse>} JSON response containing the list of contacts.
+ */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -32,6 +45,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * POST /api/pharmacist-contacts
+ * Adds a new pharmacist contact for a specific care relationship.
+ *
+ * @param {NextRequest} req - The incoming request containing the contact details in the body.
+ * @returns {Promise<NextResponse>} JSON response with the created contact object.
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -72,6 +92,13 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/**
+ * DELETE /api/pharmacist-contacts
+ * Deletes a pharmacist contact by its ID.
+ *
+ * @param {NextRequest} req - The incoming request containing the `id` of the contact as a query parameter.
+ * @returns {Promise<NextResponse>} JSON response confirming the deletion.
+ */
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
