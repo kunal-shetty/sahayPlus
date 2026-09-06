@@ -1,8 +1,24 @@
 "use client"
 
+/**
+ * @file onboarding-goals.tsx
+ * @description The OnboardingGoals component for Sahay+.
+ * This component is part of the onboarding flow and focuses on the emotional
+ * and practical goals of the user. By presenting high-level aspirations like
+ * "Peace of Mind" and "Care Together," it helps the user connect the app's
+ * functionality to their personal motivations for using the service.
+ */
+
 import { motion } from "motion/react"
 import { Heart, Clock, Sparkles } from "lucide-react"
 
+/**
+ * Data structure for a care goal.
+ * @typedef {Object} Goal
+ * @property {React.ComponentType} icon - The Lucide icon that represents the goal.
+ * @property {string} title - The name of the goal.
+ * @property {string} description - A brief explanation of why this goal matters.
+ */
 const goals = [
     {
         icon: Heart,
@@ -21,6 +37,12 @@ const goals = [
     },
 ]
 
+/**
+ * OnboardingGoals component.
+ * Renders a set of inspirational care goals with entry animations.
+ *
+ * @returns {JSX.Element} The goals showcase interface.
+ */
 export function OnboardingGoals() {
     return (
         <div className="flex h-full flex-col justify-center">
