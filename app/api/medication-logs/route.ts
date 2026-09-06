@@ -1,9 +1,21 @@
+/**
+ * @file route.ts
+ * @description API route for retrieving medication logs.
+ * This endpoint allows the caregiver's UI to synchronize and display the
+ * "taken" status of medications recorded by the care receiver.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// GET /api/medication-logs?care_relationship_id=...&date=YYYY-MM-DD
-// Returns today's "taken" status for the care-receiver's medications so
-// the caregiver's UI can show whether meds have been checked off.
+/**
+ * GET /api/medication-logs
+ * Retrieves logs for medications within a care relationship for a specific date.
+ *
+ * @param {NextRequest} req - The incoming request containing `care_relationship_id`
+ * and optionally `date` (YYYY-MM-DD) as query parameters.
+ * @returns {Promise<NextResponse>} JSON response containing a list of medication logs.
+ */
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -17,7 +29,7 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // Get all medications for this relationship
+        // First, identify all medications associated with this care relationship
         const { data: meds, error: medsError } = await supabase
             .from("medications")
             .select("id")
@@ -32,6 +44,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ logs: [] }, { status: 200 });
         }
 
+        // Fetch logs for these specific medications
         let query = supabase
             .from("medication_logs")
             .select("*")
