@@ -1,18 +1,38 @@
 'use client'
 
+/**
+ * @file quick-pill-actions.tsx
+ * @description The Quick Pill Actions component for Caregivers.
+ * This component acts as an attention-layer on the home dashboard, identifying
+ * medications that require immediate or near-future action. It surfaces two
+ * main types of issues:
+ * 1. Pending Medications: Pills that have not been marked as taken for the current period.
+ * 2. Refill Alerts: Medications with very low supply (<= 3 days).
+ *
+ * For pending medications, it provides "one-tap" mark-as-taken buttons to
+ * streamline the caregiver's workflow and reduce friction.
+ */
+
 import { motion } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
 import { Pill, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 /**
- * Quick Pill Actions Card
- * NEW FEATURE: Shows pills that need attention with one-tap actions
- * Displays missing pills, upcoming pills, or pills that need refill soon
+ * QuickPillActions component.
+ * Scans medication data for critical issues and renders an action-oriented card for each.
+ *
+ * @returns {JSX.Element | null} A collection of issue cards, or null if all medications are up-to-date.
  */
 export function QuickPillActions() {
   const { data, markMedicationTaken } = useSahay()
 
-  // Get pills needing attention
+  /**
+   * Identifies medications that need attention based on their 'taken' status
+   * and remaining refill supply.
+   *
+   * @returns {Array<{ type: 'pending' | 'refill', count: number, meds: Medication[] }>}
+   * A list of detected issues with the associated medication data.
+   */
   const getPillsNeedingAttention = () => {
     const issues = []
 
