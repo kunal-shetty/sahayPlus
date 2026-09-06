@@ -1,5 +1,13 @@
 'use client'
 
+/**
+ * @file page.tsx
+ * @description The Care Code page.
+ * This page handles the connection between a caregiver and a care receiver.
+ * - Caregivers use this page to enter a 6-character code to link with a receiver.
+ * - Care receivers use this page to view and copy their unique care code to share.
+ */
+
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Heart, Link2, ArrowRight, Loader2, Copy, Check } from 'lucide-react'
@@ -7,9 +15,10 @@ import { useSahay } from '@/lib/sahay-context'
 import { useRouter } from 'next/navigation'
 
 /**
- * Enter Care Code Page
- * - Caregivers: enter a 6-char code to link to a care receiver
- * - Care receivers: shown their code to share
+ * CareCodePage component.
+ * Dynamically renders either a code input (for caregivers) or a code display (for receivers).
+ *
+ * @returns {JSX.Element} The care code interface.
  */
 export default function CareCodePage() {
     const { user, linkCareCode, logout } = useSahay()
@@ -22,6 +31,10 @@ export default function CareCodePage() {
     const isCaregiver = user?.role === 'caregiver'
     const careCode = user?.care_code
 
+    /**
+     * Validates and submits the 6-character care code to link the relationship.
+     * After successful linking, redirects the user to their respective home page.
+     */
     const handleLink = async () => {
         if (code.length !== 6) return
         setIsLoading(true)
@@ -29,7 +42,7 @@ export default function CareCodePage() {
 
         try {
             await linkCareCode(code)
-            // After linking, redirect to the appropriate home
+            // Redirect based on user role after linking
             router.push(user?.role === 'caregiver' ? '/caregiver' : '/care-receiver')
         } catch (err: any) {
             setError(err.message || 'Invalid code. Please try again.')
@@ -38,6 +51,9 @@ export default function CareCodePage() {
         }
     }
 
+    /**
+     * Copies the user's unique care code to the clipboard.
+     */
     const handleCopy = async () => {
         if (careCode) {
             await navigator.clipboard.writeText(careCode)
@@ -80,7 +96,7 @@ export default function CareCodePage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                     >
-                        {/* Code input */}
+                        {/* Code input field: constrained to 6 uppercase alphanumeric characters */}
                         <input
                             type="text"
                             value={code}
@@ -122,7 +138,7 @@ export default function CareCodePage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                     >
-                        {/* Show the care code */}
+                        {/* Code display area for care receivers */}
                         <div className="bg-card border-2 border-sahay-blue/30 rounded-2xl p-8 text-center">
                             <p className="text-sm text-muted-foreground mb-3 uppercase tracking-widest font-medium">
                                 Your Code
@@ -169,7 +185,7 @@ export default function CareCodePage() {
                     </motion.p>
                 )}
 
-                {/* Logout */}
+                {/* Logout option to restart auth process */}
                 <button
                     onClick={() => {
                         logout()
