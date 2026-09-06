@@ -1,14 +1,33 @@
 'use client'
 
+/**
+ * @file role-status.tsx
+ * @description The Role Status component for Caregivers.
+ * This component implements the concept of "Fluid Care Roles," allowing the caregiver
+ * to adjust their status based on real-life availability. It supports two primary
+ * mechanisms:
+ * 1. Caregiver Status: Allows the caregiver to mark themselves as "Away" for a
+ *    specified duration, which pauses automated check-in suggestions to prevent
+ *    notification fatigue and burnout.
+ * 2. Care Receiver Independence: Allows the caregiver to designate specific
+ *    times of day when the care receiver is capable of managing their medications
+ *    independently, reducing the need for constant supervision.
+ *
+ * This approach acknowledges the fluctuating nature of caregiving and promotes a
+ * sustainable routine that respects the autonomy of the care receiver.
+ */
+
 import { useState } from 'react'
 import { useSahay } from '@/lib/sahay-context'
 import { type CareRoleStatus, type TimeOfDay, timeOfDayLabels } from '@/lib/types'
 import { User, Calendar, Sun, Cloud, Moon, ArrowLeft, Check } from 'lucide-react'
 
 /**
- * Fluid Care Roles
- * Allow caregiving responsibility to shift, be shared, or be handed over
- * Reflects real family dynamics and prevents burnout
+ * RoleStatus component.
+ * Provides the interface for managing caregiver availability and receiver independence.
+ *
+ * @param { { onClose: () => void } } props - Component props.
+ * @returns {JSX.Element} The care roles management interface.
  */
 export function RoleStatus({ onClose }: { onClose: () => void }) {
   const { data, updateCaregiverStatus, setCareReceiverIndependence } = useSahay()
@@ -17,6 +36,13 @@ export function RoleStatus({ onClose }: { onClose: () => void }) {
   const currentStatus = data.caregiver?.roleStatus || 'active'
   const independentTimes = data.careReceiver?.independentTimes || []
 
+  /**
+   * Updates the caregiver's role status.
+   * If the status is set to 'away', a return date is calculated based on the
+   * selected number of away days.
+   *
+   * @param {CareRoleStatus} status - The new status to apply ('active' or 'away').
+   */
   const handleStatusChange = (status: CareRoleStatus) => {
     if (status === 'away') {
       const awayUntil = new Date()
@@ -27,6 +53,11 @@ export function RoleStatus({ onClose }: { onClose: () => void }) {
     }
   }
 
+  /**
+   * Toggles the independence status for a specific time of day.
+   *
+   * @param {TimeOfDay} time - The time of day to toggle (morning, afternoon, or evening).
+   */
   const toggleIndependentTime = (time: TimeOfDay) => {
     if (independentTimes.includes(time)) {
       setCareReceiverIndependence(independentTimes.filter((t) => t !== time))
@@ -35,6 +66,7 @@ export function RoleStatus({ onClose }: { onClose: () => void }) {
     }
   }
 
+  /** Mapping of time of day slugs to their corresponding Lucide icons. */
   const timeIcons: Record<TimeOfDay, typeof Sun> = {
     morning: Sun,
     afternoon: Cloud,
@@ -48,7 +80,7 @@ export function RoleStatus({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-4">
           <button
             onClick={onClose}
-            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
+            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center
                      hover:bg-secondary/80 transition-colors touch-manipulation
                      focus:outline-none focus:ring-2 focus:ring-ring"
             aria-label="Go back"
@@ -133,7 +165,7 @@ export function RoleStatus({ onClose }: { onClose: () => void }) {
 
               <button
                 onClick={() => handleStatusChange('away')}
-                className="mt-3 w-full py-3 px-4 bg-secondary text-foreground font-medium 
+                className="mt-3 w-full py-3 px-4 bg-secondary text-foreground font-medium
                          rounded-xl transition-all touch-manipulation
                          hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
               >
