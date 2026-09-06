@@ -1,7 +1,19 @@
+/**
+ * @file route.ts
+ * @description API routes for managing emergency contacts.
+ * Provides endpoints to retrieve and create emergency contacts for a specific care relationship.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// GET /api/emergency-contacts — List emergency contacts
+/**
+ * GET /api/emergency-contacts
+ * Retrieves a list of emergency contacts for a given care relationship.
+ *
+ * @param {NextRequest} req - The incoming request containing `care_relationship_id` as a query parameter.
+ * @returns {Promise<NextResponse>} JSON response containing the list of contacts, ordered by primary status.
+ */
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -33,7 +45,13 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/emergency-contacts — Add an emergency contact
+/**
+ * POST /api/emergency-contacts
+ * Adds a new emergency contact to the database for a specific care relationship.
+ *
+ * @param {NextRequest} req - The incoming request containing the contact details in the body.
+ * @returns {Promise<NextResponse>} JSON response with the created contact object.
+ */
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
