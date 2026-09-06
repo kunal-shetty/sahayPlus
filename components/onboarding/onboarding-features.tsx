@@ -1,8 +1,29 @@
 "use client"
 
+/**
+ * @file onboarding-features.tsx
+ * @description The OnboardingFeatures component for Sahay+.
+ * This component is used during the initial onboarding flow to introduce
+ * users to the core value propositions of the application. It presents a
+ * set of key features (daily routines, shared care, gentle reminders, and
+ * privacy) using a grid of visually distinct cards.
+ *
+ * The goal is to build trust and excitement by highlighting how the app
+ * reduces the friction and anxiety typically associated with medication management.
+ */
+
 import { motion } from "motion/react"
 import { Bell, Pill, Shield, Users } from "lucide-react"
 
+/**
+ * Data structure for a feature highlight.
+ * @typedef {Object} Feature
+ * @property {React.ComponentType} icon - The Lucide icon to represent the feature.
+ * @property {string} title - The short, punchy headline for the feature.
+ * @property {string} description - A brief explanation of the benefit.
+ * @property {string} color - The Tailwind CSS background color class for the icon container.
+ * @property {string} iconColor - The Tailwind CSS text color class for the icon.
+ */
 const features = [
     {
         icon: Pill,
@@ -34,7 +55,12 @@ const features = [
     },
 ]
 
-
+/**
+ * OnboardingFeatures component.
+ * Renders a curated list of feature highlights with entry animations.
+ *
+ * @returns {JSX.Element} The feature showcase interface.
+ */
 export function OnboardingFeatures() {
     return (
         <div className="flex h-full flex-col justify-center">
