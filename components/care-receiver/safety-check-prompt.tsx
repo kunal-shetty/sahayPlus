@@ -1,18 +1,36 @@
 'use client'
 
+/**
+ * @file safety-check-prompt.tsx
+ * @description A high-priority safety check overlay for Care Receivers.
+ * This component triggers when the system detects a potential issue (e.g., via motion sensors).
+ * It presents a simple, calm "Are you okay?" question with a large confirmation button.
+ * If ignored for a set period (5 minutes), it escalates the status to notify the caregiver.
+ */
+
 import { useState, useEffect } from 'react'
 import { useSahay } from '@/lib/sahay-context'
 import { ShieldAlert, Heart, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 
+/**
+ * SafetyCheckPrompt component.
+ * Displays a full-screen prompt when a safety check is pending.
+ * Includes a real-time countdown and motion-based re-triggering logic.
+ *
+ * @returns {JSX.Element | null} The safety check prompt or null if no check is pending.
+ */
 export function SafetyCheckPrompt() {
     const { data, dismissSafetyCheck, triggerSafetyCheck } = useSahay()
     const [countdown, setCountdown] = useState(300) // 5 minutes in seconds
 
+    /**
+     * Countdown logic to track the time remaining before escalation.
+     * Syncs with the `lastTriggered` timestamp from the backend.
+     */
     useEffect(() => {
         if (data.safetyCheck.status !== 'pending_check') return
 
-        // Calculate remaining time based on when it was triggered
         const triggeredAt = data.safetyCheck.lastTriggered
             ? new Date(data.safetyCheck.lastTriggered).getTime()
             : Date.now()
@@ -36,35 +54,39 @@ export function SafetyCheckPrompt() {
     const seconds = countdown % 60
     const progress = (countdown / 300) * 100
 
+    /**
+     * Device motion listener.
+     * Re-triggers the safety check if significant motion (shake) is detected,
+     * ensuring that the prompt remains active during active movement.
+     */
     useEffect(() => {
-  let lastTriggerTime = 0;
+      let lastTriggerTime = 0;
 
-  const handleMotion = (event: DeviceMotionEvent) => {
-    const acc = event.accelerationIncludingGravity;
-    if (!acc) return;
+      const handleMotion = (event: DeviceMotionEvent) => {
+        const acc = event.accelerationIncludingGravity;
+        if (!acc) return;
 
-    const x = acc.x || 0;
-    const y = acc.y || 0;
-    const z = acc.z || 0;
+        const x = acc.x || 0;
+        const y = acc.y || 0;
+        const z = acc.z || 0;
 
-    const magnitude = Math.sqrt(x * x + y * y + z * z);
-    const now = Date.now();
+        const magnitude = Math.sqrt(x * x + y * y + z * z);
+        const now = Date.now();
 
-    // Shake threshold
-    if (magnitude > 20 && now - lastTriggerTime > 5000) {
-      lastTriggerTime = now;
+        // Shake threshold: magnitude > 20, rate-limited to once every 5 seconds
+        if (magnitude > 20 && now - lastTriggerTime > 5000) {
+          lastTriggerTime = now;
 
-      triggerSafetyCheck('motion');
-    }
-  };
+          triggerSafetyCheck('motion');
+        }
+      };
 
-  window.addEventListener("devicemotion", handleMotion);
+      window.addEventListener("devicemotion", handleMotion);
 
-  return () => {
-    window.removeEventListener("devicemotion", handleMotion);
-  };
-}, [triggerSafetyCheck]);
-
+      return () => {
+        window.removeEventListener("devicemotion", handleMotion);
+      };
+    }, [triggerSafetyCheck]);
 
     return (
         <AnimatePresence>
