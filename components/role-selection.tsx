@@ -1,13 +1,26 @@
 'use client'
 
+/**
+ * @file role-selection.tsx
+ * @description The Role Selection component for Sahay+.
+ * This screen is the first interaction point for new users, allowing them to
+ * define their primary relationship with the application: as a Caregiver
+ * (supporting someone else) or as a Care Receiver (managing their own care).
+ *
+ * The design prioritizes clarity and warmth, using large, accessible touch
+ * targets and gentle imagery to reduce the friction of the initial onboarding
+ * step.
+ */
+
 import { motion } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
 import { Heart, Users } from 'lucide-react'
 
 /**
- * Role Selection Screen
- * Calm, welcoming, and easy to understand
- * Designed for large touch targets and low cognitive load
+ * RoleSelection component.
+ * Renders the initial role choosing screen for the onboarding flow.
+ *
+ * @returns {JSX.Element} The role selection interface.
  */
 export function RoleSelection() {
   const { setUserRole } = useSahay()
@@ -63,8 +76,8 @@ export function RoleSelection() {
         {/* Caregiver option */}
         <motion.button
           onClick={() => setUserRole('caregiver')}
-          className="w-full p-6 bg-card rounded-2xl border-2 border-border hover:border-primary 
-                     transition-colors duration-200 text-left group focus:outline-none focus:ring-2 
+          className="w-full p-6 bg-card rounded-2xl border-2 border-border hover:border-primary
+                     transition-colors duration-200 text-left group focus:outline-none focus:ring-2
                      focus:ring-primary focus:ring-offset-2 focus:ring-offset-background
                      touch-manipulation"
           aria-label="I help care for someone"
@@ -76,7 +89,7 @@ export function RoleSelection() {
         >
           <div className="flex items-start gap-4">
             <motion.div
-              className="flex-shrink-0 w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center 
+              className="flex-shrink-0 w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center
                         group-hover:bg-primary transition-colors duration-200"
               whileHover={{ rotate: 5 }}
             >
@@ -100,8 +113,8 @@ export function RoleSelection() {
         {/* Care Receiver option */}
         <motion.button
           onClick={() => setUserRole('careReceiver')}
-          className="w-full p-6 bg-card rounded-2xl border-2 border-border hover:border-sahay-blue 
-                     transition-colors duration-200 text-left group focus:outline-none focus:ring-2 
+          className="w-full p-6 bg-card rounded-2xl border-2 border-border hover:border-sahay-blue
+                     transition-colors duration-200 text-left group focus:outline-none focus:ring-2
                      focus:ring-sahay-blue focus:ring-offset-2 focus:ring-offset-background
                      touch-manipulation"
           aria-label="I manage my own care"
@@ -113,7 +126,7 @@ export function RoleSelection() {
         >
           <div className="flex items-start gap-4">
             <motion.div
-              className="flex-shrink-0 w-14 h-14 rounded-xl bg-sahay-blue/10 flex items-center justify-center 
+              className="flex-shrink-0 w-14 h-14 rounded-xl bg-sahay-blue/10 flex items-center justify-center
                         group-hover:bg-sahay-blue transition-colors duration-200"
               whileHover={{ rotate: -5 }}
             >
