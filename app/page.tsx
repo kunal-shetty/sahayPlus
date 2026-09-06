@@ -1,14 +1,44 @@
-import { AppRouter } from '@/components/app-router'
+'use client'
 
-/**
- * Sahay+ Main Page
- * Human-centered medication management for families
- * 
- * The app uses client-side routing based on:
- * 1. User role (caregiver vs care receiver)
- * 2. Setup completion status
- * 3. Current medication state
- */
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useSahay } from '@/lib/sahay-context'
+import { LoadingScreen } from '@/components/loading-screen'
+
+const ONBOARDING_KEY = 'sahay_onboarding_complete'
+
 export default function Home() {
-  return <AppRouter />
+  const { user, isLoading, isDataLoading } = useSahay()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isLoading || isDataLoading) return
+
+    const hasCompletedOnboarding = localStorage.getItem(ONBOARDING_KEY) === 'true'
+
+    if (!hasCompletedOnboarding) {
+      router.push('/onboarding')
+      return
+    }
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    if (!user.care_relationship_id) {
+      router.push('/care-code')
+      return
+    }
+
+    if (user.role === 'caregiver') {
+      router.push('/caregiver')
+    } else if (user.role === 'care_receiver') {
+      router.push('/care-receiver')
+    } else {
+      router.push('/login')
+    }
+  }, [user, isLoading, isDataLoading, router])
+
+  return <LoadingScreen />
 }
