@@ -1,13 +1,26 @@
 'use client'
 
+/**
+ * @file contextual-notes.tsx
+ * @description The Contextual Notes system for Caregivers.
+ * Implements a "memory without burden" philosophy where notes are not permanent
+ * records but temporary markers of context (e.g., "Receiver felt dizzy today").
+ * Notes are linked to specific dates or medications and gradually fade in
+ * opacity before eventually being removed, preventing the cognitive load of
+ * managing an infinite log of outdated information.
+ */
+
 import { useState } from 'react'
 import { useSahay } from '@/lib/sahay-context'
 import { FileText, Plus, X, ArrowLeft } from 'lucide-react'
 
 /**
- * Contextual Notes
- * Memory without burden - notes tied to medications or days
- * Notes fade over time instead of accumulating
+ * ContextualNotes component.
+ * Provides an interface for creating, viewing, and removing temporary notes.
+ * Handles the fading logic based on the `fadingAt` timestamp.
+ *
+ * @param { { onClose: () => void } } props - Component props.
+ * @returns {JSX.Element} The notes management interface.
  */
 export function ContextualNotes({ onClose }: { onClose: () => void }) {
   const { data, addContextualNote, removeContextualNote } = useSahay()
@@ -16,13 +29,18 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
   const [linkedType, setLinkedType] = useState<'day' | 'medication'>('day')
   const [linkedMedId, setLinkedMedId] = useState<string | undefined>()
 
-  // Filter out faded notes (older than 7 days)
+  /** Filter out notes that have already passed their expiration date. */
   const now = new Date()
   const activeNotes = data.contextualNotes.filter((note) => {
     return new Date(note.fadingAt) > now
   })
 
-  // Calculate opacity based on how close to fading
+  /**
+   * Calculates visual opacity based on the remaining time before the note fades.
+   *
+   * @param {string} fadingAt - The ISO timestamp when the note should be removed.
+   * @returns {number} Opacity value between 0.4 and 1.0.
+   */
   const getNoteOpacity = (fadingAt: string) => {
     const fadeDate = new Date(fadingAt)
     const daysLeft = Math.ceil(
@@ -34,6 +52,10 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
     return 0.4
   }
 
+  /**
+   * Handles the creation of a new note.
+   * Determines whether the note is a general daily note or linked to a specific medication.
+   */
   const handleAddNote = () => {
     if (!noteText.trim()) return
 
@@ -49,6 +71,12 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
     setLinkedMedId(undefined)
   }
 
+  /**
+   * Formats a date string into a user-friendly relative label (e.g., Today, Yesterday).
+   *
+   * @param {string} dateStr - The ISO date string.
+   * @returns {string} The formatted date label.
+   */
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     const today = new Date()
@@ -67,6 +95,12 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
     })
   }
 
+  /**
+   * Retrieves the name of a medication given its ID.
+   *
+   * @param {string | undefined} medId - The ID of the medication.
+   * @returns {string | null} The medication name or null if not found.
+   */
   const getMedName = (medId: string | undefined) => {
     if (!medId) return null
     return data.medications.find((m) => m.id === medId)?.name
@@ -79,7 +113,7 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-4">
           <button
             onClick={onClose}
-            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
+            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center
                      hover:bg-secondary/80 transition-colors touch-manipulation
                      focus:outline-none focus:ring-2 focus:ring-ring"
             aria-label="Go back"
@@ -96,7 +130,7 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
       </header>
 
       <div className="flex-1 overflow-y-auto p-6 pb-24">
-        {/* Existing notes */}
+        {/* List of active notes */}
         {activeNotes.length === 0 && !isAdding ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
@@ -141,7 +175,7 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
                       </div>
                       <button
                         onClick={() => removeContextualNote(note.id)}
-                        className="w-8 h-8 rounded-lg bg-secondary/50 flex items-center justify-center 
+                        className="w-8 h-8 rounded-lg bg-secondary/50 flex items-center justify-center
                                  hover:bg-secondary transition-colors touch-manipulation
                                  focus:outline-none focus:ring-2 focus:ring-ring"
                         aria-label="Remove note"
@@ -155,21 +189,21 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        {/* Add note form */}
+        {/* New note composition form */}
         {isAdding && (
           <div className="bg-card border-2 border-sahay-sage rounded-xl p-4 mt-4">
             <textarea
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
               placeholder="Why did something change? What should you remember?"
-              className="w-full p-3 bg-secondary/50 border-0 rounded-lg text-foreground 
+              className="w-full p-3 bg-secondary/50 border-0 rounded-lg text-foreground
                        placeholder:text-muted-foreground resize-none
                        focus:outline-none focus:ring-2 focus:ring-sahay-sage"
               rows={3}
               autoFocus
             />
 
-            {/* Link options */}
+            {/* Linking options: Allows associating the note with a specific medication. */}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 onClick={() => {
@@ -196,12 +230,12 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
               ))}
             </div>
 
-            {/* Actions */}
+            {/* Form actions */}
             <div className="mt-4 flex gap-3">
               <button
                 onClick={handleAddNote}
                 disabled={!noteText.trim()}
-                className="flex-1 py-3 px-4 bg-primary text-primary-foreground font-medium 
+                className="flex-1 py-3 px-4 bg-primary text-primary-foreground font-medium
                          rounded-xl transition-all touch-manipulation
                          disabled:opacity-50 disabled:cursor-not-allowed
                          hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
@@ -213,7 +247,7 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
                   setIsAdding(false)
                   setNoteText('')
                 }}
-                className="py-3 px-4 bg-secondary text-foreground font-medium 
+                className="py-3 px-4 bg-secondary text-foreground font-medium
                          rounded-xl transition-all touch-manipulation
                          hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
               >
@@ -224,15 +258,15 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      {/* Add button */}
+      {/* Floating action button to trigger note creation. */}
       {!isAdding && (
         <div className="fixed bottom-6 left-0 right-0 px-6">
           <div className="max-w-md mx-auto">
             <button
               onClick={() => setIsAdding(true)}
-              className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold 
+              className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold
                        rounded-xl flex items-center justify-center gap-2 transition-all
-                       hover:opacity-90 shadow-lg touch-manipulation 
+                       hover:opacity-90 shadow-lg touch-manipulation
                        focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               <Plus className="w-5 h-5" />
