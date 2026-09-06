@@ -1,19 +1,33 @@
 'use client'
 
+/**
+ * @file onboarding.tsx
+ * @description The Caregiver Onboarding component.
+ * This component implements a streamlined, two-step onboarding process for new caregivers.
+ * Step 1: Collects the names of both the caregiver and the care receiver to personalize
+ * the user experience.
+ * Step 2: Guides the caregiver through adding their first medication, ensuring the
+ * app is functional immediately after setup.
+ *
+ * The design emphasizes simplicity and warmth, with a focused layout that reduces
+ * cognitive load by presenting only one primary action per screen.
+ */
+
 import { useState } from 'react'
 import { useSahay } from '@/lib/sahay-context'
 import { type TimeOfDay, timeOfDayLabels } from '@/lib/types'
 import { ArrowLeft, ArrowRight, Check, Sun, Cloud, Moon } from 'lucide-react'
 
+/**
+ * Type definition for the current step of the onboarding process.
+ */
 type OnboardingStep = 'names' | 'medication'
 
 /**
- * Caregiver Onboarding
- * Simple 2-step flow:
- * 1. Enter caregiver and care receiver names
- * 2. Add first medication
- * 
- * Design: One action per screen, large inputs, warm messaging
+ * CaregiverOnboarding component.
+ * Manages the multi-step flow for initializing a new care relationship in the app.
+ *
+ * @returns {JSX.Element} The onboarding interface.
  */
 export function CaregiverOnboarding() {
   const { data, setCaregiver, setCareReceiver, addMedication, logout } = useSahay()
@@ -30,6 +44,10 @@ export function CaregiverOnboarding() {
   const [medTime, setMedTime] = useState('')
   const [medNotes, setMedNotes] = useState('')
 
+  /**
+   * Validates and saves the names for both parties.
+   * Transitions the onboarding flow to the medication step.
+   */
   const handleNamesSubmit = () => {
     if (caregiverName.trim() && careReceiverName.trim()) {
       setCaregiver({
@@ -42,6 +60,10 @@ export function CaregiverOnboarding() {
     }
   }
 
+  /**
+   * Validates and adds the first medication.
+   * Completes the onboarding process by marking the caregiver's setup as complete.
+   */
   const handleMedicationSubmit = () => {
     if (medName.trim() && medDosage.trim()) {
       addMedication({
@@ -60,6 +82,10 @@ export function CaregiverOnboarding() {
     }
   }
 
+  /**
+   * Navigates backward through the onboarding steps.
+   * If at the first step, it triggers a logout.
+   */
   const handleBack = () => {
     if (step === 'medication') {
       setStep('names')
@@ -68,6 +94,7 @@ export function CaregiverOnboarding() {
     }
   }
 
+  /** Mapping of time of day slugs to their corresponding Lucide icons. */
   const timeIcons: Record<TimeOfDay, typeof Sun> = {
     morning: Sun,
     afternoon: Cloud,
@@ -80,7 +107,7 @@ export function CaregiverOnboarding() {
       <header className="flex items-center gap-4 p-4 border-b border-border">
         <button
           onClick={handleBack}
-          className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
+          className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center
                      hover:bg-secondary/80 transition-colors touch-manipulation
                      focus:outline-none focus:ring-2 focus:ring-sahay-sage"
           aria-label="Go back"
@@ -292,7 +319,7 @@ export function CaregiverOnboarding() {
             <button
               onClick={handleNamesSubmit}
               disabled={!caregiverName.trim() || !careReceiverName.trim()}
-              className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold 
+              className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold
                        rounded-xl flex items-center justify-center gap-2 transition-all
                        hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed
                        touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage focus:ring-offset-2"
@@ -306,7 +333,7 @@ export function CaregiverOnboarding() {
             <button
               onClick={handleMedicationSubmit}
               disabled={!medName.trim() || !medDosage.trim()}
-              className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold 
+              className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold
                        rounded-xl flex items-center justify-center gap-2 transition-all
                        hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed
                        touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage focus:ring-offset-2"
