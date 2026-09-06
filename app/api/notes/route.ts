@@ -1,7 +1,19 @@
+/**
+ * @file route.ts
+ * @description API routes for managing contextual notes.
+ * Provides endpoints to list and create short-term notes linked to specific days or medications.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// GET /api/notes — List contextual notes
+/**
+ * GET /api/notes
+ * Retrieves a list of contextual notes.
+ *
+ * @param {NextRequest} req - The incoming request. Optionally includes `care_relationship_id` as a query parameter.
+ * @returns {Promise<NextResponse>} JSON response containing the list of notes, sorted by creation date.
+ */
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -28,7 +40,13 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/notes — Add a contextual note
+/**
+ * POST /api/notes
+ * Adds a new contextual note and creates a corresponding timeline event.
+ *
+ * @param {NextRequest} req - The incoming request containing the note details in the body.
+ * @returns {Promise<NextResponse>} JSON response with the created note object.
+ */
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -75,7 +93,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        // Add timeline event
+        // Automatically add a corresponding event to the timeline
         await supabase.from("timeline_events").insert({
             care_relationship_id,
             type: "note_added",
