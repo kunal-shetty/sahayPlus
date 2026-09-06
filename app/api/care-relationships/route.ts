@@ -1,7 +1,21 @@
+/**
+ * @file route.ts
+ * @description API routes for managing care relationships.
+ * Provides endpoints to list and create links between caregivers and care receivers.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// GET /api/care-relationships — List my care circles
+/**
+ * GET /api/care-relationships
+ * Retrieves a list of care relationships.
+ * If a user_id is provided as a query parameter, it filters for relationships
+ * where that user is either the primary caregiver, the receiver, or an alternative caregiver.
+ *
+ * @param {NextRequest} req - The incoming request.
+ * @returns {Promise<NextResponse>} JSON response containing the list of relationships.
+ */
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -28,7 +42,13 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/care-relationships — Create a new care circle
+/**
+ * POST /api/care-relationships
+ * Creates a new care relationship link in the database.
+ *
+ * @param {NextRequest} req - The incoming request containing the relationship data in the body.
+ * @returns {Promise<NextResponse>} JSON response with the created relationship object.
+ */
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
