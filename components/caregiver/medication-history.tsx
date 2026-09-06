@@ -1,22 +1,56 @@
 'use client'
 
+/**
+ * @file medication-history.tsx
+ * @description The Medication History component for Caregivers.
+ * This component provides a detailed view of medication adherence and performance.
+ * It tracks total days of care, current and best streaks, and calculates an
+ * adherence rate for each medication. It also presents a chronological list of
+ * recent activity from the care timeline.
+ *
+ * The goal is to provide the caregiver with data-driven insights into the care
+ * receiver's medication patterns, helping them identify issues and celebrate
+ * consistency.
+ */
+
 import { motion } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
 import { type Medication, type TimelineEvent } from '@/lib/types'
 import { ChevronLeft, Calendar, TrendingUp, Pill } from 'lucide-react'
 
+/**
+ * Props for the MedicationHistory component.
+ *
+ * @interface MedicationHistoryProps
+ * @property {() => void} onClose - Callback function to close the history view and return to the main dashboard.
+ */
 interface MedicationHistoryProps {
   onClose: () => void
 }
 
 /**
- * Medication History & Performance Stats
- * NEW FEATURE: View medication adherence history, streaks, and performance over time
+ * MedicationHistory component.
+ * Renders a comprehensive performance dashboard including overall stats,
+ * per-medication adherence bars, and a recent activity log.
+ *
+ * @param {MedicationHistoryProps} props - Component props.
+ * @returns {JSX.Element} The medication history and performance interface.
  */
 export function MedicationHistory({ onClose }: MedicationHistoryProps) {
   const { data } = useSahay()
 
-  // Calculate stats for each medication
+  /**
+   * Calculates performance statistics for a specific medication.
+   *
+   * @param {Medication} med - The medication object to analyze.
+   * @returns {{
+   *   totalTaken: number,
+   *   streak: number,
+   *   lastTaken: Date | null,
+   *   daysAgo: number | null,
+   *   adherenceRate: number
+   * }} The calculated statistics for the medication.
+   */
   const getMedicationStats = (med: Medication) => {
     const events = data.timeline.filter(
       (e) => e.medicationId === med.id && e.type === 'medication_taken'
@@ -39,7 +73,11 @@ export function MedicationHistory({ onClose }: MedicationHistoryProps) {
     }
   }
 
-  // Get last 7 days of timeline events
+  /**
+   * Filters and sorts the care timeline to get the most recent relevant events.
+   *
+   * @returns {TimelineEvent[]} A list of up to 15 recent timeline events from the last 7 days.
+   */
   const getRecentEvents = () => {
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
