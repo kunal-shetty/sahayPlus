@@ -33,10 +33,20 @@ import { api } from './api'
 import { showNotification } from './notifications'
 import { supabase } from './supabase-client'
 
+/**
+ * @file sahay-context.tsx
+ * @description Central state management for the Sahay+ application.
+ * This context provider handles authentication, data synchronization with the API,
+ * and provides a global state for medications, timeline events, wellness tracking,
+ * and caregiver-receiver relationships.
+ */
+
 // localStorage key for persisting auth
 const AUTH_STORAGE_KEY = 'sahay_user'
 
-// Auth user type
+/**
+ * Represents the authenticated user session.
+ */
 export interface SahayUser {
   id: string
   email: string
@@ -46,101 +56,154 @@ export interface SahayUser {
   care_relationship_id?: string
 }
 
+/**
+ * The shape of the global state and methods provided by the SahayProvider.
+ */
 interface SahayContextValue {
   // State
+  /** The current application state including medications, timeline, and profiles. */
   data: AppData
+  /** Whether the initial authentication check is loading. */
   isLoading: boolean
+  /** Whether background data from the API is currently being fetched. */
   isDataLoading: boolean
 
   // Auth
+  /** The currently authenticated user, or null if not logged in. */
   user: SahayUser | null
+  /** Authenticates a user and initializes the session. */
   login: (user: any, careRelationship: any) => void
+  /** Logs out the current user and clears state. */
   logout: () => void
+  /** Links a care receiver to a caregiver using a shared care code. */
   linkCareCode: (code: string) => Promise<void>
 
   // Profile management
+  /** Updates the caregiver's profile information. */
   setCaregiver: (profile: CaregiverProfile) => void
+  /** Updates the care receiver's profile information. */
   setCareReceiver: (profile: CareReceiverProfile) => void
+  /** Updates the caregiver's current availability status (e.g., 'active', 'away'). */
   updateCaregiverStatus: (status: CareRoleStatus, awayUntil?: string) => void
+  /** Sets the times of day when the care receiver is typically independent. */
   setCareReceiverIndependence: (times: TimeOfDay[]) => void
 
   // Medication management
+  /** Adds a new medication to the tracking list. */
   addMedication: (med: Omit<Medication, 'id' | 'taken' | 'lastUpdated'>) => void
+  /** Updates an existing medication's details. */
   updateMedication: (
     id: string,
     updates: Partial<Omit<Medication, 'id'>>
   ) => void
+  /** Removes a medication from the system. */
   removeMedication: (id: string) => void
+  /** Marks a medication as taken or skipped. */
   markMedicationTaken: (id: string, taken: boolean) => void
+  /** Updates the number of days remaining before a medication refill is needed. */
   updateRefillStatus: (id: string, daysLeft: number) => void
 
   // Timeline & notes
+  /** Adds a general event to the care timeline. */
   addTimelineEvent: (
     type: TimelineEventType,
     medicationId?: string,
     note?: string
   ) => void
+  /** Adds a short-term contextual note linked to a day or medication. */
   addContextualNote: (
     text: string,
     linkedTo?: { type: 'medication' | 'day'; id?: string }
   ) => void
+  /** Deletes a contextual note. */
   removeContextualNote: (id: string) => void
 
   // Pharmacist
+  /** Updates the pharmacist's contact information. */
   updatePharmacist: (contact: PharmacistContact) => void
+  /** Adds a note from the pharmacist regarding a specific medication. */
   addPharmacistNote: (medicationId: string, note: string) => void
 
   // Daily closure
+  /** Finalizes the care day by summarizing medication adherence. */
   closeDay: () => void
+  /** Checks if the care day has already been closed. */
   isDayClosed: () => boolean
 
   // Check-in suggestions
+  /** Returns a suggestion message for the caregiver to check in, or null if not appropriate. */
   getSuggestedCheckIn: () => string | null
+  /** Dismisses the current check-in suggestion. */
   dismissCheckInSuggestion: () => void
 
   // Emergency contacts
+  /** Adds a new emergency contact. */
   addEmergencyContact: (contact: Omit<EmergencyContact, 'id'>) => void
+  /** Removes an emergency contact. */
   removeEmergencyContact: (id: string) => void
+  /** Sets a specific contact as the primary emergency contact. */
   setPrimaryContact: (id: string) => void
 
   // Wellness tracking
+  /** Logs a wellness level and optional note for the day. */
   logWellness: (level: WellnessLevel, note?: string) => void
+  /** Retrieves the wellness entry for today. */
   getTodayWellness: () => WellnessEntry | null
+  /** Retrieves a trend of recent wellness entries. */
   getWellnessTrend: () => WellnessEntry[]
 
   // Messaging
+  /** Sends a message to the other party in the care relationship. */
   sendMessage: (text: string, isQuickMessage?: boolean) => void
+  /** Marks a specific message as read. */
   markMessageRead: (id: string) => void
+  /** Calculates the number of unread messages. */
   getUnreadCount: () => number
 
   // Analytics helpers
+  /** Gets adherence stats (streak, total) for a specific medication. */
   getMedicationStats: (medId: string) => { streak: number; total: number }
+  /** Calculates adherence rates for the last 7 days. */
   getWeeklyAdherence: () => { day: string; taken: number; total: number }[]
 
   // Safety check
+  /** Triggers a safety check request (either automatically via motion or manually). */
   triggerSafetyCheck: (by: 'motion' | 'manual') => void
+  /** Dismisses an active safety check. */
   dismissSafetyCheck: () => void
+  /** Escalates a safety check to the caregiver if the receiver doesn't respond. */
   escalateSafetyCheck: () => void
 
   // New features
+  /** Marks the daily wellness check-in as complete. */
   completeDailyCheckIn: () => void
+  /** Sends an urgent help request to the caregiver. */
   requestHelp: () => void
+  /** Initiates a care handover to another person. */
   startHandover: (targetName: string, endDate: string) => void
+  /** Ends an active care handover. */
   endHandover: () => void
+  /** Generates human-readable insights based on timeline patterns. */
   getHumanInsights: () => string[]
+  /** Generates a summary of care for a doctor's visit. */
   getDoctorPrepSummary: () => string
+  /** Dismisses the notification that data has changed. */
   dismissChangeIndicator: () => void
 
   // Utility
+  /** Resets the application state to defaults. */
   resetApp: () => void
 
-  // Manual refresh of medication/timeline data (e.g. on focus, on pull-to-refresh)
+  /** Manually refreshes the care relationship data from the API. */
   refreshRelationshipData: () => Promise<void>
 }
 
 const SahayContext = createContext<SahayContextValue | null>(null)
 
-// Custom hook to use the context
+/**
+ * Custom hook to access the Sahay global state.
+ * @throws {Error} If used outside of a SahayProvider.
+ */
 export function useSahay(): SahayContextValue {
   const context = useContext(SahayContext)
   if (!context) {
@@ -149,7 +212,14 @@ export function useSahay(): SahayContextValue {
   return context
 }
 
-// Helper: safely call API and swallow errors (for non-critical side effects)
+/**
+ * Helper to execute an API call and safely handle errors, returning null on failure.
+ * Useful for non-critical side effects where a crash would be disruptive.
+ *
+ * @template T The expected return type.
+ * @param {() => Promise<T>} fn - The API call to execute.
+ * @returns {Promise<T | null>} The result of the call or null if it failed.
+ */
 async function safeApiCall<T>(fn: () => Promise<T>): Promise<T | null> {
   try {
     return await fn()
@@ -159,6 +229,11 @@ async function safeApiCall<T>(fn: () => Promise<T>): Promise<T | null> {
   }
 }
 
+/**
+ * Retrieves the current active handover ID for a given relationship.
+ * @param {string} crId - The care relationship ID.
+ * @returns {Promise<string | null>} The handover ID or null if none active.
+ */
 async function currentHandoverId(crId: string): Promise<string | null> {
   try {
     const res = await api.handover.current(crId)
@@ -168,6 +243,12 @@ async function currentHandoverId(crId: string): Promise<string | null> {
   }
 }
 
+/**
+ * Resolves a safety check ID based on the relationship and the trigger timestamp.
+ * @param {string} crId - The care relationship ID.
+ * @param {string} triggeredAt - The ISO timestamp when the check was triggered.
+ * @returns {Promise<string | null>} The safety check ID or null.
+ */
 async function resolveSafetyCheckId(crId: string, triggeredAt: string): Promise<string | null> {
   try {
     const res = await fetch(`/api/safety-checks?care_relationship_id=${crId}&triggered_at=${encodeURIComponent(triggeredAt)}`)
@@ -179,7 +260,11 @@ async function resolveSafetyCheckId(crId: string, triggeredAt: string): Promise<
   }
 }
 
-// Provider component — calls API routes, falls back to local state
+/**
+ * Provider component that wraps the application and manages global state.
+ * It handles auth restoration from localStorage, data synchronization with the API,
+ * and provides the business logic for all care-related actions.
+ */
 export function SahayProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(defaultAppData)
   const [isLoading, setIsLoading] = useState(true)
@@ -187,11 +272,14 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SahayUser | null>(null)
   const [caregiverId, setCaregiverId] = useState<string | null>(null)
 
-  // Helper to get user ID safely
+  /** Safely returns the current user ID. */
   const getUserId = useCallback(() => user?.id || '', [user])
+  /** Safely returns the current care relationship ID. */
   const getCareRelId = useCallback(() => user?.care_relationship_id || '', [user])
 
-  // ─── Auth: restore from localStorage on mount ─────────────────────
+  /**
+   * Restores the user session from localStorage on initial mount.
+   */
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(AUTH_STORAGE_KEY)
@@ -199,7 +287,6 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         try {
           const parsed = JSON.parse(stored) as SahayUser
           setUser(parsed)
-          // Set role from stored user
           setData((prev) => ({
             ...prev,
             userRole: parsed.role === 'caregiver' ? 'caregiver' : 'careReceiver',
@@ -212,11 +299,10 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  // ─── Re-fetch the user row from the DB ────────────────────────────
-  // Used to pick up a new care_relationship_id that was created by the
-  // caregiver's device while this device was on the care-code screen.
-  // Goes through the server API (service-role client) because the browser-
-  // side Supabase client has no auth session and can't read users via RLS.
+  /**
+   * Re-fetches the user profile and relationship from the DB.
+   * This ensures the client picks up relationship changes made on other devices.
+   */
   const refreshUserFromDb = useCallback(async () => {
     if (!user?.id) return
     try {
@@ -238,7 +324,6 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         care_relationship_id: rel ? String(rel.id) : user.care_relationship_id,
       }
 
-      // Only update state if something actually changed — avoids extra renders
       if (
         updated.care_relationship_id !== user.care_relationship_id ||
         updated.care_code !== user.care_code ||
@@ -252,7 +337,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [user])
 
-  // ─── Login ────────────────────────────────────────────────────────
+  /**
+   * Handles the login process by setting the user session and initializing state.
+   */
   const login = useCallback((userData: any, careRelationship: any) => {
     const u: SahayUser = {
       id: String(userData.id),
@@ -264,7 +351,6 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
     setUser(u)
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(u))
-    // Reset to clean state, then set profile fields — API data will load via the useEffect
     setData({
       ...defaultAppData,
       userRole: u.role === 'caregiver' ? 'caregiver' : 'careReceiver',
@@ -273,14 +359,18 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  // ─── Logout ───────────────────────────────────────────────────────
+  /**
+   * Logs out the user by clearing session and state.
+   */
   const logout = useCallback(() => {
     setUser(null)
     localStorage.removeItem(AUTH_STORAGE_KEY)
     setData(defaultAppData)
   }, [])
 
-  // ─── Link Care Code ───────────────────────────────────────────────
+  /**
+   * Links the current user to a care relationship using a provided care code.
+   */
   const linkCareCode = useCallback(async (code: string) => {
     if (!user) throw new Error('Not logged in')
     const res = await fetch('/api/care-relationships/link', {
@@ -298,7 +388,6 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     setUser(updatedUser)
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser))
 
-    // Set care receiver name
     if (data.care_receiver) {
       setData((prev) => ({
         ...prev,
@@ -307,7 +396,10 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [user])
 
-  // ─── Load data from API when user + care_relationship available ───
+  /**
+   * Effect that loads all necessary data from the API when a user is linked to a relationship.
+   * Fetches medications, timeline, notes, wellness, closures, messages, and emergency contacts.
+   */
   useEffect(() => {
     if (!user?.care_relationship_id) return
 
@@ -330,10 +422,6 @@ export function SahayProvider({ children }: { children: ReactNode }) {
             api.careRelationships.get(crId),
           ])
 
-        // Resolve the other party's user row so we can show their name on
-        // the caregiver's home (and the caregiver's name on the care
-        // receiver's home).  Query via the new /me endpoint with the
-        // relationship's user id.
         let otherPartyName: string | undefined
         if (relRes.status === 'fulfilled') {
           const rel = relRes.value.relationship
@@ -352,14 +440,12 @@ export function SahayProvider({ children }: { children: ReactNode }) {
                   otherPartyName = otherPayload?.user?.name
                 }
               } catch {
-                // best-effort — UI will fall back to a generic name
+                // best-effort
               }
             }
           }
         }
 
-        // Fetch today's medication_logs so the caregiver sees the
-        // "taken" status that the care receiver logged on their device.
         const today = new Date().toISOString().split('T')[0]
         let takenMedIds = new Set<string>()
         try {
@@ -378,7 +464,6 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         }
 
         setData((prev) => {
-          // Apply taken status from today's logs
           const medsWithTaken = (medsRes.status === 'fulfilled'
             ? medsRes.value.medications.map((m: any) => ({
               id: String(m.id),
@@ -463,8 +548,6 @@ export function SahayProvider({ children }: { children: ReactNode }) {
                 isPrimary: c.is_primary,
               }))
               : prev.emergencyContacts,
-            // Set the other party's name so the UI shows "John's Care"
-            // on the caregiver's home and "Alice's care" on the receiver's.
             ...(user!.role === 'caregiver'
               ? { careReceiver: { name: otherPartyName || 'Care Receiver', preferVoiceConfirm: false } }
               : { caregiver: prev.caregiver || (otherPartyName ? { name: otherPartyName, setupComplete: true, roleStatus: 'active' as CareRoleStatus } : null) }
@@ -480,16 +563,23 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     loadData()
   }, [user?.care_relationship_id, user?.id, user?.role])
 
-  // ─── Profile management (local + API) ─────────────────────────────
-
+  /**
+   * Updates the caregiver's profile in local state.
+   */
   const setCaregiver = useCallback((profile: CaregiverProfile) => {
     setData((prev) => ({ ...prev, caregiver: profile }))
   }, [])
 
+  /**
+   * Updates the care receiver's profile in local state.
+   */
   const setCareReceiver = useCallback((profile: CareReceiverProfile) => {
     setData((prev) => ({ ...prev, careReceiver: profile }))
   }, [])
 
+  /**
+   * Updates the caregiver's availability status both locally and in the DB.
+   */
   const updateCaregiverStatus = useCallback(
     (status: CareRoleStatus, awayUntil?: string) => {
       setData((prev) => ({
@@ -511,6 +601,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     [getCareRelId]
   )
 
+  /**
+   * Sets the times of day when the care receiver is independent.
+   */
   const setCareReceiverIndependence = useCallback((times: TimeOfDay[]) => {
     setData((prev) => ({
       ...prev,
@@ -528,8 +621,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [getCareRelId])
 
-  // ─── Medication management ────────────────────────────────────────
-
+  /**
+   * Adds a new medication to the tracking list and syncs with the API.
+   */
   const addMedication = useCallback(
     (med: Omit<Medication, 'id' | 'taken' | 'lastUpdated'>) => {
       const tempId = generateId()
@@ -570,6 +664,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     [getCareRelId]
   )
 
+  /**
+   * Updates an existing medication's details and syncs with the API.
+   */
   const updateMedication = useCallback(
     (id: string, updates: Partial<Omit<Medication, 'id'>>) => {
       setData((prev) => ({
@@ -599,6 +696,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     []
   )
 
+  /**
+   * Removes a medication from the list.
+   */
   const removeMedication = useCallback((id: string) => {
     setData((prev) => ({
       ...prev,
@@ -608,6 +708,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     safeApiCall(() => api.medications.remove(id))
   }, [])
 
+  /**
+   * Marks a medication as taken or skipped and triggers corresponding API calls and notifications.
+   */
   const markMedicationTaken = useCallback((id: string, taken: boolean) => {
     const med = data.medications.find((m) => m.id === id)
 
@@ -633,10 +736,8 @@ export function SahayProvider({ children }: { children: ReactNode }) {
 
     const userId = getUserId()
     if (taken) {
-      // 1. Mark as taken
       safeApiCall(() => api.medications.take(id, userId))
 
-      // 2. Notify Caregiver via DB
       if (caregiverId) {
         const medName = med?.name || 'Medicine'
         const careReceiverName = data.careReceiver?.name || 'Care Receiver'
@@ -653,6 +754,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [getUserId, caregiverId, data.careReceiver?.name, data.medications])
 
+  /**
+   * Updates the refill countdown for a medication.
+   */
   const updateRefillStatus = useCallback((id: string, daysLeft: number) => {
     setData((prev) => ({
       ...prev,
@@ -665,8 +769,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     safeApiCall(() => api.medications.update(id, { refill_days_left: daysLeft }))
   }, [])
 
-  // ─── Timeline & notes ─────────────────────────────────────────────
-
+  /**
+   * Adds a general event to the care timeline.
+   */
   const addTimelineEvent = useCallback(
     (type: TimelineEventType, medicationId?: string, note?: string) => {
       const med = medicationId
@@ -689,6 +794,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     [data.medications, data.userRole]
   )
 
+  /**
+   * Adds a short-term contextual note linked to a day or medication.
+   */
   const addContextualNote = useCallback(
     (text: string, linkedTo?: { type: 'medication' | 'day'; id?: string }) => {
       const now = new Date()
@@ -729,6 +837,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     [getCareRelId, getUserId]
   )
 
+  /**
+   * Deletes a contextual note.
+   */
   const removeContextualNote = useCallback((id: string) => {
     setData((prev) => ({
       ...prev,
@@ -737,8 +848,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     safeApiCall(() => api.notes.remove(id))
   }, [])
 
-  // ─── Pharmacist ───────────────────────────────────────────────────
-
+  /**
+   * Updates the pharmacist's contact details.
+   */
   const updatePharmacist = useCallback((contact: PharmacistContact) => {
     setData((prev) => ({
       ...prev,
@@ -746,6 +858,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  /**
+   * Adds a note from the pharmacist about a specific medication.
+   */
   const addPharmacistNote = useCallback((medicationId: string, note: string) => {
     setData((prev) => {
       const newEvent: TimelineEvent = {
@@ -770,8 +885,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     safeApiCall(() => api.medications.update(medicationId, { pharmacist_note: note }))
   }, [])
 
-  // ─── Daily closure ────────────────────────────────────────────────
-
+  /**
+   * Closes the care day and records a summary of medication adherence.
+   */
   const closeDay = useCallback(() => {
     const today = new Date().toISOString().split('T')[0]
     setData((prev) => {
@@ -788,6 +904,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         type: 'day_closed',
         timestamp: new Date().toISOString(),
         note: `Day closed with ${takenCount}/${prev.medications.length} taken`,
+        actor: 'caregiver',
       }
 
       const crId = getCareRelId()
@@ -812,13 +929,17 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     })
   }, [getCareRelId, getUserId])
 
+  /**
+   * Returns true if the care day has been closed.
+   */
   const isDayClosed = useCallback(() => {
     const today = new Date().toISOString().split('T')[0]
     return (data.dayClosures || []).some((c) => c.date === today)
   }, [data.dayClosures])
 
-  // ─── Check-in suggestions (pure getter) ───────────────────────────
-
+  /**
+   * Pure getter that determines if the caregiver should be prompted to check in.
+   */
   const getSuggestedCheckIn = useCallback(() => {
     if (data.userRole !== 'caregiver') return null
     const yesterday = new Date()
@@ -848,6 +969,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     return `You might want to check in with ${careReceiverName}`
   }, [data])
 
+  /**
+   * Dismisses the check-in suggestion and updates the cooldown timer.
+   */
   const dismissCheckInSuggestion = useCallback(() => {
     setData((prev) => ({
       ...prev,
@@ -855,8 +979,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  // ─── Emergency contacts ───────────────────────────────────────────
-
+  /**
+   * Adds a new emergency contact and syncs with the API.
+   */
   const addEmergencyContact = useCallback(
     (contact: Omit<EmergencyContact, 'id'>) => {
       const tempId = generateId()
@@ -888,6 +1013,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     [getCareRelId]
   )
 
+  /**
+   * Removes an emergency contact.
+   */
   const removeEmergencyContact = useCallback((id: string) => {
     setData((prev) => ({
       ...prev,
@@ -896,6 +1024,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     safeApiCall(() => api.emergencyContacts.remove(id))
   }, [])
 
+  /**
+   * Sets a specific emergency contact as the primary one.
+   */
   const setPrimaryContact = useCallback((id: string) => {
     setData((prev) => ({
       ...prev,
@@ -906,8 +1037,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  // ─── Wellness tracking ────────────────────────────────────────────
-
+  /**
+   * Logs a daily wellness entry.
+   */
   const logWellness = useCallback((level: WellnessLevel, note?: string) => {
     const today = new Date().toISOString().split('T')[0]
     const tempId = generateId()
@@ -943,19 +1075,26 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [getCareRelId, getUserId])
 
+  /**
+   * Retrieves the wellness entry for today.
+   */
   const getTodayWellness = useCallback(() => {
     const today = new Date().toISOString().split('T')[0]
     return (data.wellnessEntries || []).find((e) => e.date === today) || null
   }, [data.wellnessEntries])
 
+  /**
+   * Retrieves a trend of the last 7 wellness entries.
+   */
   const getWellnessTrend = useCallback(() => {
     return (data.wellnessEntries || [])
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 7)
   }, [data.wellnessEntries])
 
-  // ─── Messaging ────────────────────────────────────────────────────
-
+  /**
+   * Sends a message to the other party in the care relationship.
+   */
   const sendMessage = useCallback(
     (text: string, isQuickMessage = false) => {
       const tempId = generateId()
@@ -993,6 +1132,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     [data.userRole, getCareRelId, getUserId]
   )
 
+  /**
+   * Marks a message as read.
+   */
   const markMessageRead = useCallback((id: string) => {
     setData((prev) => ({
       ...prev,
@@ -1003,6 +1145,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     safeApiCall(() => api.messages.markRead(id))
   }, [])
 
+  /**
+   * Calculates the total count of unread messages from the other party.
+   */
   const getUnreadCount = useCallback(() => {
     const myRole = data.userRole
     return (data.messages || []).filter(
@@ -1010,8 +1155,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     ).length
   }, [data.messages, data.userRole])
 
-  // ─── Analytics helpers (pure getters) ─────────────────────────────
-
+  /**
+   * Pure getter that calculates adherence rates for the last 7 days.
+   */
   const getWeeklyAdherence = useCallback(() => {
     const days: { day: string; taken: number; total: number }[] = []
     for (let i = 6; i >= 0; i--) {
@@ -1028,6 +1174,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     return days
   }, [data.dayClosures, data.medications.length])
 
+  /**
+   * Pure getter that retrieves stats for a specific medication.
+   */
   const getMedicationStats = useCallback(
     (medId: string) => {
       const med = data.medications.find((m) => m.id === medId)
@@ -1039,14 +1188,16 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     [data.medications]
   )
 
-  // ─── Reset ────────────────────────────────────────────────────────
-
+  /**
+   * Resets the global application state.
+   */
   const resetApp = useCallback(() => {
     setData(defaultAppData)
   }, [])
 
-  // ─── Safety check ─────────────────────────────────────────────────
-
+  /**
+   * Triggers a safety check. If manual, notifies the caregiver.
+   */
   const triggerSafetyCheck = useCallback((by: 'motion' | 'manual') => {
     setData((prev) => {
       const newEvent: TimelineEvent = {
@@ -1075,6 +1226,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [getCareRelId, caregiverId])
 
+  /**
+   * Dismisses an active safety check and notifies the backend.
+   */
   const dismissSafetyCheck = useCallback(() => {
     setData((prev) => {
       const newEvent: TimelineEvent = {
@@ -1102,6 +1256,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [getCareRelId, data.safetyCheck])
 
+  /**
+   * Escalates a safety check to the caregiver via system notification.
+   */
   const escalateSafetyCheck = useCallback(() => {
     setData((prev) => {
       const newEvent: TimelineEvent = {
@@ -1129,8 +1286,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [caregiverId, data.careReceiver?.name])
 
-  // ─── Daily check-in ───────────────────────────────────────────────
-
+  /**
+   * Marks the daily wellness check-in as complete and notifies the caregiver.
+   */
   const completeDailyCheckIn = useCallback(() => {
     setData((prev) => {
       const newEvent: TimelineEvent = {
@@ -1157,6 +1315,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [caregiverId, data.careReceiver?.name])
 
+  /**
+   * Sends an urgent help request to the caregiver.
+   */
   const requestHelp = useCallback(() => {
     setData((prev) => {
       const newEvent: TimelineEvent = {
@@ -1179,8 +1340,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [caregiverId, data.careReceiver?.name])
 
-  // ─── Handover ─────────────────────────────────────────────────────
-
+  /**
+   * Initiates a care handover to another designated person.
+   */
   const startHandover = useCallback((targetName: string, endDate: string) => {
     setData((prev) => {
       const newEvent: TimelineEvent = {
@@ -1213,6 +1375,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [getCareRelId, getUserId])
 
+  /**
+   * Terminates an active care handover.
+   */
   const endHandover = useCallback(() => {
     setData((prev) => {
       const newEvent: TimelineEvent = {
@@ -1243,8 +1408,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [getCareRelId, getUserId])
 
-  // ─── Pattern Insights (pure getter) ───────────────────────────────
-
+  /**
+   * Pure getter that generates human-readable insights based on timeline patterns.
+   */
   const getHumanInsights = useCallback(() => {
     const insights: string[] = []
     const timeline = data.timeline
@@ -1265,8 +1431,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     return insights
   }, [data.timeline, data.medications])
 
-  // ─── Doctor Prep (pure getter) ────────────────────────────────────
-
+  /**
+   * Pure getter that generates a summary of care events and changes for a doctor's visit.
+   */
   const getDoctorPrepSummary = useCallback(() => {
     const timeline = data.timeline
     const notes = data.contextualNotes
@@ -1285,6 +1452,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     return summary
   }, [data.timeline, data.contextualNotes])
 
+  /**
+   * Dismisses the notification indicating that data has changed.
+   */
   const dismissChangeIndicator = useCallback(() => {
     setData((prev) => ({
       ...prev,
@@ -1292,8 +1462,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  // ─── Safety check auto-escalation timer ───────────────────────────
-
+  /**
+   * Effect that manages the safety check auto-escalation timer.
+   */
   useEffect(() => {
     if (data.safetyCheck.status === 'pending_check') {
       const timer = setTimeout(() => {
@@ -1304,7 +1475,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [data.safetyCheck.status, escalateSafetyCheck])
 
-  // ─── Realtime Notifications (Caregiver Side) ──────────────────────
+  /**
+   * Effect that sets up a Supabase realtime channel for caregiver notifications.
+   */
   useEffect(() => {
     if (!user || user.role !== 'caregiver') return
 
@@ -1335,13 +1508,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id, user?.role])
 
-  // ─── Poll: Care Receiver gets linked ────────────────────────
-  // When a caregiver enters the care code on their device, the link API
-  // INSERTs a row into care_relationships.  The care receiver's device
-  // doesn't have a Supabase auth session, so realtime channels are blocked
-  // by RLS.  We poll the server endpoint every 3s while the care-receiver
-  // is on the care-code screen, and also re-fetch on focus/visibility so
-  // coming back to the tab clears the screen immediately.
+  /**
+   * Effect that polls the server for relationship link updates for the care receiver.
+   */
   useEffect(() => {
     if (!user || user.role !== 'care_receiver') return
     if (user.care_relationship_id) return // already linked — no need to poll
@@ -1350,7 +1519,6 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       refreshUserFromDb()
     }
 
-    // Fire one immediately so a returning user doesn't wait 3s
     poll()
     const interval = setInterval(poll, 3000)
     window.addEventListener('focus', poll)
@@ -1363,11 +1531,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id, user?.role, user?.care_relationship_id, refreshUserFromDb])
 
-  // ─── Poll: Caregiver sees care-receiver's actions ─────────────
-  // The caregiver's UI doesn't have realtime either (no auth session),
-  // so we re-fetch medication logs + timeline every 10s while a
-  // relationship is active.  This is what makes "medication taken"
-  // show up on the caregiver's screen without a manual refresh.
+  /**
+   * Effect that periodically refreshes medication and timeline data for the caregiver.
+   */
   const refreshRelationshipData = useCallback(async () => {
     if (!user?.care_relationship_id) return
     const crId = user.care_relationship_id
@@ -1424,8 +1590,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.care_relationship_id, refreshRelationshipData])
 
-  // ─── Context value ────────────────────────────────────────────────
-
+  /**
+   * The final context value provided to all consuming components.
+   */
   const value: SahayContextValue = {
     data,
     isLoading,
