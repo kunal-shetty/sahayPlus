@@ -1,14 +1,29 @@
 'use client'
 
+/**
+ * @file email-login.tsx
+ * @description The Email Login component for Sahay+.
+ * This component manages the primary authentication entry point for the application.
+ * It implements a two-step login/signup flow:
+ * 1. Email Identification: The user enters their email. The system checks if a
+ *    profile already exists.
+ * 2. Profile Creation (for new users): If the user is new, they are prompted to
+ *    enter their name and select their role (Caregiver or Care Receiver).
+ *
+ * The interface is designed to be welcoming and accessible, utilizing smooth
+ * animations and clear visual cues to guide users through the authentication process.
+ */
+
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Heart, Mail, User, ArrowRight, Users, Loader2 } from 'lucide-react'
 import { useSahay } from '@/lib/sahay-context'
 
 /**
- * Email Login Screen
- * Step 1: Enter email
- * Step 2 (new users): Enter name + select role
+ * EmailLogin component.
+ * Handles the authentication flow including email verification and role selection.
+ *
+ * @returns {JSX.Element} The authentication interface.
  */
 export function EmailLogin() {
     const { login } = useSahay()
@@ -19,6 +34,11 @@ export function EmailLogin() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
 
+    /**
+     * Processes the initial email submission.
+     * It attempts to log in existing users directly or directs new users to the
+     * details step.
+     */
     const handleEmailSubmit = async () => {
         if (!email.trim()) return
         setIsLoading(true)
@@ -49,6 +69,10 @@ export function EmailLogin() {
         }
     }
 
+    /**
+     * Finalizes the signup process for new users.
+     * Submits the name and selected role to the backend to create a new user profile.
+     */
     const handleSignup = async () => {
         if (!name.trim() || !role) return
         setIsLoading(true)
@@ -128,8 +152,8 @@ export function EmailLogin() {
                                 onKeyDown={(e) => e.key === 'Enter' && handleEmailSubmit()}
                                 placeholder="Enter your email"
                                 className="w-full pl-12 pr-4 py-4 text-lg bg-card border-2 border-border rounded-2xl
-                         focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20
-                         transition-all placeholder:text-muted-foreground/60"
+                                 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20
+                                 transition-all placeholder:text-muted-foreground/60"
                                 autoFocus
                                 autoComplete="email"
                             />
@@ -140,10 +164,10 @@ export function EmailLogin() {
                             onClick={handleEmailSubmit}
                             disabled={!email.trim() || isLoading}
                             className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold
-                       rounded-2xl flex items-center justify-center gap-2 shadow-lg
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-all touch-manipulation
-                       focus:outline-none focus:ring-2 focus:ring-primary/50"
+                               rounded-2xl flex items-center justify-center gap-2 shadow-lg
+                               disabled:opacity-50 disabled:cursor-not-allowed
+                               transition-all touch-manipulation
+                               focus:outline-none focus:ring-2 focus:ring-primary/50"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                         >
@@ -172,8 +196,8 @@ export function EmailLogin() {
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="Your name"
                                 className="w-full pl-12 pr-4 py-4 text-lg bg-card border-2 border-border rounded-2xl
-                         focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20
-                         transition-all placeholder:text-muted-foreground/60"
+                                 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20
+                                 transition-all placeholder:text-muted-foreground/60"
                                 autoFocus
                             />
                         </div>
@@ -187,7 +211,7 @@ export function EmailLogin() {
                             <motion.button
                                 onClick={() => setRole('caregiver')}
                                 className={`p-5 rounded-2xl border-2 text-left transition-all touch-manipulation
-                          ${role === 'caregiver'
+                                  ${role === 'caregiver'
                                         ? 'border-primary bg-primary/5'
                                         : 'border-border bg-card hover:border-primary/50'}`}
                                 whileHover={{ scale: 1.02 }}
@@ -201,7 +225,7 @@ export function EmailLogin() {
                             <motion.button
                                 onClick={() => setRole('care_receiver')}
                                 className={`p-5 rounded-2xl border-2 text-left transition-all touch-manipulation
-                          ${role === 'care_receiver'
+                                  ${role === 'care_receiver'
                                         ? 'border-sahay-blue bg-sahay-blue/5'
                                         : 'border-border bg-card hover:border-sahay-blue/50'}`}
                                 whileHover={{ scale: 1.02 }}
@@ -218,10 +242,10 @@ export function EmailLogin() {
                             onClick={handleSignup}
                             disabled={!name.trim() || !role || isLoading}
                             className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold
-                       rounded-2xl flex items-center justify-center gap-2 shadow-lg
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-all touch-manipulation
-                       focus:outline-none focus:ring-2 focus:ring-primary/50"
+                               rounded-2xl flex items-center justify-center gap-2 shadow-lg
+                               disabled:opacity-50 disabled:cursor-not-allowed
+                               transition-all touch-manipulation
+                               focus:outline-none focus:ring-2 focus:ring-primary/50"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                         >
