@@ -1,7 +1,21 @@
+/**
+ * @file route.ts
+ * @description API routes for wellness tracking.
+ * Provides endpoints to log daily wellness levels and retrieve the wellness history.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// GET /api/wellness — Get wellness entry history
+/**
+ * GET /api/wellness
+ * Retrieves wellness entry history.
+ *
+ * @param {NextRequest} req - The incoming request.
+ * @param {string} [req.query.care_relationship_id] - Filter by relationship ID.
+ * @param {string} [req.query.user_id] - Filter by user ID.
+ * @returns {Promise<NextResponse>} JSON response containing a list of wellness entries.
+ */
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -32,7 +46,13 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/wellness — Log a wellness entry
+/**
+ * POST /api/wellness
+ * Logs a new wellness entry and creates a corresponding timeline event.
+ *
+ * @param {NextRequest} req - The incoming request containing `care_relationship_id`, `user_id`, and `level` in the body.
+ * @returns {Promise<NextResponse>} JSON response confirming the entry was logged.
+ */
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -69,7 +89,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        // Add timeline event
+        // Automatically add a corresponding event to the timeline
         await supabase.from("timeline_events").insert({
             care_relationship_id,
             type: "wellness_logged",
