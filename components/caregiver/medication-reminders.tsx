@@ -1,5 +1,17 @@
 'use client'
 
+/**
+ * @file medication-reminders.tsx
+ * @description The Medication Reminders component for Caregivers.
+ * This component manages high-priority notifications for medications that are
+ * currently due. It features a "snooze" mechanism to allow caregivers to
+ * defer a reminder for a short period (e.g., 15 minutes) and a "took it" action
+ * that updates the medication state and marks it as taken.
+ *
+ * Reminders are presented as floating cards at the top of the screen, using
+ * animations to draw attention without being intrusive.
+ */
+
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
@@ -7,19 +19,26 @@ import { type Medication } from '@/lib/types'
 import { Bell, Clock, X, ChevronLeft } from 'lucide-react'
 
 /**
- * Medication Reminders with Snooze Feature
- * Quick push-notification style reminders with customizable snooze times
+ * MedicationReminders component.
+ * Monitors the current time and medication schedule to display active reminders.
+ *
+ * @returns {JSX.Element | null} A list of floating reminder cards, or null if no medications are currently due.
  */
 export function MedicationReminders() {
   const { data, markMedicationTaken } = useSahay()
   const [snoozedMeds, setSnoozedMeds] = useState<{ [key: string]: number }>({})
   const [dismissedMeds, setDismissedMeds] = useState<Set<string>>(new Set())
 
-  // Get pending medications for current time
+  /**
+   * Identifies medications that are due based on the current time of day
+   * and have not yet been taken or dismissed.
+   *
+   * @returns {Medication[]} An array of pending medications for the current time window.
+   */
   const getPendingMeds = () => {
     const hour = new Date().getHours()
     let currentTime: 'morning' | 'afternoon' | 'evening'
-    
+
     if (hour < 12) currentTime = 'morning'
     else if (hour < 17) currentTime = 'afternoon'
     else currentTime = 'evening'
@@ -31,6 +50,12 @@ export function MedicationReminders() {
 
   const pendingMeds = getPendingMeds()
 
+  /**
+   * Snoozes a medication reminder for a specified number of minutes.
+   *
+   * @param {string} medId - The ID of the medication to snooze.
+   * @param {number} minutes - The duration to snooze the reminder in minutes.
+   */
   const handleSnooze = (medId: string, minutes: number) => {
     setSnoozedMeds((prev) => ({
       ...prev,
@@ -38,10 +63,20 @@ export function MedicationReminders() {
     }))
   }
 
+  /**
+   * Dismisses a reminder card from the view without marking the medication as taken.
+   *
+   * @param {string} medId - The ID of the medication to dismiss.
+   */
   const handleDismiss = (medId: string) => {
     setDismissedMeds((prev) => new Set([...prev, medId]))
   }
 
+  /**
+   * Marks a medication as taken and dismisses the reminder card.
+   *
+   * @param {string} medId - The ID of the medication that was taken.
+   */
   const handleTook = (medId: string) => {
     markMedicationTaken(medId, true)
     handleDismiss(medId)
