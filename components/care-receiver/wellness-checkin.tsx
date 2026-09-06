@@ -1,15 +1,23 @@
 'use client'
 
+/**
+ * @file wellness-checkin.tsx
+ * @description The Wellness Check-in interface for Care Receivers.
+ * Allows users to log their daily emotional and physical state using a
+ * simplified scale (Great, Okay, Not Great). This data is then shared with
+ * the caregiver to provide a baseline of the receiver's daily well-being.
+ */
+
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
 import { ArrowLeft, Smile, Meh, Frown, Check } from 'lucide-react'
 import type { WellnessLevel } from '@/lib/types'
 
-interface WellnessCheckinProps {
-  onClose: () => void
-}
-
+/**
+ * Configuration for wellness levels.
+ * Defines the visual and textual representation for each possible wellness state.
+ */
 const wellnessOptions: {
   level: WellnessLevel
   icon: typeof Smile
@@ -44,6 +52,15 @@ const wellnessOptions: {
   },
 ]
 
+/**
+ * WellnessCheckin component.
+ * Handles the process of selecting a wellness level, adding an optional note,
+ * and submitting the data. Also displays a read-only view if a check-in
+ * has already been completed for the current day.
+ *
+ * @param {WellnessCheckinProps} props - Component props.
+ * @returns {JSX.Element} The wellness check-in interface.
+ */
 export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
   const { logWellness, getTodayWellness, data } = useSahay()
   const [selectedLevel, setSelectedLevel] = useState<WellnessLevel | null>(null)
@@ -53,6 +70,9 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
   const todayWellness = getTodayWellness()
   const caregiverName = data.caregiver?.name || 'your caregiver'
 
+  /**
+   * Submits the selected wellness level and optional note to the backend.
+   */
   const handleSubmit = () => {
     if (selectedLevel) {
       logWellness(selectedLevel, note.trim() || undefined)
@@ -60,7 +80,10 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
     }
   }
 
-  // Already submitted today view
+  /**
+   * Read-only view.
+   * Rendered when the user has already completed their check-in for the day.
+   */
   if (todayWellness && !submitted) {
     const config = wellnessOptions.find((o) => o.level === todayWellness.level)!
     const Icon = config.icon
@@ -107,7 +130,10 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
     )
   }
 
-  // Success view
+  /**
+   * Confirmation View.
+   * Rendered immediately after successful submission.
+   */
   if (submitted) {
     return (
       <main className="min-h-screen flex flex-col bg-sahay-sage-light p-6">
@@ -181,7 +207,7 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
           Take a moment to check in
         </p>
 
-        {/* Wellness options */}
+        {/* Wellness options selection grid */}
         <div className="space-y-4 mb-8">
           {wellnessOptions.map((option, idx) => {
             const Icon = option.icon
@@ -190,7 +216,7 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
               <motion.button
                 key={option.level}
                 onClick={() => setSelectedLevel(option.level)}
-                className={`w-full p-6 rounded-2xl border-2 flex items-center gap-5 
+                className={`w-full p-6 rounded-2xl border-2 flex items-center gap-5
                          touch-manipulation transition-all
                          focus:outline-none focus:ring-2 focus:ring-ring
                          ${
@@ -226,7 +252,7 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
           })}
         </div>
 
-        {/* Optional note */}
+        {/* Optional detailed note input */}
         <AnimatePresence>
           {selectedLevel && (
             <motion.div
@@ -253,7 +279,7 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
           )}
         </AnimatePresence>
 
-        {/* Submit button */}
+        {/* Submit button - enabled only after level selection */}
         <motion.button
           onClick={handleSubmit}
           disabled={!selectedLevel}
