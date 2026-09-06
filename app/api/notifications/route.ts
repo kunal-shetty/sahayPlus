@@ -1,7 +1,22 @@
+/**
+ * @file route.ts
+ * @description API routes for managing system notifications.
+ * Provides endpoints to retrieve notifications for a user and create new alerts.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// GET /api/notifications — List notifications for a user
+/**
+ * GET /api/notifications
+ * Retrieves a paginated list of notifications for a specific user.
+ *
+ * @param {NextRequest} req - The incoming request.
+ * @param {string} req.query.user_id - Required. The ID of the user.
+ * @param {string} [req.query.limit="50"] - Maximum number of notifications to return.
+ * @param {string} [req.query.offset="0"] - The starting offset for pagination.
+ * @returns {Promise<NextResponse>} JSON response containing notifications and pagination metadata.
+ */
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -39,7 +54,13 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/notifications — Create a notification
+/**
+ * POST /api/notifications
+ * Creates a new notification for a specific user.
+ *
+ * @param {NextRequest} req - The incoming request containing `user_id`, `type`, `title`, and `body` in the body.
+ * @returns {Promise<NextResponse>} JSON response confirming the notification was created.
+ */
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
