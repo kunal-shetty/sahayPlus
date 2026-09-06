@@ -1,7 +1,19 @@
+/**
+ * @file route.ts
+ * @description API routes for managing medications.
+ * Provides endpoints to list and add medications associated with a care relationship.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// GET /api/medications — List all medications
+/**
+ * GET /api/medications
+ * Retrieves a list of medications.
+ *
+ * @param {NextRequest} req - The incoming request. Optionally includes `care_relationship_id` as a query parameter.
+ * @returns {Promise<NextResponse>} JSON response containing the list of medications, sorted by time of day and creation date.
+ */
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -28,7 +40,13 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/medications — Add a new medication
+/**
+ * POST /api/medications
+ * Adds a new medication record to the database.
+ *
+ * @param {NextRequest} req - The incoming request containing medication details in the body.
+ * @returns {Promise<NextResponse>} JSON response with the created medication object.
+ */
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
