@@ -1,21 +1,48 @@
 'use client'
 
+/**
+ * @file analytics-dashboard.tsx
+ * @description The Analytics Dashboard for Caregivers.
+ * This component provides high-level insights into the care receiver's medication
+ * adherence and overall well-being. It visualizes weekly adherence via a bar chart,
+ * displays a calculated "Care Confidence" score, and tracks medication-specific
+ * streaks and totals to help caregivers identify patterns and potential issues.
+ */
+
 import { useSahay } from '@/lib/sahay-context'
 import { ArrowLeft, TrendingUp, Calendar, Award, Pill } from 'lucide-react'
 import { calculateConfidence, getConfidenceMessage } from '@/lib/types'
 
+/**
+ * Props for the AnalyticsDashboard component.
+ * @interface AnalyticsDashboardProps
+ * @property {() => void} onClose - Callback to close the dashboard and return to the main view.
+ */
 interface AnalyticsDashboardProps {
   onClose: () => void
 }
 
+/**
+ * AnalyticsDashboard component.
+ * Aggregates timeline and adherence data to present an overview of the care receiver's status.
+ *
+ * @param {AnalyticsDashboardProps} props - Component props.
+ * @returns {JSX.Element} The caregiver insights dashboard.
+ */
 export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
   const { data, getWeeklyAdherence, getMedicationStats } = useSahay()
 
+  /** Aggregated adherence data for the current week. */
   const weeklyData = getWeeklyAdherence()
+
+  /** Confidence score based on adherence consistency and day closures. */
   const confidence = calculateConfidence(data.timeline, data.dayClosures)
   const confidenceMessage = getConfidenceMessage(confidence)
 
-  // Calculate overall stats
+  /**
+   * Overall adherence calculation.
+   * Sums all doses taken versus total doses scheduled over the tracked period.
+   */
   const totalTaken = weeklyData.reduce((sum, d) => sum + d.taken, 0)
   const totalPossible = weeklyData.reduce((sum, d) => sum + d.total, 0)
   const adherencePercent = totalPossible > 0 ? Math.round((totalTaken / totalPossible) * 100) : 0
@@ -45,7 +72,7 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
       </header>
 
       <div className="flex-1 overflow-y-auto px-6 pb-8">
-        {/* Confidence indicator */}
+        {/* Confidence indicator: Provides a qualitative summary of care stability. */}
         <div className="bg-sahay-sage-light rounded-2xl p-6 mb-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-full bg-sahay-sage/20 flex items-center justify-center">
@@ -62,15 +89,15 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
           </div>
         </div>
 
-        {/* Weekly overview */}
+        {/* Weekly overview: Visualizes adherence across the current 7-day window. */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-sahay-blue" />
             This Week
           </h2>
-          
+
           <div className="bg-card rounded-2xl border-2 border-border p-5">
-            {/* Bar chart */}
+            {/* Adherence Bar chart */}
             <div className="flex items-end justify-between gap-2 h-32 mb-4">
               {weeklyData.map((day, i) => {
                 const percent = day.total > 0 ? (day.taken / day.total) * 100 : 0
@@ -90,7 +117,7 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
               })}
             </div>
 
-            {/* Summary */}
+            {/* Adherence Summary */}
             <div className="flex items-center justify-between pt-4 border-t border-border">
               <div>
                 <p className="text-sm text-muted-foreground">Weekly adherence</p>
@@ -106,13 +133,13 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
           </div>
         </section>
 
-        {/* Streaks */}
+        {/* Streaks: Motivates consistency by tracking consecutive successful days. */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Award className="w-5 h-5 text-sahay-warm" />
             Streaks
           </h2>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-card rounded-2xl border-2 border-border p-5">
               <p className="text-sm text-muted-foreground mb-1">Current streak</p>
@@ -131,13 +158,13 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
           </div>
         </section>
 
-        {/* Per-medication stats */}
+        {/* Per-medication stats: Detailed breakdown of adherence for each specific drug. */}
         <section>
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Pill className="w-5 h-5 text-primary" />
             Medication Details
           </h2>
-          
+
           <div className="space-y-3">
             {data.medications.map((med) => {
               const stats = getMedicationStats(med.id)
