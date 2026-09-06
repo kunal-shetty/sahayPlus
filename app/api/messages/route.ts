@@ -1,7 +1,22 @@
+/**
+ * @file route.ts
+ * @description API routes for managing messages between care parties.
+ * Provides endpoints to retrieve message history and send new messages.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// GET /api/messages — Get messages for a care relationship
+/**
+ * GET /api/messages
+ * Retrieves a paginated list of messages for a specific care relationship.
+ *
+ * @param {NextRequest} req - The incoming request.
+ * @param {string} req.query.care_relationship_id - Required. The ID of the relationship.
+ * @param {string} [req.query.limit="50"] - Maximum number of messages to return.
+ * @param {string} [req.query.offset="0"] - The starting offset for pagination.
+ * @returns {Promise<NextResponse>} JSON response containing messages and pagination metadata.
+ */
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -39,7 +54,13 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/messages — Send a message
+/**
+ * POST /api/messages
+ * Sends a new message within a care relationship.
+ *
+ * @param {NextRequest} req - The incoming request containing `care_relationship_id`, `from_user_id`, and `text` in the body.
+ * @returns {Promise<NextResponse>} JSON response confirming the message was sent.
+ */
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
