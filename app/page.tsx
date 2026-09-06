@@ -32,7 +32,8 @@ export default function Home() {
     }
 
     if (user.role === 'caregiver') {
-      router.push('/caregiver')
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024
+      router.push(isDesktop ? '/dashboard' : '/caregiver')
     } else if (user.role === 'care_receiver') {
       router.push('/care-receiver')
     } else {
