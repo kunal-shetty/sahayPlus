@@ -1,11 +1,22 @@
 "use client"
 
+/**
+ * @file bottom-nav.tsx
+ * @description A mobile-optimized bottom navigation bar for the Sahay+ application.
+ * Features a glass-morphism background, safe-area handling for mobile devices,
+ * and an elevated center action button for primary user tasks.
+ */
+
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Search, Plus, Bookmark, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 
+/**
+ * Configuration for navigation items.
+ * Each item contains the destination href, the icon component, and a display label.
+ */
 const navItems = [
   { href: "/home", icon: Home, label: "Home" },
   { href: "/search", icon: Search, label: "Search" },
@@ -14,10 +25,18 @@ const navItems = [
   { href: "/profile", icon: User, label: "Profile" },
 ]
 
+/**
+ * BottomNav component.
+ * Renders a persistent navigation bar at the bottom of the viewport.
+ * Handles active route highlighting and ensures proper rendering on the client side.
+ *
+ * @returns {JSX.Element} The bottom navigation component.
+ */
 export function BottomNav() {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
 
+  /** Ensure the component only renders on the client to avoid hydration mismatch. */
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -35,6 +54,7 @@ export function BottomNav() {
           const isActive = pathname.startsWith(item.href)
           const Icon = item.icon
 
+          /** Render the elevated center button (e.g., Upload) with a glow effect. */
           if (item.isCenter) {
             return (
               <Link key={item.href} href={item.href} className="relative flex flex-col items-center -mt-6">
@@ -54,6 +74,7 @@ export function BottomNav() {
             )
           }
 
+          /** Render standard navigation links with active state indicators. */
           return (
             <Link
               key={item.href}
