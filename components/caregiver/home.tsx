@@ -1,5 +1,17 @@
 'use client'
 
+/**
+ * @file home.tsx
+ * @description The primary dashboard for the Caregiver in Sahay+.
+ * This page serves as the central hub for managing the care receiver's medication
+ * and wellness. It provides a passive overview of the day's status, medication
+ * management tools, and quick access to high-level insights (Analytics, Timeline,
+ * Wellness) and care tools (Notes, Handover, Doctor Prep).
+ *
+ * The interface is organized into tabs (Home, Activity, Care, Messages) to maintain
+ * a clean, focused experience and avoid cognitive overload.
+ */
+
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
@@ -53,7 +65,10 @@ import { CaregiverHomeSkeleton } from '../skeletons'
 import { CaregiverBottomNav, type CaregiverTab } from './bottom-nav'
 
 /**
- * Inline pharmacist form for the pharmacist panel
+ * PharmacistInlineForm component.
+ * A small, inline form used to manage the local pharmacist's contact information.
+ *
+ * @returns {JSX.Element} The pharmacist edit/add interface.
  */
 function PharmacistInlineForm() {
   const { data, updatePharmacist } = useSahay()
@@ -61,6 +76,7 @@ function PharmacistInlineForm() {
   const [name, setName] = useState(data.pharmacist?.name || '')
   const [saving, setSaving] = useState(false)
 
+  /** Persists the pharmacist's name to the backend. */
   const handleSave = () => {
     setSaving(true)
     updatePharmacist({ name: name.trim() || undefined })
@@ -74,7 +90,7 @@ function PharmacistInlineForm() {
     return (
       <button
         onClick={() => setEditing(true)}
-        className="w-full py-3 px-4 bg-secondary text-foreground font-medium 
+        className="w-full py-3 px-4 bg-secondary text-foreground font-medium
                  rounded-xl transition-all active:scale-[0.97] touch-manipulation
                  hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
       >
@@ -96,7 +112,7 @@ function PharmacistInlineForm() {
       <div className="flex gap-2">
         <button
           onClick={() => setEditing(false)}
-          className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium 
+          className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium
                    rounded-xl transition-all active:scale-[0.97] touch-manipulation"
         >
           Cancel
@@ -104,7 +120,7 @@ function PharmacistInlineForm() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 py-3 px-4 bg-primary text-primary-foreground font-medium 
+          className="flex-1 py-3 px-4 bg-primary text-primary-foreground font-medium
                    rounded-xl transition-all active:scale-[0.97] touch-manipulation
                    disabled:opacity-50 flex items-center justify-center gap-2"
         >
@@ -122,7 +138,12 @@ function PharmacistInlineForm() {
 }
 
 /**
- * Per-medication pharmacist note entry
+ * MedPharmacistNote component.
+ * An expandable card for each medication that allows adding specific notes
+ * provided by the pharmacist.
+ *
+ * @param { { med: Medication } } props - Component props.
+ * @returns {JSX.Element} The medication-specific pharmacist note interface.
  */
 function MedPharmacistNote({ med }: { med: Medication }) {
   const { addPharmacistNote } = useSahay()
@@ -130,6 +151,7 @@ function MedPharmacistNote({ med }: { med: Medication }) {
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
 
+  /** Saves the pharmacist note for the specific medication. */
   const handleSave = () => {
     if (!note.trim()) return
     setSaving(true)
@@ -209,9 +231,12 @@ function MedPharmacistNote({ med }: { med: Medication }) {
 }
 
 /**
- * Caregiver Home Screen
- * Passive overview of today's medication status
- * Features: medication list grouped by time, add/edit/remove, calm status indicators
+ * CaregiverHome component.
+ * The primary entry point for the caregiver's experience. It manages multiple
+ * sub-views (medication forms, analytics, timeline, etc.) and a tabbed
+ * navigation system.
+ *
+ * @returns {JSX.Element} The comprehensive caregiver dashboard.
  */
 export function CaregiverHome() {
   const {
@@ -243,10 +268,9 @@ export function CaregiverHome() {
   const [activeTab, setActiveTab] = useState<CaregiverTab>('home')
 
   const unreadMessages = getUnreadCount()
-
   const currentTimeOfDay = getCurrentTimeOfDay()
 
-  // Group medications by time of day
+  /** Group medications by time of day for structured display. */
   const groupedMeds: Record<TimeOfDay, Medication[]> = {
     morning: [],
     afternoon: [],
@@ -257,7 +281,7 @@ export function CaregiverHome() {
     groupedMeds[med.timeOfDay].push(med)
   }
 
-  // Calculate overall status
+  /** Overall adherence metrics for the current day. */
   const totalMeds = data.medications.length
   const takenMeds = data.medications.filter((m) => m.taken).length
   const allTaken = totalMeds > 0 && takenMeds === totalMeds
@@ -268,6 +292,7 @@ export function CaregiverHome() {
     evening: Moon,
   }
 
+  /** Returns a time-appropriate greeting. */
   const getGreeting = () => {
     const hour = new Date().getHours()
     if (hour < 12) return 'Good morning'
@@ -275,12 +300,10 @@ export function CaregiverHome() {
     return 'Good evening'
   }
 
-  // Show skeleton during loading (both initial auth check and API data fetching)
   if (isLoading || isDataLoading) {
     return <CaregiverHomeSkeleton />
   }
 
-  // Show medication form if adding or editing
   if (showAddForm || editingMed) {
     return (
       <MedicationForm
@@ -293,52 +316,42 @@ export function CaregiverHome() {
     )
   }
 
-  // Show settings panel
   if (showSettings) {
     return <SettingsPanel onClose={() => setShowSettings(false)} />
   }
 
-  // Show care timeline
   if (showTimeline) {
     return <CareTimeline onClose={() => setShowTimeline(false)} />
   }
 
-  // Show role status
   if (showRoleStatus) {
     return <RoleStatus onClose={() => setShowRoleStatus(false)} />
   }
 
-  // Show notes
   if (showNotes) {
     return <ContextualNotes onClose={() => setShowNotes(false)} />
   }
 
-  // Show analytics
   if (showAnalytics) {
     return <AnalyticsDashboard onClose={() => setShowAnalytics(false)} />
   }
 
-  // Show emergency contacts
   if (showEmergency) {
     return <EmergencyContacts onClose={() => setShowEmergency(false)} />
   }
 
-  // Show messages
   if (showMessages) {
     return <Messages onClose={() => setShowMessages(false)} />
   }
 
-  // Show wellness
   if (showWellness) {
     return <WellnessOverview onClose={() => setShowWellness(false)} />
   }
 
-  // Show medication history
   if (showHistory) {
     return <MedicationHistory onClose={() => setShowHistory(false)} />
   }
 
-  // Show pharmacist panel
   if (showPharmacist) {
     return (
       <main className="min-h-screen flex flex-col bg-background p-6">
@@ -353,9 +366,7 @@ export function CaregiverHome() {
           </button>
           <h1 className="text-2xl font-bold">Pharmacist</h1>
         </header>
-
         <div className="space-y-6 max-w-md mx-auto w-full">
-          {/* Current pharmacist info */}
           <section className="p-5 bg-card rounded-2xl border-2 border-border">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-sahay-blue-light flex items-center justify-center">
@@ -366,7 +377,6 @@ export function CaregiverHome() {
                 <p className="text-sm text-muted-foreground">A silent helper for refill notes</p>
               </div>
             </div>
-
             {data.pharmacist?.name ? (
               <div className="mb-4 p-3 bg-secondary/50 rounded-xl">
                 <p className="text-foreground font-medium">{data.pharmacist.name}</p>
@@ -379,11 +389,8 @@ export function CaregiverHome() {
             ) : (
               <p className="text-muted-foreground mb-4">No pharmacist added yet</p>
             )}
-
             <PharmacistInlineForm />
           </section>
-
-          {/* Medication-specific notes from pharmacist */}
           {data.medications.length > 0 && (
             <section className="p-5 bg-card rounded-2xl border-2 border-border">
               <h3 className="text-lg font-medium text-foreground mb-4">Medication Notes</h3>
@@ -402,7 +409,6 @@ export function CaregiverHome() {
     )
   }
 
-  // Doctor Visit Prep Modal (Feature 9)
   if (showDoctorPrep) {
     return (
       <main className="min-h-screen flex flex-col bg-background p-6">
@@ -420,7 +426,6 @@ export function CaregiverHome() {
 
   return (
     <main className="min-h-screen flex flex-col bg-background safe-top safe-bottom">
-      {/* Header - Only show for non-messaging tabs for a cleaner look */}
       <AnimatePresence mode="wait">
         {activeTab !== 'messages' && (
           <motion.header
@@ -442,7 +447,7 @@ export function CaregiverHome() {
               </div>
               <button
                 onClick={() => setShowSettings(true)}
-                className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
+                className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center
                          hover:bg-secondary/80 active:scale-95 transition-all touch-manipulation
                          focus:outline-none focus:ring-2 focus:ring-sahay-sage"
                 aria-label="Settings"
@@ -451,7 +456,6 @@ export function CaregiverHome() {
               </button>
             </div>
 
-            {/* Status card */}
             <motion.div
               className={`p-5 rounded-2xl glass-card ${allTaken
                 ? 'bg-sahay-sage-light/80 border-2 border-sahay-sage/30'
@@ -508,7 +512,6 @@ export function CaregiverHome() {
         )}
       </AnimatePresence>
 
-      {/* Feature 3: Active Handover Banner */}
       {data.caregiver?.handover?.isActive && (
         <div className="bg-sahay-blue border-b border-sahay-blue/20 p-2 overflow-hidden text-center">
           <p className="text-xs font-bold text-white uppercase tracking-widest flex items-center justify-center gap-2">
@@ -519,16 +522,13 @@ export function CaregiverHome() {
         </div>
       )}
 
-      {/* Scrollable content area */}
       <div className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden' : 'overflow-y-auto px-6 pb-24 overflow-x-hidden'}`}>
 
-        {/* ═══ HOME TAB ═══ */}
         {activeTab === 'home' && (
           <>
-            {/* Add medication button - MOVED TO TOP */}
             <motion.button
               onClick={() => setShowAddForm(true)}
-              className="w-full py-4 px-6 mb-6 bg-primary text-primary-foreground text-lg font-semibold 
+              className="w-full py-4 px-6 mb-6 bg-primary text-primary-foreground text-lg font-semibold
                        rounded-xl flex items-center justify-center gap-2 shadow-sm touch-manipulation button-interactive
                        focus:outline-none focus:ring-2 focus:ring-sahay-sage"
               initial={{ opacity: 0, y: -10 }}
@@ -541,7 +541,6 @@ export function CaregiverHome() {
               Add medication
             </motion.button>
 
-            {/* Feature 4: Help Requested Alert */}
             {data.timeline.find(e => e.type === 'help_requested' && !e.note?.includes('resolved')) && (
               <motion.div
                 className="bg-sahay-blue/10 border-2 border-sahay-blue/30 rounded-2xl p-6 mb-6 shadow-lg shadow-sahay-blue/10"
@@ -568,7 +567,6 @@ export function CaregiverHome() {
               </motion.div>
             )}
 
-            {/* Safety Check Escalation Alert */}
             {data.safetyCheck.status === 'escalating' && (
               <motion.div
                 className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-6 mb-6 shadow-lg shadow-destructive/10"
@@ -609,7 +607,6 @@ export function CaregiverHome() {
               </motion.div>
             )}
 
-            {/* Medication Streak Counter */}
             {totalMeds > 0 && (
               <motion.div
                 className="bg-gradient-to-br from-sahay-sage/10 to-sahay-success/10 rounded-2xl p-5 mb-6 border-2 border-sahay-sage/20 card-interactive"
@@ -639,10 +636,8 @@ export function CaregiverHome() {
               </motion.div>
             )}
 
-            {/* Quick Pill Actions */}
             {totalMeds > 0 && <QuickPillActions />}
 
-            {/* Feature 1: "I'm Fine Today" Status */}
             {data.lastFineCheckIn?.startsWith(new Date().toISOString().split('T')[0]) && (
               <motion.div
                 className="bg-sahay-success/10 border-2 border-sahay-success/20 rounded-2xl p-5 mb-6 flex items-center gap-4"
@@ -659,7 +654,6 @@ export function CaregiverHome() {
               </motion.div>
             )}
 
-            {/* Refill awareness */}
             {data.medications.some(
               (m) => m.refillDaysLeft !== undefined && m.refillDaysLeft <= 7
             ) && (
@@ -681,7 +675,6 @@ export function CaregiverHome() {
                 </div>
               )}
 
-            {/* Medication list grouped by time */}
             {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map((timeOfDay) => {
               const meds = groupedMeds[timeOfDay]
               if (meds.length === 0) return null
@@ -713,7 +706,7 @@ export function CaregiverHome() {
                       <motion.button
                         key={med.id}
                         onClick={() => setEditingMed(med)}
-                        className="w-full p-4 bg-card rounded-xl border-2 border-border 
+                        className="w-full p-4 bg-card rounded-xl border-2 border-border
                                  hover:border-sahay-sage/50 active:bg-sahay-sage/5 text-left
                                  touch-manipulation button-interactive focus:outline-none focus:ring-2 focus:ring-sahay-sage"
                         initial={{ opacity: 0, x: -20 }}
@@ -798,7 +791,6 @@ export function CaregiverHome() {
               </div>
             )}
 
-            {/* Daily closure ritual */}
             {totalMeds > 0 && (
               <div className="mt-6 mb-8">
                 <DailyClosure />
@@ -807,12 +799,10 @@ export function CaregiverHome() {
           </>
         )}
 
-        {/* ═══ ACTIVITY TAB ═══ */}
         {activeTab === 'activity' && (
           <div className="space-y-3 pt-2">
             <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Activity & Insights</h2>
 
-            {/* Pattern Insights - inline */}
             {getHumanInsights().length > 0 && (
               <div className="space-y-3 mb-4">
                 <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest pl-1">Daily Insights</h3>
@@ -833,10 +823,8 @@ export function CaregiverHome() {
               </div>
             )}
 
-            {/* Gentle check-in */}
             <GentleCheckIn />
 
-            {/* Care confidence */}
             {totalMeds > 0 && (
               <motion.div
                 className="mb-3"
@@ -848,7 +836,6 @@ export function CaregiverHome() {
               </motion.div>
             )}
 
-            {/* Activity action cards */}
             {[
               { label: 'Care Timeline', desc: 'Full history of care events', icon: BookOpen, bgColor: 'bg-sahay-sage/10', iconColor: 'text-sahay-sage', action: () => setShowTimeline(true) },
               { label: 'Analytics', desc: 'Charts, trends & patterns', icon: BarChart3, bgColor: 'bg-sahay-blue/10', iconColor: 'text-sahay-blue', action: () => setShowAnalytics(true) },
@@ -880,12 +867,10 @@ export function CaregiverHome() {
           </div>
         )}
 
-        {/* ═══ CARE TAB ═══ */}
         {activeTab === 'care' && (
           <div className="space-y-3 pt-2">
             <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Care Tools</h2>
 
-            {/* Care action cards */}
             {[
               { label: 'Contextual Notes', desc: 'Quick notes about care', icon: FileText, bgColor: 'bg-sahay-warm/10', iconColor: 'text-sahay-warm', action: () => setShowNotes(true) },
               { label: 'Care Roles', desc: 'Manage who helps with care', icon: Users, bgColor: 'bg-sahay-blue/10', iconColor: 'text-sahay-blue', action: () => setShowRoleStatus(true) },
@@ -916,7 +901,6 @@ export function CaregiverHome() {
               </motion.button>
             ))}
 
-            {/* Handover section - inline */}
             <div className="mt-4">
               <motion.button
                 onClick={() => setShowHandoverSetup(!showHandoverSetup)}
@@ -987,7 +971,6 @@ export function CaregiverHome() {
           </div>
         )}
 
-        {/* ═══ MESSAGES TAB ═══ */}
         {activeTab === 'messages' && (
           <div className="h-full">
             <Messages onClose={() => setActiveTab('home')} />
@@ -995,7 +978,6 @@ export function CaregiverHome() {
         )}
       </div>
 
-      {/* Bottom navigation */}
       <CaregiverBottomNav
         activeTab={activeTab}
         onTabChange={(tab) => {
@@ -1006,4 +988,3 @@ export function CaregiverHome() {
     </main>
   )
 }
-
