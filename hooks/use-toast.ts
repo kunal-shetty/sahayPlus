@@ -1,13 +1,21 @@
 'use client'
 
-// Inspired by react-hot-toast library
-import * as React from 'react'
+/**
+ * @file use-toast.ts
+ * @description Custom hook and state manager for displaying non-blocking toast notifications.
+ * Inspired by the react-hot-toast library, it provides a global dispatch system to trigger,
+ * update, and dismiss toasts from anywhere in the application.
+ */
 
+import * as React from 'react'
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast'
 
+/** Maximum number of toasts allowed to be visible at once. */
 const TOAST_LIMIT = 1
+/** Delay in milliseconds before a dismissed toast is completely removed from the state. */
 const TOAST_REMOVE_DELAY = 1000000
 
+/** Internal representation of a toast with a unique identifier. */
 type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
@@ -15,6 +23,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
+/** Action types for the toast reducer. */
 const actionTypes = {
   ADD_TOAST: 'ADD_TOAST',
   UPDATE_TOAST: 'UPDATE_TOAST',
@@ -24,6 +33,7 @@ const actionTypes = {
 
 let count = 0
 
+/** Generates a unique numeric ID for each toast. */
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   return count.toString()
@@ -31,6 +41,9 @@ function genId() {
 
 type ActionType = typeof actionTypes
 
+/**
+ * Discriminated union of possible actions that can modify the toast state.
+ */
 type Action =
   | {
       type: ActionType['ADD_TOAST']
@@ -49,12 +62,18 @@ type Action =
       toastId?: ToasterToast['id']
     }
 
+/** Shape of the toast manager state. */
 interface State {
   toasts: ToasterToast[]
 }
 
+/** Map to track active timeouts for toast removal. */
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+/**
+ * Schedules a toast for complete removal from the state after the defined delay.
+ * @param {string} toastId - The ID of the toast to remove.
+ */
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return
@@ -71,6 +90,12 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+/**
+ * Reducer function that handles state transitions for the toast system.
+ * @param {State} state - Current state.
+ * @param {Action} action - The action to apply.
+ * @returns {State} The updated state.
+ */
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'ADD_TOAST':
@@ -90,8 +115,6 @@ export const reducer = (state: State, action: Action): State => {
     case 'DISMISS_TOAST': {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -126,10 +149,16 @@ export const reducer = (state: State, action: Action): State => {
   }
 }
 
+/** List of subscribers to state changes. */
 const listeners: Array<(state: State) => void> = []
 
+/** The current state held in memory outside of the React tree. */
 let memoryState: State = { toasts: [] }
 
+/**
+ * Dispatches an action to the reducer and notifies all registered listeners.
+ * @param {Action} action - The action to perform.
+ */
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
   listeners.forEach((listener) => {
@@ -139,6 +168,12 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, 'id'>
 
+/**
+ * Imperative function to trigger a new toast notification.
+ * @param {Toast} props - The properties of the toast to display.
+ * @returns {{ id: string, dismiss: () => void, update: (props: ToasterToast) => void }}
+ * An object containing the toast ID and methods to control the toast.
+ */
 function toast({ ...props }: Toast) {
   const id = genId()
 
@@ -168,6 +203,12 @@ function toast({ ...props }: Toast) {
   }
 }
 
+/**
+ * Hook that provides access to the toast state and the trigger functions.
+ * It subscribes to the global toast state and updates the local React state on changes.
+ *
+ * @returns {{ ...State, toast: typeof toast, dismiss: (toastId?: string) => void }}
+ */
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
