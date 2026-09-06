@@ -166,7 +166,7 @@ export default function HistoryPage() {
                               ? 'Today'
                               : stats.daysAgo === 1
                               ? 'Yesterday'
-                              : `${stats.daysAgo}d ago`}
+                              : `${stats.daysAgo}d ago`
                             : 'Never'}
                         </p>
                       </div>
