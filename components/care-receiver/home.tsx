@@ -1,5 +1,19 @@
 'use client'
 
+/**
+ * @file home.tsx
+ * @description The primary home screen for the Care Receiver.
+ * This component is specifically engineered for elderly users, prioritizing
+ * accessibility, simplicity, and cognitive ease. It centers on a single primary
+ * action (medication adherence) while providing quick access to safety and wellness tools.
+ *
+ * Design principles:
+ * - Single-action focus: One clear primary task per screen.
+ * - High accessibility: Large text (24px+), oversized tap targets (48px+), and high contrast.
+ * - Low cognitive load: Avoids complex navigation, lists, or stressful warnings.
+ * - Emotional reassurance: Uses calm, supportive messaging and soft colors.
+ */
+
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useSahay } from '@/lib/sahay-context'
@@ -32,17 +46,14 @@ import { QuickMessages } from './quick-messages'
 import { EmergencyCall } from './emergency-call'
 import { SafetyCheckPrompt } from './safety-check-prompt'
 import { CareReceiverHomeSkeleton } from '../skeletons'
+import { useRouter } from 'next/navigation'
 
 /**
- * Care Receiver Home Screen
- * Extremely simple interface for elderly users
- * Features: Current/next medication, large "I took it" button, gentle confirmations
- * 
- * Design principles:
- * - One primary action per screen
- * - Large text (24px+) and tap targets (48px+)
- * - No lists, no navigation, no warnings
- * - Calm, reassuring messaging
+ * CareReceiverHome component.
+ * Manages the care receiver's daily interaction cycle including medication tracking,
+ * wellness check-ins, and emergency help requests.
+ *
+ * @returns {JSX.Element} The simplified home interface for the care receiver.
  */
 export function CareReceiverHome() {
   const {
@@ -57,7 +68,13 @@ export function CareReceiverHome() {
     requestHelp,
     dismissChangeIndicator,
   } = useSahay()
+  const router = useRouter()
 
+  /**
+   * Exposes a safety check trigger to the window object.
+   * This allows integration with external hardware (e.g., motion sensors)
+   * to automatically trigger safety checks in the app.
+   */
   useEffect(() => {
   if (typeof window !== "undefined") {
     window.triggerMotionSafetyCheck = () => {
@@ -70,6 +87,7 @@ export function CareReceiverHome() {
   };
 }, [triggerSafetyCheck]);
 
+  // UI State Management
   const [confirmedMed, setConfirmedMed] = useState<Medication | null>(null)
   const [showUndo, setShowUndo] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -79,10 +97,13 @@ export function CareReceiverHome() {
   const [isListening, setIsListening] = useState(false)
   const [showHelpConfirmed, setShowHelpConfirmed] = useState(false)
 
-  // Theme: user picks light, dark, or auto (auto = dark after 9pm).
-  // Default is light so first-time users aren't surprised by a dark screen.
+  /**
+   * Theme state: 'light' for standard, 'dark' for forced dark mode,
+   * or 'auto' for automatic transition between 9 PM and 6 AM.
+   */
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light')
 
+  /** Restore theme preference from localStorage on initial mount. */
   useEffect(() => {
     if (typeof window === 'undefined') return
     const saved = window.localStorage.getItem('sahay_receiver_theme')
@@ -91,6 +112,7 @@ export function CareReceiverHome() {
     }
   }, [])
 
+  /** Updates theme preference and persists it to local storage. */
   const updateTheme = (next: 'light' | 'dark' | 'auto') => {
     setTheme(next)
     if (typeof window !== 'undefined') {
@@ -98,26 +120,28 @@ export function CareReceiverHome() {
     }
   }
 
-  // Effective dark state: explicit dark always wins, auto follows the clock.
   const hour = new Date().getHours()
   const isAutoNight = hour >= 21 || hour < 6
   const isNight = theme === 'dark' || (theme === 'auto' && isAutoNight)
 
-  // Find the current/next medication to show
   const currentTimeOfDay = getCurrentTimeOfDay()
 
-  // Priority order: current time's pending meds, then upcoming pending meds
+  /**
+   * Determines the next medication the user should take.
+   * Prioritizes pending medications for the current time of day,
+   * then falls back to the sequence: morning -> afternoon -> evening.
+   *
+   * @returns {Medication | null} The next pending medication or null if none remain.
+   */
   const getNextMedication = useCallback((): Medication | null => {
     const pendingMeds = data.medications.filter((m) => !m.taken)
     if (pendingMeds.length === 0) return null
 
-    // First, check for pending meds at current time
     const currentTimeMeds = pendingMeds.filter(
       (m) => m.timeOfDay === currentTimeOfDay
     )
     if (currentTimeMeds.length > 0) return currentTimeMeds[0]
 
-    // Otherwise, return the first pending med in time order
     const timeOrder = ['morning', 'afternoon', 'evening']
     for (const time of timeOrder) {
       const timeMeds = pendingMeds.filter((m) => m.timeOfDay === time)
@@ -133,7 +157,10 @@ export function CareReceiverHome() {
     data.medications.every((m) => m.taken)
   const dayClosed = isDayClosed()
 
-  // Handle "I took it" action
+  /**
+   * Handles the "I took it" action.
+   * Marks medication as taken and triggers a temporary confirmation/undo state.
+   */
   const handleTookIt = () => {
     if (nextMed) {
       markMedicationTaken(nextMed.id, true)
@@ -142,7 +169,9 @@ export function CareReceiverHome() {
     }
   }
 
-  // Handle undo (only available for a few seconds)
+  /**
+   * Reverts the medication status if the user accidentally tapped the confirmation.
+   */
   const handleUndo = () => {
     if (confirmedMed) {
       markMedicationTaken(confirmedMed.id, false)
@@ -151,7 +180,7 @@ export function CareReceiverHome() {
     }
   }
 
-  // Auto-dismiss undo after 5 seconds
+  /** Automatically clears the undo state after a 3-second timeout. */
   useEffect(() => {
     if (showUndo) {
       const timer = setTimeout(() => {
@@ -168,35 +197,29 @@ export function CareReceiverHome() {
     evening: Moon,
   }
 
+  /** Returns a context-appropriate greeting based on the current hour. */
   const getGreeting = () => {
     if (hour < 12) return 'Good morning'
     if (hour < 17) return 'Good afternoon'
     return 'Good evening'
   }
 
-  // isNight is computed above from the user's theme preference.
-
-  // Show skeleton during loading (both initial auth check and API data fetching)
   if (isLoading || isDataLoading) {
     return <CareReceiverHomeSkeleton />
   }
 
-  // Show wellness check-in
   if (showWellness) {
     return <WellnessCheckin onClose={() => setShowWellness(false)} />
   }
 
-  // Show quick messages
   if (showMessages) {
     return <QuickMessages onClose={() => setShowMessages(false)} />
   }
 
-  // Show emergency call
   if (showEmergency) {
     return <EmergencyCall onClose={() => setShowEmergency(false)} />
   }
 
-  // Settings view (minimal)
   if (showSettings) {
     return (
       <main className="min-h-screen flex flex-col bg-background p-6">
@@ -270,7 +293,7 @@ export function CareReceiverHome() {
 
             <button
               onClick={() => setShowSettings(false)}
-              className="w-full py-4 px-6 bg-primary text-primary-foreground text-xl font-semibold 
+              className="w-full py-4 px-6 bg-primary text-primary-foreground text-xl font-semibold
                        rounded-2xl transition-all active:scale-[0.97] touch-manipulation
                        focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             >
@@ -282,17 +305,14 @@ export function CareReceiverHome() {
     )
   }
 
-  // Confirmation screen (shown briefly after taking medication)
   if (showUndo && confirmedMed) {
     return (
       <main className="min-h-screen flex flex-col bg-sahay-sage-light p-6">
         <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full">
-          {/* Success icon */}
           <div className="w-24 h-24 rounded-full bg-sahay-success/20 flex items-center justify-center mb-8 animate-in zoom-in duration-300">
             <Check className="w-12 h-12 text-sahay-success" strokeWidth={2} />
           </div>
 
-          {/* Confirmation message */}
           <h1 className="text-3xl font-semibold text-foreground mb-3 text-center text-balance">
             Noted. Take care.
           </h1>
@@ -300,17 +320,15 @@ export function CareReceiverHome() {
             {confirmedMed.name} marked as taken
           </p>
 
-          {/* Undo button */}
           <button
             onClick={handleUndo}
-            className="py-4 px-8 bg-card text-foreground text-lg font-medium 
+            className="py-4 px-8 bg-card text-foreground text-lg font-medium
                      rounded-2xl border-2 border-border transition-all touch-manipulation
                      focus:outline-none focus:ring-2 focus:ring-sahay-sage"
           >
             Undo this
           </button>
 
-          {/* Progress indicator */}
           <div className="mt-8 w-full max-w-xs">
             <div className="h-1 bg-sahay-sage/20 rounded-full overflow-hidden">
               <div className="h-full bg-sahay-sage animate-shrink-width" />
@@ -321,14 +339,13 @@ export function CareReceiverHome() {
     )
   }
 
-  // Day closed screen (caregiver closed the day)
   if (dayClosed) {
     return (
       <main className="min-h-screen flex flex-col bg-sahay-sage-light p-6">
         <div className="flex justify-end">
           <button
             onClick={() => setShowSettings(true)}
-            className="w-12 h-12 rounded-xl bg-card/50 flex items-center justify-center 
+            className="w-12 h-12 rounded-xl bg-card/50 flex items-center justify-center
                      touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring"
             aria-label="Settings"
           >
@@ -351,15 +368,13 @@ export function CareReceiverHome() {
     )
   }
 
-  // All done screen
   if (allDone) {
     return (
       <main className="min-h-screen flex flex-col bg-background p-6">
-        {/* Settings button */}
         <div className="flex justify-end">
           <button
             onClick={() => setShowSettings(true)}
-            className="w-12 h-12 rounded-xl bg-secondary/50 flex items-center justify-center 
+            className="w-12 h-12 rounded-xl bg-secondary/50 flex items-center justify-center
                      touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             aria-label="Settings"
           >
@@ -368,12 +383,10 @@ export function CareReceiverHome() {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full">
-          {/* Success icon */}
           <div className="w-24 h-24 rounded-full bg-sahay-sage-light flex items-center justify-center mb-8">
             <Check className="w-12 h-12 text-sahay-sage" strokeWidth={2} />
           </div>
 
-          {/* All done message */}
           <h1 className="text-3xl font-semibold text-foreground mb-3 text-center text-balance">
             You&apos;re all set for today
           </h1>
@@ -385,15 +398,13 @@ export function CareReceiverHome() {
     )
   }
 
-  // No medications set up
   if (data.medications.length === 0) {
     return (
       <main className="min-h-screen flex flex-col bg-background p-6">
-        {/* Settings button */}
         <div className="flex justify-end">
           <button
             onClick={() => setShowSettings(true)}
-            className="w-12 h-12 rounded-xl bg-secondary/50 flex items-center justify-center 
+            className="w-12 h-12 rounded-xl bg-secondary/50 flex items-center justify-center
                      touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             aria-label="Settings"
           >
@@ -416,13 +427,11 @@ export function CareReceiverHome() {
     )
   }
 
-  // Main view: Show current/next medication
   const TimeIcon = timeIcons[nextMed!.timeOfDay]
   const isFineCheckedIn = data.lastFineCheckIn?.startsWith(new Date().toISOString().split('T')[0])
 
   return (
     <main className={`min-h-screen flex flex-col transition-colors duration-1000 ${isNight ? 'bg-[#0f172a] text-slate-300' : 'bg-background'}`}>
-      {/* Feature 7: Calm "Something Changed" Indicator */}
       <AnimatePresence>
         {data.lastChangeNotifiedAt && (
           <motion.div
@@ -447,7 +456,6 @@ export function CareReceiverHome() {
         )}
       </AnimatePresence>
 
-      {/* Header */}
       <header className="p-6 pb-4">
         <div className="flex items-center justify-between">
           <div>
@@ -458,7 +466,7 @@ export function CareReceiverHome() {
           </div>
           <button
             onClick={() => setShowSettings(true)}
-            className={`w-12 h-12 rounded-xl flex items-center justify-center touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage 
+            className={`w-12 h-12 rounded-xl flex items-center justify-center touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage
                       ${isNight ? 'bg-slate-800/50 text-slate-400' : 'bg-secondary/50 text-muted-foreground'}`}
             aria-label="Settings"
           >
@@ -467,10 +475,8 @@ export function CareReceiverHome() {
         </div>
       </header>
 
-      {/* Main content - current medication */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 -mt-10">
         <div className="w-full max-w-md">
-          {/* Feature 1: "I'm Fine Today" Check-In */}
           {!isFineCheckedIn && (
             <motion.button
               onClick={completeDailyCheckIn}
@@ -490,7 +496,6 @@ export function CareReceiverHome() {
             </motion.button>
           )}
 
-          {/* Time indicator */}
           <div className="flex items-center justify-center gap-2 mb-6">
             <TimeIcon
               className="w-6 h-6 text-sahay-sage"
@@ -502,9 +507,8 @@ export function CareReceiverHome() {
             </span>
           </div>
 
-          {/* Medication card */}
           <motion.div
-            className={`rounded-3xl p-8 border-2 mb-8 text-center glass-card 
+            className={`rounded-3xl p-8 border-2 mb-8 text-center glass-card
                       ${isNight ? 'bg-slate-800/60 border-slate-700/80 shadow-2xl' : 'bg-card border-border'}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -521,7 +525,6 @@ export function CareReceiverHome() {
             )}
             <p className={`text-2xl ${isNight ? 'text-slate-300' : 'text-muted-foreground'}`}>{nextMed!.dosage}</p>
 
-            {/* Feature 5: Simple Medication Explanations */}
             {nextMed!.simpleExplanation && (
               <p className={`text-lg font-medium mt-4 py-3 border-t ${isNight ? 'border-slate-700 text-sahay-sage' : 'border-border text-sahay-sage'}`}>
                 {nextMed!.simpleExplanation}
@@ -546,11 +549,10 @@ export function CareReceiverHome() {
             )}
           </motion.div>
 
-          {/* I took it button row */}
           <div className="flex gap-3 mb-8">
             <motion.button
               onClick={handleTookIt}
-              className="flex-1 py-6 px-8 bg-primary text-primary-foreground text-2xl font-semibold 
+              className="flex-1 py-6 px-8 bg-primary text-primary-foreground text-2xl font-semibold
                        rounded-2xl flex items-center justify-center gap-3 shadow-lg touch-manipulation button-interactive
                        focus:outline-none focus:ring-4 focus:ring-primary/50"
               initial={{ opacity: 0, y: 20 }}
@@ -563,7 +565,6 @@ export function CareReceiverHome() {
               I took it
             </motion.button>
 
-            {/* Feature 6: Voice Confirmation Option */}
             <motion.button
               onClick={() => {
                 setIsListening(true)
@@ -583,7 +584,6 @@ export function CareReceiverHome() {
             </motion.button>
           </div>
 
-          {/* Quick actions */}
           <div className="grid grid-cols-3 gap-3">
             <motion.button
               onClick={() => setShowWellness(true)}
@@ -596,7 +596,6 @@ export function CareReceiverHome() {
               <span className="text-sm font-medium">How I feel</span>
             </motion.button>
 
-            {/* Feature 4: "I Need Help" Button */}
             <motion.button
               onClick={() => {
                 requestHelp()
@@ -631,7 +630,6 @@ export function CareReceiverHome() {
         </div>
       </div>
 
-      {/* Night mode message */}
       <AnimatePresence>
         {isNight && (
           <motion.div
