@@ -1,10 +1,19 @@
-// Sahay+ Data Types
-// Simple, human-centered medication management
+/**
+ * @file types.ts
+ * @description Defines the core data models and type definitions for the Sahay+ application.
+ * This file ensures type safety across the app, covering user roles, medication tracking,
+ * wellness entries, and the global application state.
+ */
 
+/** The role of the user in the care relationship. */
 export type UserRole = 'caregiver' | 'careReceiver' | null
 
+/** General time of day categories for medication scheduling. */
 export type TimeOfDay = 'morning' | 'afternoon' | 'evening'
 
+/**
+ * Types of events that can be recorded in the care timeline.
+ */
 export type TimelineEventType =
   | 'medication_taken'
   | 'medication_skipped'
@@ -28,153 +37,280 @@ export type TimelineEventType =
   | 'handover_ended'
   | 'routine_changed'
 
+/** The current status of the caregiver's availability. */
 export type CareRoleStatus = 'active' | 'away' | 'independent'
 
+/** Qualitative measure of the current care routine's stability. */
 export type ConfidenceLevel = 'stable' | 'adjusting' | 'new'
 
+/** Subjective wellness levels reported by the care receiver. */
 export type WellnessLevel = 'great' | 'okay' | 'notGreat'
 
+/** The current state of a safety check process. */
 export type SafetyCheckStatus = 'idle' | 'pending_check' | 'escalating'
 
+/** Visual identification colors for medications. */
 export type MedicationColor = 'white' | 'blue' | 'pink' | 'yellow' | 'orange' | 'green' | 'red'
 
+/** Visual identification shapes for medications. */
 export type MedicationShape = 'round' | 'oval' | 'capsule' | 'rectangle'
 
-// Emergency contact
+/**
+ * Represents an emergency contact.
+ */
 export interface EmergencyContact {
+  /** Unique identifier for the contact. */
   id: string
+  /** Full name of the contact. */
   name: string
+  /** Relationship to the care receiver (e.g., 'Doctor', 'Son'). */
   relationship: string
+  /** Phone number of the contact. */
   phone: string
+  /** Whether this is the primary contact to notify first. */
   isPrimary: boolean
 }
 
-// Wellness check entry
+/**
+ * A single wellness check entry.
+ */
 export interface WellnessEntry {
+  /** Unique identifier for the entry. */
   id: string
+  /** Date of the entry (YYYY-MM-DD). */
   date: string
+  /** Reported wellness level. */
   level: WellnessLevel
+  /** Optional note providing more context. */
   note?: string
+  /** ISO timestamp of when the entry was created. */
   timestamp: string
 }
 
+/**
+ * Information about an active care handover.
+ */
 export interface HandoverInfo {
+  /** Whether a handover is currently in effect. */
   isActive: boolean
+  /** Name of the person taking over care. */
   targetName?: string
-  endDate?: string // ISO date
+  /** ISO date when the handover ends. */
+  endDate?: string
 }
 
-// Message between caregiver and care receiver
+/**
+ * A message exchanged between a caregiver and a care receiver.
+ */
 export interface CareMessage {
+  /** Unique identifier for the message. */
   id: string
+  /** The sender of the message. */
   from: 'caregiver' | 'careReceiver'
+  /** The text content of the message. */
   text: string
+  /** ISO timestamp of when the message was sent. */
   timestamp: string
+  /** Whether the message has been read by the recipient. */
   isRead: boolean
-  isQuickMessage: boolean // Pre-set messages vs custom
+  /** True if the message was sent using a pre-defined quick-message template. */
+  isQuickMessage: boolean
 }
 
+/**
+ * An event recorded in the care timeline.
+ */
 export interface TimelineEvent {
+  /** Unique identifier for the event. */
   id: string
+  /** Type of event (see TimelineEventType). */
   type: TimelineEventType
+  /** ISO timestamp of the event. */
   timestamp: string
+  /** ID of the medication associated with the event, if applicable. */
   medicationId?: string
+  /** Name of the medication associated with the event, if applicable. */
   medicationName?: string
+  /** Optional descriptive note. */
   note?: string
+  /** The person who performed the action. */
   actor?: 'caregiver' | 'careReceiver' | 'pharmacist'
 }
 
+/**
+ * A short-term note linked to a specific day or medication.
+ */
 export interface ContextualNote {
+  /** Unique identifier for the note. */
   id: string
+  /** Content of the note. */
   text: string
+  /** ISO timestamp of creation. */
   createdAt: string
+  /** Entity the note is linked to. */
   linkedTo?: {
+    /** Type of linked entity. */
     type: 'medication' | 'day'
+    /** ID of the linked entity. */
     id?: string
   }
-  fadingAt: string // When this note starts to fade (7 days from creation)
+  /** ISO timestamp when the note should begin fading from the UI. */
+  fadingAt: string
 }
 
+/**
+ * Comprehensive details of a medication.
+ */
 export interface Medication {
+  /** Unique identifier for the medication. */
   id: string
+  /** Name of the medication. */
   name: string
+  /** Dosage information (e.g., '500mg'). */
   dosage: string
+  /** General time of day for administration. */
   timeOfDay: TimeOfDay
-  time?: string // Specific time (e.g. "08:30")
+  /** Specific administration time (e.g., '08:30'). */
+  time?: string
+  /** Additional notes about administration. */
   notes?: string
+  /** Whether the medication has been taken for the current day. */
   taken: boolean
-  lastUpdated: string // ISO date string
-  refillDaysLeft?: number // Simple refill awareness
-  pharmacistNote?: string // Note from pharmacist
-  color?: MedicationColor // Visual identification
-  shape?: MedicationShape // Visual identification
-  imageUrl?: string // Photo of actual pill
-  streak?: number // Consecutive days taken
-  totalTaken?: number // Lifetime total
-  simpleExplanation?: string // Feature 5: Simple Medication Explanations
+  /** ISO timestamp of the last update to this medication record. */
+  lastUpdated: string
+  /** Number of days remaining until a refill is required. */
+  refillDaysLeft?: number
+  /** Notes provided by the pharmacist. */
+  pharmacistNote?: string
+  /** Visual color for identification. */
+  color?: MedicationColor
+  /** Visual shape for identification. */
+  shape?: MedicationShape
+  /** URL to a photo of the medication. */
+  imageUrl?: string
+  /** Number of consecutive days the medication was taken. */
+  streak?: number
+  /** Total number of times the medication has been taken. */
+  totalTaken?: number
+  /** A simplified explanation of the medicine's purpose for the receiver. */
+  simpleExplanation?: string
 }
 
+/**
+ * Profile information for the caregiver.
+ */
 export interface CaregiverProfile {
+  /** Full name of the caregiver. */
   name: string
+  /** Whether the caregiver has completed the onboarding process. */
   setupComplete: boolean
+  /** Current availability status. */
   roleStatus: CareRoleStatus
-  awayUntil?: string // ISO date when temporarily away
-  handover?: HandoverInfo // Feature 3: Temporary Care Handover
+  /** ISO timestamp until which the caregiver is temporarily away. */
+  awayUntil?: string
+  /** Handover details if care is being temporarily transferred. */
+  handover?: HandoverInfo
 }
 
+/**
+ * Profile information for the care receiver.
+ */
 export interface CareReceiverProfile {
+  /** Full name of the care receiver. */
   name: string
-  independentTimes?: TimeOfDay[] // Times they manage independently
-  preferLargeText?: boolean // Accessibility
-  preferVoiceConfirm?: boolean // Voice confirmation mode
-  quickMessages?: string[] // Pre-set messages to send to caregiver
+  /** Times of day when the receiver is typically independent. */
+  independentTimes?: TimeOfDay[]
+  /** Whether the receiver prefers larger text for accessibility. */
+  preferLargeText?: boolean
+  /** Whether the receiver prefers voice-based confirmation. */
+  preferVoiceConfirm?: boolean
+  /** List of pre-defined quick messages the receiver can send. */
+  quickMessages?: string[]
 }
 
+/**
+ * Contact information for the pharmacist.
+ */
 export interface PharmacistContact {
+  /** Name of the pharmacist or pharmacy. */
   name?: string
-  lastRefillConfirm?: string // ISO date
+  /** ISO date of the last refill confirmation. */
+  lastRefillConfirm?: string
+  /** General notes about pharmacy dealings. */
   note?: string
 }
 
+/**
+ * Summary of a finalized care day.
+ */
 export interface DayClosure {
+  /** Date of the closure (YYYY-MM-DD). */
   date: string
+  /** ISO timestamp of when the day was closed. */
   closedAt: string
+  /** Whether all scheduled medications were taken. */
   allTaken: boolean
+  /** Total number of medications scheduled for the day. */
   totalMeds: number
+  /** Number of medications actually taken. */
   takenCount: number
 }
 
+/**
+ * The global state object for the entire application.
+ */
 export interface AppData {
+  /** The role of the current authenticated user. */
   userRole: UserRole
+  /** Profile of the caregiver, if applicable. */
   caregiver: CaregiverProfile | null
+  /** Profile of the care receiver, if applicable. */
   careReceiver: CareReceiverProfile | null
+  /** List of all medications being tracked. */
   medications: Medication[]
-  lastResetDate: string // Track daily reset
+  /** ISO date of the last daily reset. */
+  lastResetDate: string
+  /** History of all care-related events. */
   timeline: TimelineEvent[]
+  /** Collection of short-term contextual notes. */
   contextualNotes: ContextualNote[]
+  /** Pharmacist contact details. */
   pharmacist: PharmacistContact | null
+  /** History of daily care closures. */
   dayClosures: DayClosure[]
-  lastCheckInSuggestion?: string // ISO date of last suggestion
-  // New advanced features
+  /** ISO date of the last check-in suggestion shown to the caregiver. */
+  lastCheckInSuggestion?: string
+  /** List of emergency contacts. */
   emergencyContacts: EmergencyContact[]
+  /** History of wellness entries. */
   wellnessEntries: WellnessEntry[]
+  /** History of messages between parties. */
   messages: CareMessage[]
-  currentStreak: number // Days in a row with all meds taken
+  /** Current adherence streak in days. */
+  currentStreak: number
+  /** Longest adherence streak recorded. */
   longestStreak: number
+  /** Total number of days the app has been used for tracking. */
   totalDaysTracked: number
-  lastChangeNotifiedAt?: string // Feature 7: Calm "Something Changed" Indicator
-  lastFineCheckIn?: string // Feature 1: Daily "I'm Fine Today" Check-In
+  /** ISO timestamp of the last significant state change notification. */
+  lastChangeNotifiedAt?: string
+  /** ISO timestamp of the last successful daily check-in. */
+  lastFineCheckIn?: string
+  /** Current state of the safety check system. */
   safetyCheck: {
+    /** Current status of the safety check. */
     status: SafetyCheckStatus
+    /** ISO timestamp of the last trigger. */
     lastTriggered?: string
+    /** Method used to trigger the last check. */
     triggeredBy?: 'motion' | 'manual'
   }
 }
 
-// Storage key for localStorage
+/** Local storage key used to persist AppData. */
 export const STORAGE_KEY = 'sahay-app-data'
 
-// Default empty state
+/** Default initial state for the application. */
 export const defaultAppData: AppData = {
   userRole: null,
   caregiver: null,
@@ -196,20 +332,31 @@ export const defaultAppData: AppData = {
   },
 }
 
-// Helper to create dates relative to today
+/**
+ * Helper to generate ISO date strings for X days ago.
+ * @param {number} days - Number of days to subtract from today.
+ * @returns {string} ISO date string.
+ */
 function daysAgo(days: number): string {
   const d = new Date()
   d.setDate(d.getDate() - days)
   return d.toISOString()
 }
 
+/**
+ * Helper to generate ISO date strings for X days from now.
+ * @param {number} days - Number of days to add to today.
+ * @returns {string} ISO date string.
+ */
 function daysFromNow(days: number): string {
   const d = new Date()
   d.setDate(d.getDate() + days)
   return d.toISOString()
 }
 
-// Dummy data for wireframe/design preview
+/**
+ * Dummy data used for development, wireframing, and design previews.
+ */
 export const dummyAppData: AppData = {
   userRole: 'caregiver',
   caregiver: {
@@ -618,7 +765,12 @@ export const dummyAppData: AppData = {
   },
 }
 
-// Calculate care confidence based on recent activity
+/**
+ * Calculates care confidence based on recent activity.
+ * @param {TimelineEvent[]} timeline - The event history.
+ * @param {DayClosure[]} dayClosures - The history of day closures.
+ * @returns {ConfidenceLevel} The determined confidence level.
+ */
 export function calculateConfidence(
   timeline: TimelineEvent[],
   dayClosures: DayClosure[]
@@ -633,10 +785,8 @@ export function calculateConfidence(
     return diffDays < recentDays
   })
 
-  // New if less than 3 days of history
   if (dayClosures.length < 3) return 'new'
 
-  // Check for recent changes (dose changes, new meds, etc.)
   const hasRecentChanges = recentEvents.some((e) =>
     ['dose_changed', 'medication_added', 'medication_removed'].includes(e.type)
   )
@@ -646,7 +796,11 @@ export function calculateConfidence(
   return 'stable'
 }
 
-// Get confidence message
+/**
+ * Maps a confidence level to a human-readable message.
+ * @param {ConfidenceLevel} level - The confidence level.
+ * @returns {string} The descriptive message.
+ */
 export function getConfidenceMessage(level: ConfidenceLevel): string {
   switch (level) {
     case 'stable':
@@ -658,19 +812,27 @@ export function getConfidenceMessage(level: ConfidenceLevel): string {
   }
 }
 
-// Helper to generate unique IDs
+/**
+ * Generates a unique identifier for new medications or events.
+ * @returns {string} A unique string ID.
+ */
 export function generateId(): string {
   return `med_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 }
 
-// Time of day display labels
+/**
+ * Mapping of TimeOfDay keys to human-readable display labels.
+ */
 export const timeOfDayLabels: Record<TimeOfDay, string> = {
   morning: 'Morning',
   afternoon: 'Afternoon',
   evening: 'Evening',
 }
 
-// Get current time of day
+/**
+ * Determines the current time of day based on the local system clock.
+ * @returns {TimeOfDay} The current time category.
+ */
 export function getCurrentTimeOfDay(): TimeOfDay {
   const hour = new Date().getHours()
   if (hour < 12) return 'morning'
@@ -678,9 +840,11 @@ export function getCurrentTimeOfDay(): TimeOfDay {
   return 'evening'
 }
 
-// Format a 24-hour time string ("14:30", "14:30:00", or a Date) into a
-// 12-hour "h:mm AM/PM" label.  Anything we can't parse falls back to the
-// input string so the UI never goes blank.
+/**
+ * Formats a 24-hour time string or Date object into a 12-hour format (e.g., "8:30 AM").
+ * @param {string | Date | null | undefined} time - The time value to format.
+ * @returns {string} The formatted 12-hour time string, or an empty string if no input.
+ */
 export function formatTime12h(time: string | Date | null | undefined): string {
   if (!time) return ''
   let h = 0
