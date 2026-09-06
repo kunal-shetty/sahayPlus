@@ -1,14 +1,24 @@
 'use client'
 
+/**
+ * @file page.tsx
+ * @description The Login and Sign-up page for Sahay+.
+ * This page implements a multi-step flow:
+ * 1. User enters email.
+ * 2. If the user is recognized, they are logged in immediately.
+ * 3. If the user is new, they are prompted to provide their name and select a role.
+ */
+
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Heart, Mail, User, ArrowRight, Users, Loader2 } from 'lucide-react'
 import { useSahay } from '@/lib/sahay-context'
 
 /**
- * Email Login Page
- * Step 1: Enter email
- * Step 2 (new users): Enter name + select role
+ * LoginPage component.
+ * Manages the authentication state, multi-step form transitions, and interaction with the auth API.
+ *
+ * @returns {JSX.Element} The login/signup interface.
  */
 export default function LoginPage() {
     const { login } = useSahay()
@@ -19,13 +29,17 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
 
+    /**
+     * Handles the first step of the login process (email submission).
+     * Checks if the user already exists or if they need to complete a profile setup.
+     */
     const handleEmailSubmit = async () => {
         if (!email.trim()) return
         setIsLoading(true)
         setError('')
 
         try {
-            // Try logging in with just email
+            // Attempt to login with email; the server determines if the user is new or existing
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -34,10 +48,10 @@ export default function LoginPage() {
             const data = await res.json()
 
             if (res.ok && !data.is_new) {
-                // Existing user — log them in directly
+                // Existing user: Log in directly via context
                 login(data.user, data.care_relationship)
             } else if (res.status === 400 && data.error?.includes('Name and role')) {
-                // New user — need more info
+                // New user: transition to the details step to collect name and role
                 setStep('details')
             } else {
                 setError(data.error || 'Something went wrong')
@@ -49,6 +63,10 @@ export default function LoginPage() {
         }
     }
 
+    /**
+     * Handles the second step of the login process (signup/profile creation).
+     * Registers the new user with the provided name and role.
+     */
     const handleSignup = async () => {
         if (!name.trim() || !role) return
         setIsLoading(true)
@@ -76,7 +94,7 @@ export default function LoginPage() {
 
     return (
         <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-background safe-top safe-bottom">
-            {/* Logo */}
+            {/* Logo and Welcome Header */}
             <motion.div
                 className="text-center mb-10"
                 initial={{ opacity: 0, y: -20 }}
@@ -118,7 +136,7 @@ export default function LoginPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
                     >
-                        {/* Email input */}
+                        {/* Email input field */}
                         <div className="relative">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                             <input
@@ -135,7 +153,7 @@ export default function LoginPage() {
                             />
                         </div>
 
-                        {/* Continue button */}
+                        {/* Primary action button for email submission */}
                         <motion.button
                             onClick={handleEmailSubmit}
                             disabled={!email.trim() || isLoading}
@@ -163,7 +181,7 @@ export default function LoginPage() {
                         initial={{ opacity: 0, x: 30 }}
                         animate={{ opacity: 1, x: 0 }}
                     >
-                        {/* Name input */}
+                        {/* Name input field for new users */}
                         <div className="relative">
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                             <input
@@ -178,7 +196,7 @@ export default function LoginPage() {
                             />
                         </div>
 
-                        {/* Role selection */}
+                        {/* Role selection grid */}
                         <p className="text-center text-muted-foreground text-base pt-2">
                             How will you use Sahay+?
                         </p>
@@ -213,7 +231,7 @@ export default function LoginPage() {
                             </motion.button>
                         </div>
 
-                        {/* Create account button */}
+                        {/* Final signup button */}
                         <motion.button
                             onClick={handleSignup}
                             disabled={!name.trim() || !role || isLoading}
@@ -235,7 +253,7 @@ export default function LoginPage() {
                             )}
                         </motion.button>
 
-                        {/* Back link */}
+                        {/* Navigation back to email step */}
                         <button
                             onClick={() => setStep('email')}
                             className="w-full text-center text-muted-foreground text-base py-2 hover:text-foreground transition-colors"
@@ -245,7 +263,7 @@ export default function LoginPage() {
                     </motion.div>
                 )}
 
-                {/* Error message */}
+                {/* Error display area */}
                 {error && (
                     <motion.p
                         className="mt-4 text-center text-destructive text-base font-medium"
