@@ -1,7 +1,23 @@
+/**
+ * @file route.ts
+ * @description API route for retrieving the shared activity timeline.
+ * This provides a chronologically ordered list of events (meds taken, check-ins, etc.)
+ * for a specific care relationship.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// GET /api/timeline — Fetch shared activity timeline
+/**
+ * GET /api/timeline
+ * Fetches a paginated list of timeline events for a given care relationship.
+ *
+ * @param {NextRequest} req - The incoming request.
+ * @param {string} req.query.care_relationship_id - Required. The ID of the relationship.
+ * @param {string} [req.query.limit="50"] - Maximum number of events to return.
+ * @param {string} [req.query.offset="0"] - The starting offset for pagination.
+ * @returns {Promise<NextResponse>} JSON response containing the events and pagination metadata.
+ */
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
