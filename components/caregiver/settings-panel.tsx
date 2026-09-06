@@ -1,17 +1,37 @@
 'use client'
 
+/**
+ * @file settings-panel.tsx
+ * @description The Settings Panel component for Caregivers.
+ * This component serves as the administrative hub for the caregiver's account.
+ * It allows for profile viewing, managing the "Silent Participant" (the local pharmacist),
+ * switching user roles, and performing a hard reset of the application data.
+ *
+ * The panel is designed to be calm and minimal, ensuring that destructive actions
+ * (like resetting the app) are protected by confirmation dialogs to prevent
+ * accidental data loss.
+ */
+
 import { useState } from 'react'
 import { useSahay } from '@/lib/sahay-context'
 import { ArrowLeft, LogOut, Trash2, Heart, Pill, Plus } from 'lucide-react'
 
+/**
+ * Props for the SettingsPanel component.
+ *
+ * @interface SettingsPanelProps
+ * @property {() => void} onClose - Callback function to close the settings panel and return to the previous view.
+ */
 interface SettingsPanelProps {
   onClose: () => void
 }
 
 /**
- * Settings Panel
- * Simple settings for caregiver: switch role, reset app
- * Design: Calm, minimal, clear actions
+ * SettingsPanel component.
+ * Provides an interface for account and application-level configurations.
+ *
+ * @param {SettingsPanelProps} props - Component props.
+ * @returns {JSX.Element} The caregiver settings interface.
  */
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { data, logout, resetApp, updatePharmacist, addPharmacistNote } =
@@ -26,19 +46,32 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   )
   const [pharmacistNote, setPharmacistNote] = useState('')
 
+  /**
+   * Triggers the logout process to allow the user to switch roles
+   * (e.g., from caregiver to care receiver).
+   */
   const handleSwitchRole = () => {
     logout()
   }
 
+  /**
+   * Wipes all stored application data and resets the app to its initial state.
+   */
   const handleReset = () => {
     resetApp()
   }
 
+  /**
+   * Persists the pharmacist's name to the backend.
+   */
   const handleSavePharmacist = () => {
     updatePharmacist({ name: pharmacistName.trim() || undefined })
     setShowPharmacistForm(false)
   }
 
+  /**
+   * Adds a specific note from the pharmacist to a selected medication.
+   */
   const handleAddPharmacistNote = () => {
     if (selectedMedForNote && pharmacistNote.trim()) {
       addPharmacistNote(selectedMedForNote, pharmacistNote.trim())
@@ -53,7 +86,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
       <header className="flex items-center gap-4 p-4 border-b border-border">
         <button
           onClick={onClose}
-          className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center 
+          className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center
                    hover:bg-secondary/80 active:scale-95 transition-all touch-manipulation
                    focus:outline-none focus:ring-2 focus:ring-sahay-sage"
           aria-label="Go back"
@@ -123,7 +156,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
                 <button
                   onClick={() => setShowPharmacistForm(true)}
-                  className="w-full py-3 px-4 bg-secondary text-foreground font-medium 
+                  className="w-full py-3 px-4 bg-secondary text-foreground font-medium
                            rounded-xl transition-all active:scale-[0.97] touch-manipulation
                            hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
                 >
@@ -145,7 +178,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowPharmacistForm(false)}
-                    className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium 
+                    className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium
                              rounded-xl transition-all active:scale-[0.97] touch-manipulation
                              focus:outline-none focus:ring-2 focus:ring-ring"
                   >
@@ -153,7 +186,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   </button>
                   <button
                     onClick={handleSavePharmacist}
-                    className="flex-1 py-3 px-4 bg-primary text-primary-foreground font-medium 
+                    className="flex-1 py-3 px-4 bg-primary text-primary-foreground font-medium
                              rounded-xl transition-all active:scale-[0.97] touch-manipulation
                              focus:outline-none focus:ring-2 focus:ring-ring"
                   >
@@ -193,7 +226,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                           setSelectedMedForNote(null)
                           setPharmacistNote('')
                         }}
-                        className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium 
+                        className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium
                                  rounded-xl transition-colors touch-manipulation
                                  focus:outline-none focus:ring-2 focus:ring-ring"
                       >
@@ -202,7 +235,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                       <button
                         onClick={handleAddPharmacistNote}
                         disabled={!pharmacistNote.trim()}
-                        className="flex-1 py-3 px-4 bg-sahay-blue text-accent-foreground font-medium 
+                        className="flex-1 py-3 px-4 bg-sahay-blue text-accent-foreground font-medium
                                  rounded-xl transition-colors touch-manipulation disabled:opacity-50
                                  focus:outline-none focus:ring-2 focus:ring-ring"
                       >
@@ -216,7 +249,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                       <button
                         key={med.id}
                         onClick={() => setSelectedMedForNote(med.id)}
-                        className="px-3 py-2 bg-secondary text-foreground text-sm font-medium 
+                        className="px-3 py-2 bg-secondary text-foreground text-sm font-medium
                                  rounded-lg transition-colors touch-manipulation flex items-center gap-1
                                  hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
                       >
@@ -239,7 +272,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             {/* Switch role */}
             <button
               onClick={handleSwitchRole}
-              className="w-full p-4 bg-card rounded-xl border-2 border-border 
+              className="w-full p-4 bg-card rounded-xl border-2 border-border
                        hover:border-sahay-sage/50 transition-all active:scale-[0.97] text-left
                        touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage"
             >
@@ -262,7 +295,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             {!showResetConfirm && (
               <button
                 onClick={() => setShowResetConfirm(true)}
-                className="w-full p-4 bg-card rounded-xl border-2 border-border 
+                className="w-full p-4 bg-card rounded-xl border-2 border-border
                          hover:border-destructive/50 transition-all active:scale-[0.97] text-left
                          touch-manipulation focus:outline-none focus:ring-2 focus:ring-destructive"
               >
@@ -293,7 +326,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   <button
                     type="button"
                     onClick={() => setShowResetConfirm(false)}
-                    className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium 
+                    className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium
                              rounded-xl transition-colors touch-manipulation
                              focus:outline-none focus:ring-2 focus:ring-sahay-sage"
                   >
@@ -302,7 +335,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="flex-1 py-3 px-4 bg-destructive text-destructive-foreground font-medium 
+                    className="flex-1 py-3 px-4 bg-destructive text-destructive-foreground font-medium
                              rounded-xl flex items-center justify-center gap-2 transition-colors touch-manipulation
                              focus:outline-none focus:ring-2 focus:ring-destructive"
                   >
