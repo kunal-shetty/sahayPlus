@@ -1,5 +1,13 @@
 'use client'
 
+/**
+ * @file emergency-call.tsx
+ * @description The Emergency Call interface for Care Receivers.
+ * Provides a simple, high-contrast list of emergency contacts that can be
+ * triggered with a single tap to initiate a phone call. Includes a
+ * highlighted primary contact and a fallback to the national emergency number.
+ */
+
 import { useSahay } from '@/lib/sahay-context'
 import {
   ArrowLeft,
@@ -10,10 +18,23 @@ import {
   Stethoscope,
 } from 'lucide-react'
 
+/**
+ * Props for the EmergencyCall component.
+ * @interface EmergencyCallProps
+ * @property {() => void} onClose - Callback to close the emergency call screen and return to home.
+ */
 interface EmergencyCallProps {
   onClose: () => void
 }
 
+/**
+ * EmergencyCall component.
+ * Displays emergency contacts for the care receiver.
+ * Prioritizes the primary contact and provides context-aware icons based on the relationship.
+ *
+ * @param {EmergencyCallProps} props - Component props.
+ * @returns {JSX.Element} The emergency call contact list.
+ */
 export function EmergencyCall({ onClose }: EmergencyCallProps) {
   const { data } = useSahay()
 
@@ -21,6 +42,12 @@ export function EmergencyCall({ onClose }: EmergencyCallProps) {
   const primaryContact = contacts.find((c) => c.isPrimary)
   const otherContacts = contacts.filter((c) => !c.isPrimary)
 
+  /**
+   * Determines the most appropriate icon based on the contact's relationship.
+   *
+   * @param {string} relationship - The relationship string (e.g., 'Daughter', 'Doctor').
+   * @returns {JSX.Element} The corresponding Lucide icon.
+   */
   const getRelationshipIcon = (relationship: string) => {
     const lower = relationship.toLowerCase()
     if (lower.includes('doctor') || lower.includes('dr.')) {
@@ -132,7 +159,7 @@ export function EmergencyCall({ onClose }: EmergencyCallProps) {
           </p>
           <a
             href="tel:112"
-            className="w-full p-4 bg-destructive/10 border-2 border-destructive/30 rounded-xl 
+            className="w-full p-4 bg-destructive/10 border-2 border-destructive/30 rounded-xl
                      flex items-center justify-center gap-3
                      touch-manipulation active:bg-destructive/20
                      focus:outline-none focus:ring-2 focus:ring-ring"
