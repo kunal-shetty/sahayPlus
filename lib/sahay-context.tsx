@@ -185,8 +185,13 @@ interface SahayContextValue {
   endHandover: () => void
   /** Generates human-readable insights based on timeline patterns. */
   getHumanInsights: () => string[]
-  /** Generates a summary of care for a doctor's visit. */
-  getDoctorPrepSummary: () => string
+  /** Generates structured data for a doctor's visit summary. */
+  getDoctorPrepData: () => {
+    observations: string[]
+    changes: { medicationName: string; date: string; note: string }[]
+    wellnessTrend: WellnessLevel[]
+    adherenceRate: number
+  }
   /** Dismisses the notification that data has changed. */
   dismissChangeIndicator: () => void
 
@@ -1432,25 +1437,45 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   }, [data.timeline, data.medications])
 
   /**
-   * Pure getter that generates a summary of care events and changes for a doctor's visit.
+   * Generates structured data for a doctor's visit summary.
    */
-  const getDoctorPrepSummary = useCallback(() => {
+  const getDoctorPrepData = useCallback(() => {
     const timeline = data.timeline
     const notes = data.contextualNotes
+    const wellness = data.wellnessEntries
 
-    let summary = "Summary for Doctor Visit:\n\n"
+    const recentNotes = notes
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5)
+      .map(n => n.text)
 
-    const recentNotes = notes.slice(-3).map(n => `- ${n.text}`).join('\n')
-    if (recentNotes) summary += `Recent observations:\n${recentNotes}\n\n`
+    const changes = timeline
+      .filter(t => t.type === 'dose_changed')
+      .slice(-5)
+      .map(c => ({
+        medicationName: c.medicationName || 'Unknown',
+        date: new Date(c.timestamp).toLocaleDateString(),
+        note: c.note || 'Dose changed'
+      }))
 
-    const changes = timeline.filter(t => t.type === 'dose_changed').slice(-2)
-    if (changes.length > 0) {
-      summary += "Routine changes:\n"
-      changes.forEach(c => summary += `- ${c.medicationName} dose adjusted on ${new Date(c.timestamp).toLocaleDateString()}\n`)
+    const wellnessTrend = wellness
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 7)
+      .map(w => w.level)
+
+    const recentClosures = data.dayClosures.slice(-7)
+    const avgAdherence = recentClosures.length > 0
+      ? Math.round((recentClosures.reduce((acc, c) => acc + c.takenCount, 0) /
+         recentClosures.reduce((acc, c) => acc + c.totalMeds, 0)) * 100)
+      : 0
+
+    return {
+      observations: recentNotes,
+      changes,
+      wellnessTrend,
+      adherenceRate: avgAdherence
     }
-
-    return summary
-  }, [data.timeline, data.contextualNotes])
+  }, [data.timeline, data.contextualNotes, data.wellnessEntries, data.dayClosures])
 
   /**
    * Dismisses the notification indicating that data has changed.
@@ -1639,7 +1664,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     startHandover,
     endHandover,
     getHumanInsights,
-    getDoctorPrepSummary,
+    getDoctorPrepData,
     dismissChangeIndicator,
     refreshRelationshipData,
   }
