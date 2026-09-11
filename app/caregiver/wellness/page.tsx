@@ -1,9 +1,10 @@
 'use client'
 
 import { useSahay } from '@/lib/sahay-context'
-import { ArrowLeft, Smile, Meh, Frown, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Smile, Meh, Frown, MessageCircle, Heart, Calendar, Info } from 'lucide-react'
 import type { WellnessLevel } from '@/lib/types'
-import { useRouter } from 'next/navigation'
+import { CaregiverLayout } from '@/components/caregiver/caregiver-layout'
+import { motion } from 'motion/react'
 
 const wellnessConfig: Record<
   WellnessLevel,
@@ -31,13 +32,10 @@ const wellnessConfig: Record<
 
 export default function WellnessPage() {
   const { data, getWellnessTrend, getTodayWellness } = useSahay()
-  const router = useRouter()
-
   const trend = getWellnessTrend()
   const todayWellness = getTodayWellness()
   const careReceiverName = data.careReceiver?.name || 'Care Receiver'
 
-  // Count wellness levels in last 7 days
   const wellnessCounts = trend.reduce(
     (acc, entry) => {
       acc[entry.level] = (acc[entry.level] || 0) + 1
@@ -52,168 +50,165 @@ export default function WellnessPage() {
       | undefined
 
   return (
-    <main className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="px-6 pt-6 pb-4">
-        <div className="flex items-center gap-4 mb-2">
-          <button
-            onClick={() => router.back()}
-            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center
-                     touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              How {careReceiverName} Feels
-            </h1>
-            <p className="text-muted-foreground">Wellness check-ins</p>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex-1 overflow-y-auto px-6 pb-8">
-        {/* Today's wellness */}
-        {todayWellness && (
-          <div
-            className={`rounded-2xl p-6 mb-6 ${
-              wellnessConfig[todayWellness.level].bgColor
-            }`}
-          >
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-2">
-              Today
-            </p>
-            <div className="flex items-center gap-4">
-              {(() => {
-                const config = wellnessConfig[todayWellness.level]
-                const Icon = config.icon
-                return (
-                  <>
-                    <div
-                      className={`w-16 h-16 rounded-full ${config.bgColor} flex items-center justify-center`}
-                    >
-                      <Icon className={`w-8 h-8 ${config.color}`} />
-                    </div>
-                    <div>
-                      <p className={`text-xl font-semibold ${config.color}`}>
-                        {config.label}
-                      </p>
-                      {todayWellness.note && (
-                        <p className="text-muted-foreground mt-1">
-                          &quot;{todayWellness.note}&quot;
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )
-              })()}
+      <main className="min-h-screen bg-background p-6">
+        <header className="flex items-center justify-between mb-8 max-w-6xl mx-auto">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+              <Heart className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Wellness Tracking</h1>
+              <p className="text-muted-foreground text-sm">Monitoring the emotional and physical well-being of {careReceiverName}</p>
             </div>
           </div>
-        )}
+        </header>
 
-        {!todayWellness && (
-          <div className="rounded-2xl p-6 mb-6 bg-secondary/50 border-2 border-dashed border-border">
-            <p className="text-center text-muted-foreground">
-              No wellness check-in today yet
-            </p>
-          </div>
-        )}
-
-        {/* Weekly summary */}
-        {mostCommon && (
-          <div className="bg-card rounded-2xl border-2 border-border p-5 mb-6">
-            <h2 className="text-lg font-semibold text-foreground mb-3">
-              This Week
-            </h2>
-            <p className="text-muted-foreground">
-              {careReceiverName} has mostly been{' '}
-              <span className={wellnessConfig[mostCommon].color}>
-                {wellnessConfig[mostCommon].label.toLowerCase()}
-              </span>{' '}
-              this week.
-            </p>
-            <div className="flex items-center gap-4 mt-4">
-              {(['great', 'okay', 'notGreat'] as WellnessLevel[]).map(
-                (level) => {
-                  const config = wellnessConfig[level]
-                  const Icon = config.icon
-                  const count = wellnessCounts[level] || 0
-                  return (
-                    <div
-                      key={level}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <Icon className={`w-5 h-5 ${config.color}`} />
-                      <span className="text-foreground font-medium">
-                        {count}
-                      </span>
-                    </div>
-                  )
-                }
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Wellness history */}
-        <section>
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            Recent Check-ins
-          </h2>
-          <div className="space-y-3">
-            {trend.map((entry) => {
-              const config = wellnessConfig[entry.level]
-              const Icon = config.icon
-              const date = new Date(entry.timestamp)
-              return (
-                <div
-                  key={entry.id}
-                  className="bg-card rounded-xl border-2 border-border p-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-full ${config.bgColor} flex items-center justify-center`}
-                      >
-                        <Icon className={`w-5 h-5 ${config.color}`} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {config.label}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {date.toLocaleDateString('en', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </p>
-                      </div>
-                    </div>
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* Today's Wellness Snapshot */}
+          <section className={cn(
+            "rounded-3xl p-8 shadow-sm border-2 transition-all",
+            todayWellness
+              ? `${wellnessConfig[todayWellness.level].bgColor} border-transparent`
+              : "bg-secondary/50 border-border border-dashed"
+          )}>
+            {todayWellness ? (
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="relative">
+                  <div className={cn(
+                    "w-24 h-24 rounded-full flex items-center justify-center text-4xl shadow-inner",
+                    wellnessConfig[todayWellness.level].bgColor
+                  )}>
+                    {(() => {
+                      const Icon = wellnessConfig[todayWellness.level].icon
+                      return <Icon className={cn("w-12 h-12", wellnessConfig[todayWellness.level].color)} />
+                    })()}
                   </div>
-                  {entry.note && (
-                    <div className="mt-3 pt-3 border-t border-border flex items-start gap-2">
-                      <MessageCircle className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-muted-foreground">
-                        {entry.note}
-                      </p>
-                    </div>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-sahay-success animate-pulse" />
+                  </motion.div>
+                </div>
+                <div className="text-center md:text-left">
+                  <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-1">Today's Status</p>
+                  <h2 className={cn("text-3xl font-bold mb-2", wellnessConfig[todayWellness.level].color)}>
+                    {wellnessConfig[todayWellness.level].label}
+                  </h2>
+                  {todayWellness.note && (
+                    <p className="text-lg text-foreground/80 italic leading-relaxed">
+                      &quot;{todayWellness.note}&quot;
+                    </p>
                   )}
                 </div>
-              )
-            })}
-
-            {trend.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  No wellness check-ins recorded yet
-                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+                  <Info className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-lg font-medium text-muted-foreground">No wellness check-in recorded for today</p>
+                <p className="text-sm text-muted-foreground mt-1">Check-ins are usually logged by the care receiver</p>
               </div>
             )}
+          </section>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Weekly Summary Card */}
+            <section className="lg:col-span-1 bg-card border-2 border-border rounded-3xl p-8 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <Calendar className="w-5 h-5 text-primary" />
+                <h3 className="text-xl font-bold">Weekly Summary</h3>
+              </div>
+
+              {mostCommon ? (
+                <div className="space-y-6">
+                  <div className="p-4 bg-secondary/30 rounded-2xl">
+                    <p className="text-sm text-muted-foreground mb-2">Dominant Mood</p>
+                    <p className={cn("text-xl font-bold", wellnessConfig[mostCommon].color)}>
+                      {wellnessConfig[mostCommon].label}
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">Mood Distribution</p>
+                    {(['great', 'okay', 'notGreat'] as WellnessLevel[]).map(level => {
+                      const config = wellnessConfig[level]
+                      const Icon = config.icon
+                      const count = wellnessCounts[level] || 0
+                      const percent = trend.length > 0 ? (count / trend.length) * 100 : 0
+                      return (
+                        <div key={level} className="flex items-center gap-3">
+                          <Icon className={cn("w-4 h-4", config.color)} />
+                          <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percent}%` }}
+                              className={cn("h-full", level === 'great' ? 'bg-sahay-success' : level === 'okay' ? 'bg-sahay-pending' : 'bg-destructive')}
+                            />
+                          </div>
+                          <span className="text-xs font-bold w-4 text-right">{count}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground italic">Insufficient data to generate a weekly summary.</p>
+              )}
+            </section>
+
+            {/* History Grid */}
+            <section className="lg:col-span-2 bg-card border-2 border-border rounded-3xl p-8 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                <h3 className="text-xl font-bold">Recent Detailed Check-ins</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {trend.map((entry) => {
+                  const config = wellnessConfig[entry.level]
+                  const Icon = config.icon
+                  return (
+                    <motion.div
+                      key={entry.id}
+                      whileHover={{ scale: 1.02 }}
+                      className="p-4 bg-background border border-border rounded-2xl flex gap-4"
+                    >
+                      <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", config.bgColor)}>
+                        <Icon className={cn("w-6 h-6", config.color)} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="font-bold text-foreground">{config.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(entry.timestamp).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                          </p>
+                        </div>
+                        {entry.note ? (
+                          <p className="text-sm text-muted-foreground italic leading-relaxed">
+                            &quot;{entry.note}&quot;
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">No additional notes</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  )
+                })}
+                {trend.length === 0 && (
+                  <div className="col-span-2 py-12 text-center">
+                    <p className="text-muted-foreground">No wellness check-ins recorded yet.</p>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
-        </section>
-      </div>
-    </main>
+        </div>
+      </main>
   )
+}
+
+function cn(...classes: any[]) {
+  return classes.filter(Boolean).join(' ')
 }
