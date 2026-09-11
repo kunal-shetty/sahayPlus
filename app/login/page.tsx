@@ -13,6 +13,7 @@ import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Heart, Mail, User, ArrowRight, Users, Loader2 } from 'lucide-react'
 import { useSahay } from '@/lib/sahay-context'
+import { useRouter } from 'next/navigation'
 
 /**
  * LoginPage component.
@@ -22,6 +23,7 @@ import { useSahay } from '@/lib/sahay-context'
  */
 export default function LoginPage() {
     const { login } = useSahay()
+    const router = useRouter()
     const [email, setEmail] = useState('')
     const [name, setName] = useState('')
     const [role, setRole] = useState<'caregiver' | 'care_receiver' | null>(null)
@@ -50,6 +52,7 @@ export default function LoginPage() {
             if (res.ok && !data.is_new) {
                 // Existing user: Log in directly via context
                 login(data.user, data.care_relationship)
+                router.push('/')
             } else if (res.status === 400 && data.error?.includes('Name and role')) {
                 // New user: transition to the details step to collect name and role
                 setStep('details')
@@ -82,6 +85,7 @@ export default function LoginPage() {
 
             if (res.ok) {
                 login(data.user, data.care_relationship)
+                router.push('/')
             } else {
                 setError(data.error || 'Something went wrong')
             }
