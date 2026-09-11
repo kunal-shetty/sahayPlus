@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'motion/react'
-import { ArrowLeft, Pill, Clock } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
+import { ArrowLeft, Pill, Clock, Save, X, Plus, ChevronRight } from 'lucide-react'
 import { useSahay } from '@/lib/sahay-context'
 import { useRouter } from 'next/navigation'
 import { type Medication } from '@/lib/types'
+import { CaregiverLayout } from '@/components/caregiver/caregiver-layout'
 
 /**
  * Pharmacist Panel Page
- * A silent helper for refill notes and pharmacist communication
+ * A professional interface for managing pharmacist details and medication-specific refill notes.
  */
 export default function PharmacistPage() {
   const { data, updatePharmacist, addPharmacistNote } = useSahay()
@@ -28,114 +29,120 @@ export default function PharmacistPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-background p-6">
-      <header className="flex items-center gap-4 mb-8">
-        <button
-          onClick={() => router.back()}
-          className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center
-                   hover:bg-secondary/80 active:scale-95 transition-all touch-manipulation
-                   focus:outline-none focus:ring-2 focus:ring-sahay-sage"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-2xl font-bold">Pharmacist</h1>
-      </header>
-
-      <div className="space-y-6 max-w-md mx-auto w-full">
-        {/* Current pharmacist info */}
-        <section className="p-5 bg-card rounded-2xl border-2 border-border">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-sahay-blue-light flex items-center justify-center">
-              <Pill className="w-5 h-5 text-sahay-blue" />
+      <main className="min-h-screen bg-background p-6">
+        <header className="flex items-center justify-between mb-8 max-w-5xl mx-auto">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+              <Pill className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-medium text-foreground">Local Pharmacist</h2>
-              <p className="text-sm text-muted-foreground">A silent helper for refill notes</p>
+              <h1 className="text-2xl font-bold">Pharmacist Panel</h1>
+              <p className="text-muted-foreground text-sm">Manage pharmacy contacts and medication refill notes</p>
             </div>
           </div>
+        </header>
 
-          {data.pharmacist?.name ? (
-            <div className="mb-4 p-3 bg-secondary/50 rounded-xl">
-              <p className="text-foreground font-medium">{data.pharmacist.name}</p>
-              {data.pharmacist.lastRefillConfirm && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Last refill: {new Date(data.pharmacist.lastRefillConfirm).toLocaleDateString()}
-                </p>
+        <div className="max-w-5xl mx-auto space-y-8">
+          {/* Pharmacist Identity Section */}
+          <section className="bg-card border-2 border-border rounded-3xl p-6 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-sahay-blue-light flex items-center justify-center text-2xl">
+                  💊
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Local Pharmacy</h2>
+                  <p className="text-muted-foreground text-sm">Primary medication provider</p>
+                </div>
+              </div>
+
+              {editing ? (
+                <div className="flex items-center gap-2 bg-secondary p-2 rounded-2xl border border-border">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Pharmacy Name"
+                    className="bg-transparent px-3 py-2 text-sm outline-none w-full md:w-64"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="p-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50"
+                  >
+                    {saving ? <Clock className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="p-2 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-all"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="font-bold text-lg">{data.pharmacist?.name || 'Not Set'}</p>
+                    {data.pharmacist?.lastRefillConfirm && (
+                      <p className="text-xs text-muted-foreground">
+                        Last Refill: {new Date(data.pharmacist.lastRefillConfirm).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="px-4 py-2 bg-secondary text-foreground text-sm font-medium rounded-xl hover:bg-secondary/80 transition-all"
+                  >
+                    Edit
+                  </button>
+                </div>
               )}
             </div>
-          ) : (
-            <p className="text-muted-foreground mb-4">No pharmacist added yet</p>
-          )}
+          </section>
 
-          {editing ? (
-            <div className="space-y-3">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Pharmacist name"
-                className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setEditing(false)}
-                  className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium
-                           rounded-xl transition-all active:scale-[0.97] touch-manipulation"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 py-3 px-4 bg-primary text-primary-foreground font-medium
-                           rounded-xl transition-all active:scale-[0.97] touch-manipulation
-                           disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {saving ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}>
-                      <Clock className="w-4 h-4" />
-                    </motion.div>
-                  ) : (
-                    'Save'
-                  )}
-                </button>
+          {/* Medication Notes Table */}
+          <section className="bg-card border-2 border-border rounded-3xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold">Medication Notes</h3>
+                <p className="text-sm text-muted-foreground">Notes provided by the pharmacist for each medication</p>
               </div>
             </div>
-          ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className="w-full py-3 px-4 bg-secondary text-foreground font-medium
-                       rounded-xl transition-all active:scale-[0.97] touch-manipulation
-                       hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              {data.pharmacist?.name ? 'Edit Pharmacist' : '+ Add Pharmacist'}
-            </button>
-          )}
-        </section>
 
-        {/* Medication-specific notes from pharmacist */}
-        {data.medications.length > 0 && (
-          <section className="p-5 bg-card rounded-2xl border-2 border-border">
-            <h3 className="text-lg font-medium text-foreground mb-4">Medication Notes</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Add notes from your pharmacist for specific medications
-            </p>
-            <div className="space-y-3">
-              {data.medications.map((med) => (
-                <MedPharmacistNote key={med.id} med={med} />
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-secondary/50 text-muted-foreground text-xs uppercase tracking-wider font-bold">
+                  <tr>
+                    <th className="px-6 py-4">Medication</th>
+                    <th className="px-6 py-4">Current Note</th>
+                    <th className="px-6 py-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {data.medications.length > 0 ? (
+                    data.medications.map((med) => (
+                      <MedPharmacistRow key={med.id} med={med} />
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="px-6 py-12 text-center text-muted-foreground italic">
+                        No medications tracked yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </section>
-        )}
-      </div>
-    </main>
+        </div>
+      </main>
   )
 }
 
-function MedPharmacistNote({ med }: { med: Medication }) {
+function MedPharmacistRow({ med }: { med: Medication }) {
   const { addPharmacistNote } = useSahay()
-  const [expanded, setExpanded] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -146,73 +153,67 @@ function MedPharmacistNote({ med }: { med: Medication }) {
     setTimeout(() => {
       setSaving(false)
       setNote('')
-      setExpanded(false)
+      setIsEditing(false)
     }, 300)
   }
 
   return (
-    <div className="border-2 border-border rounded-xl overflow-hidden">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full p-3 flex items-center justify-between text-left
-                 hover:bg-secondary/50 active:scale-[0.99] transition-all touch-manipulation"
-      >
+    <tr className="hover:bg-secondary/30 transition-colors">
+      <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${med.taken ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}>
-            {med.taken ? <Check className="w-3 h-3 text-sahay-success" /> : <Clock className="w-3 h-3 text-sahay-pending" />}
-          </div>
-          <div>
-            <p className="font-medium text-foreground">{med.name}</p>
-            {med.pharmacistNote && (
-              <p className="text-xs text-sahay-blue mt-0.5">Has pharmacist note</p>
-            )}
-          </div>
+          <div className={`w-2 h-2 rounded-full ${med.taken ? 'bg-sahay-success' : 'bg-sahay-pending'}`} />
+          <span className="font-medium">{med.name}</span>
         </div>
-        <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`} />
-      </button>
-
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="p-3 pt-0 space-y-2">
-              {med.pharmacistNote && (
-                <div className="p-2 bg-sahay-blue/10 rounded-lg">
-                  <p className="text-sm text-sahay-blue font-medium">Current note:</p>
-                  <p className="text-sm text-foreground">{med.pharmacistNote}</p>
-                </div>
-              )}
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Add note from pharmacist..."
-                rows={2}
-                className="w-full p-2 bg-secondary rounded-lg border border-border text-sm
-                         focus:outline-none focus:ring-2 focus:ring-sahay-blue resize-none"
-              />
-              <button
-                onClick={handleSave}
-                disabled={!note.trim() || saving}
-                className="w-full py-2 px-3 bg-sahay-blue text-white font-medium text-sm
-                         rounded-lg transition-all active:scale-[0.97] touch-manipulation
-                         disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {saving ? (
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}>
-                    <Clock className="w-3 h-3" />
-                  </motion.div>
-                ) : (
-                  'Save Note'
-                )}
-              </button>
-            </div>
-          </motion.div>
+      </td>
+      <td className="px-6 py-4">
+        {isEditing ? (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Enter pharmacist note..."
+              className="bg-secondary border border-border rounded-lg px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-primary w-full"
+              autoFocus
+            />
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50"
+            >
+              {saving ? <Clock className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={() => setIsEditing(false)}
+              className="p-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <p className={cn("text-sm", med.pharmacistNote ? "text-foreground" : "text-muted-foreground italic")}>
+              {med.pharmacistNote || 'No note provided'}
+            </p>
+            {med.pharmacistNote && <div className="w-1.5 h-1.5 rounded-full bg-sahay-blue" />}
+          </div>
         )}
-      </AnimatePresence>
-    </div>
+      </td>
+      <td className="px-6 py-4 text-right">
+        <button
+          onClick={() => {
+            setNote(med.pharmacistNote || '')
+            setIsEditing(true)
+          }}
+          className="text-xs font-bold text-primary hover:underline"
+        >
+          {isEditing ? 'Cancel' : 'Update Note'}
+        </button>
+      </td>
+    </tr>
   )
+}
+
+function cn(...classes: any[]) {
+  return classes.filter(Boolean).join(' ')
 }
