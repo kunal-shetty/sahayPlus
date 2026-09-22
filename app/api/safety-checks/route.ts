@@ -23,8 +23,11 @@ export async function GET(req: NextRequest) {
 
     if (!careRelationshipId || !triggeredAt) {
       return NextResponse.json(
-        { error: "Missing required query params: care_relationship_id, triggered_at" },
-        { status: 400 }
+        {
+          error:
+            "Missing required query params: care_relationship_id, triggered_at",
+        },
+        { status: 400 },
       );
     }
 
@@ -35,8 +38,14 @@ export async function GET(req: NextRequest) {
       .select("*")
       .eq("care_relationship_id", careRelationshipId)
       .eq("status", "pending_check")
-      .gte("triggered_at", new Date(new Date(triggeredAt).getTime() - 60000).toISOString())
-      .lte("triggered_at", new Date(new Date(triggeredAt).getTime() + 60000).toISOString())
+      .gte(
+        "triggered_at",
+        new Date(new Date(triggeredAt).getTime() - 60000).toISOString(),
+      )
+      .lte(
+        "triggered_at",
+        new Date(new Date(triggeredAt).getTime() + 60000).toISOString(),
+      )
       .order("triggered_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -49,7 +58,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch safety check" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
