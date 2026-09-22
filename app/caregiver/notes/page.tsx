@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useSahay } from '@/lib/sahay-context'
-import { FileText, Plus, X, ArrowLeft } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useState } from "react";
+import { useSahay } from "@/lib/sahay-context";
+import { FileText, Plus, X, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 /**
  * Contextual Notes Page
@@ -11,68 +11,68 @@ import { useRouter } from 'next/navigation'
  * Notes fade over time instead of accumulating
  */
 export default function NotesPage() {
-  const { data, addContextualNote, removeContextualNote } = useSahay()
-  const router = useRouter()
-  const [isAdding, setIsAdding] = useState(false)
-  const [noteText, setNoteText] = useState('')
-  const [linkedType, setLinkedType] = useState<'day' | 'medication'>('day')
-  const [linkedMedId, setLinkedMedId] = useState<string | undefined>()
+  const { data, addContextualNote, removeContextualNote } = useSahay();
+  const router = useRouter();
+  const [isAdding, setIsAdding] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [linkedType, setLinkedType] = useState<"day" | "medication">("day");
+  const [linkedMedId, setLinkedMedId] = useState<string | undefined>();
 
   // Filter out faded notes (older than 7 days)
-  const now = new Date()
+  const now = new Date();
   const activeNotes = data.contextualNotes.filter((note) => {
-    return new Date(note.fadingAt) > now
-  })
+    return new Date(note.fadingAt) > now;
+  });
 
   // Calculate opacity based on how close to fading
   const getNoteOpacity = (fadingAt: string) => {
-    const fadeDate = new Date(fadingAt)
+    const fadeDate = new Date(fadingAt);
     const daysLeft = Math.ceil(
-      (fadeDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-    )
-    if (daysLeft >= 5) return 1
-    if (daysLeft >= 3) return 0.8
-    if (daysLeft >= 1) return 0.6
-    return 0.4
-  }
+      (fadeDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    if (daysLeft >= 5) return 1;
+    if (daysLeft >= 3) return 0.8;
+    if (daysLeft >= 1) return 0.6;
+    return 0.4;
+  };
 
   const handleAddNote = () => {
-    if (!noteText.trim()) return
+    if (!noteText.trim()) return;
 
     const linkedTo =
-      linkedType === 'medication' && linkedMedId
-        ? { type: 'medication' as const, id: linkedMedId }
-        : { type: 'day' as const }
+      linkedType === "medication" && linkedMedId
+        ? { type: "medication" as const, id: linkedMedId }
+        : { type: "day" as const };
 
-    addContextualNote(noteText.trim(), linkedTo)
-    setNoteText('')
-    setIsAdding(false)
-    setLinkedType('day')
-    setLinkedMedId(undefined)
-  }
+    addContextualNote(noteText.trim(), linkedTo);
+    setNoteText("");
+    setIsAdding(false);
+    setLinkedType("day");
+    setLinkedMedId(undefined);
+  };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Today'
+      return "Today";
     }
     if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday'
+      return "Yesterday";
     }
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   const getMedName = (medId: string | undefined) => {
-    if (!medId) return null
-    return data.medications.find((m) => m.id === medId)?.name
-  }
+    if (!medId) return null;
+    return data.medications.find((m) => m.id === medId)?.name;
+  };
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
@@ -115,11 +115,11 @@ export default function NotesPage() {
               .sort(
                 (a, b) =>
                   new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime()
+                  new Date(a.createdAt).getTime(),
               )
               .map((note) => {
-                const opacity = getNoteOpacity(note.fadingAt)
-                const medName = getMedName(note.linkedTo?.id)
+                const opacity = getNoteOpacity(note.fadingAt);
+                const medName = getMedName(note.linkedTo?.id);
 
                 return (
                   <div
@@ -152,7 +152,7 @@ export default function NotesPage() {
                       </button>
                     </div>
                   </div>
-                )
+                );
               })}
           </div>
         )}
@@ -175,11 +175,11 @@ export default function NotesPage() {
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 onClick={() => {
-                  setLinkedType('day')
-                  setLinkedMedId(undefined)
+                  setLinkedType("day");
+                  setLinkedMedId(undefined);
                 }}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-                         ${linkedType === 'day' && !linkedMedId ? 'bg-sahay-sage text-primary-foreground' : 'bg-secondary text-foreground'}`}
+                         ${linkedType === "day" && !linkedMedId ? "bg-sahay-sage text-primary-foreground" : "bg-secondary text-foreground"}`}
               >
                 General note
               </button>
@@ -187,11 +187,11 @@ export default function NotesPage() {
                 <button
                   key={med.id}
                   onClick={() => {
-                    setLinkedType('medication')
-                    setLinkedMedId(med.id)
+                    setLinkedType("medication");
+                    setLinkedMedId(med.id);
                   }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-                           ${linkedMedId === med.id ? 'bg-sahay-sage text-primary-foreground' : 'bg-secondary text-foreground'}`}
+                           ${linkedMedId === med.id ? "bg-sahay-sage text-primary-foreground" : "bg-secondary text-foreground"}`}
                 >
                   {med.name}
                 </button>
@@ -212,8 +212,8 @@ export default function NotesPage() {
               </button>
               <button
                 onClick={() => {
-                  setIsAdding(false)
-                  setNoteText('')
+                  setIsAdding(false);
+                  setNoteText("");
                 }}
                 className="py-3 px-4 bg-secondary text-foreground font-medium
                          rounded-xl transition-all touch-manipulation
@@ -244,5 +244,5 @@ export default function NotesPage() {
         </div>
       )}
     </main>
-  )
+  );
 }
