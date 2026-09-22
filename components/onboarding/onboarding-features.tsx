@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * @file onboarding-features.tsx
@@ -12,8 +12,8 @@
  * reduces the friction and anxiety typically associated with medication management.
  */
 
-import { motion } from "motion/react"
-import { Bell, Pill, Shield, Users } from "lucide-react"
+import { motion } from "motion/react";
+import { Bell, Pill, Shield, Users } from "lucide-react";
 
 /**
  * Data structure for a feature highlight.
@@ -35,7 +35,8 @@ const features = [
     {
         icon: Users,
         title: "Care, shared thoughtfully",
-        description: "Stay in sync with family or caregivers, without over-monitoring.",
+        description:
+            "Stay in sync with family or caregivers, without over-monitoring.",
         color: "bg-primary",
         iconColor: "text-primary-foreground",
     },
@@ -53,7 +54,7 @@ const features = [
         color: "bg-accent",
         iconColor: "text-accent-foreground",
     },
-]
+];
 
 /**
  * OnboardingFeatures component.
@@ -93,7 +94,9 @@ export function OnboardingFeatures() {
                         <div
                             className={`flex h-12 w-12 items-center justify-center rounded-xl ${feature.color}`}
                         >
-                            <feature.icon className={`h-6 w-6 ${feature.iconColor}`} />
+                            <feature.icon
+                                className={`h-6 w-6 ${feature.iconColor}`}
+                            />
                         </div>
                         <div>
                             <h3 className="font-medium text-foreground">
@@ -107,5 +110,5 @@ export function OnboardingFeatures() {
                 ))}
             </div>
         </div>
-    )
+    );
 }
