@@ -15,8 +15,10 @@ export async function POST(req: NextRequest) {
 
         if (!care_relationship_id || !closed_by) {
             return NextResponse.json(
-                { error: "Missing required fields: care_relationship_id, closed_by" },
-                { status: 400 }
+                {
+                    error: "Missing required fields: care_relationship_id, closed_by",
+                },
+                { status: 400 },
             );
         }
 
@@ -48,12 +50,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Day closed successfully", closure: data },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to close day" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
