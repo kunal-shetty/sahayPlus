@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file daily-celebration.tsx
@@ -9,8 +9,8 @@
  * the receiver's adherence.
  */
 
-import { motion } from 'motion/react'
-import { Sparkles, Trophy } from 'lucide-react'
+import { motion } from "motion/react";
+import { Sparkles, Trophy } from "lucide-react";
 
 /**
  * Props for the DailyCelebration component.
@@ -19,8 +19,8 @@ import { Sparkles, Trophy } from 'lucide-react'
  * @property {number} medicationCount - The total number of medications completed today.
  */
 interface DailyCelebrationProps {
-  streak: number
-  medicationCount: number
+  streak: number;
+  medicationCount: number;
 }
 
 /**
@@ -30,14 +30,17 @@ interface DailyCelebrationProps {
  * @param {DailyCelebrationProps} props - Component props.
  * @returns {JSX.Element} The celebratory UI.
  */
-export function DailyCelebration({ streak, medicationCount }: DailyCelebrationProps) {
+export function DailyCelebration({
+  streak,
+  medicationCount,
+}: DailyCelebrationProps) {
   // Generate confetti particles with randomized properties for a natural look.
   const confetti = Array.from({ length: 20 }, (_, i) => ({
     id: i,
     delay: Math.random() * 0.3,
     x: Math.random() * 100 - 50,
     duration: 2 + Math.random() * 1,
-  }))
+  }));
 
   return (
     <div className="relative">
@@ -49,7 +52,7 @@ export function DailyCelebration({ streak, medicationCount }: DailyCelebrationPr
           style={{
             left: `${50 + particle.x}%`,
             top: 0,
-            backgroundColor: ['#65CDA6', '#F4B860', '#FF6B6B', '#4ECDC4'][
+            backgroundColor: ["#65CDA6", "#F4B860", "#FF6B6B", "#4ECDC4"][
               Math.floor(Math.random() * 4)
             ],
           }}
@@ -61,7 +64,7 @@ export function DailyCelebration({ streak, medicationCount }: DailyCelebrationPr
           transition={{
             duration: particle.duration,
             delay: particle.delay,
-            ease: 'easeIn',
+            ease: "easeIn",
           }}
         />
       ))}
@@ -110,5 +113,5 @@ export function DailyCelebration({ streak, medicationCount }: DailyCelebrationPr
         )}
       </motion.div>
     </div>
-  )
+  );
 }
