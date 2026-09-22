@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file analytics-dashboard.tsx
@@ -9,9 +9,9 @@
  * streaks and totals to help caregivers identify patterns and potential issues.
  */
 
-import { useSahay } from '@/lib/sahay-context'
-import { ArrowLeft, TrendingUp, Calendar, Award, Pill } from 'lucide-react'
-import { calculateConfidence, getConfidenceMessage } from '@/lib/types'
+import { useSahay } from "@/lib/sahay-context";
+import { ArrowLeft, TrendingUp, Calendar, Award, Pill } from "lucide-react";
+import { calculateConfidence, getConfidenceMessage } from "@/lib/types";
 
 /**
  * Props for the AnalyticsDashboard component.
@@ -19,7 +19,7 @@ import { calculateConfidence, getConfidenceMessage } from '@/lib/types'
  * @property {() => void} onClose - Callback to close the dashboard and return to the main view.
  */
 interface AnalyticsDashboardProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 /**
@@ -30,22 +30,23 @@ interface AnalyticsDashboardProps {
  * @returns {JSX.Element} The caregiver insights dashboard.
  */
 export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
-  const { data, getWeeklyAdherence, getMedicationStats } = useSahay()
+  const { data, getWeeklyAdherence, getMedicationStats } = useSahay();
 
   /** Aggregated adherence data for the current week. */
-  const weeklyData = getWeeklyAdherence()
+  const weeklyData = getWeeklyAdherence();
 
   /** Confidence score based on adherence consistency and day closures. */
-  const confidence = calculateConfidence(data.timeline, data.dayClosures)
-  const confidenceMessage = getConfidenceMessage(confidence)
+  const confidence = calculateConfidence(data.timeline, data.dayClosures);
+  const confidenceMessage = getConfidenceMessage(confidence);
 
   /**
    * Overall adherence calculation.
    * Sums all doses taken versus total doses scheduled over the tracked period.
    */
-  const totalTaken = weeklyData.reduce((sum, d) => sum + d.taken, 0)
-  const totalPossible = weeklyData.reduce((sum, d) => sum + d.total, 0)
-  const adherencePercent = totalPossible > 0 ? Math.round((totalTaken / totalPossible) * 100) : 0
+  const totalTaken = weeklyData.reduce((sum, d) => sum + d.taken, 0);
+  const totalPossible = weeklyData.reduce((sum, d) => sum + d.total, 0);
+  const adherencePercent =
+    totalPossible > 0 ? Math.round((totalTaken / totalPossible) * 100) : 0;
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
@@ -64,9 +65,7 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
             <h1 className="text-2xl font-semibold text-foreground">
               Care Insights
             </h1>
-            <p className="text-muted-foreground">
-              How things are going
-            </p>
+            <p className="text-muted-foreground">How things are going</p>
           </div>
         </div>
       </header>
@@ -100,9 +99,13 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
             {/* Adherence Bar chart */}
             <div className="flex items-end justify-between gap-2 h-32 mb-4">
               {weeklyData.map((day, i) => {
-                const percent = day.total > 0 ? (day.taken / day.total) * 100 : 0
+                const percent =
+                  day.total > 0 ? (day.taken / day.total) * 100 : 0;
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                  <div
+                    key={i}
+                    className="flex-1 flex flex-col items-center gap-2"
+                  >
                     <div className="w-full bg-secondary rounded-lg relative h-24 overflow-hidden">
                       <div
                         className="absolute bottom-0 left-0 right-0 bg-sahay-sage rounded-lg transition-all"
@@ -113,15 +116,19 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
                       {day.day}
                     </span>
                   </div>
-                )
+                );
               })}
             </div>
 
             {/* Adherence Summary */}
             <div className="flex items-center justify-between pt-4 border-t border-border">
               <div>
-                <p className="text-sm text-muted-foreground">Weekly adherence</p>
-                <p className="text-2xl font-bold text-foreground">{adherencePercent}%</p>
+                <p className="text-sm text-muted-foreground">
+                  Weekly adherence
+                </p>
+                <p className="text-2xl font-bold text-foreground">
+                  {adherencePercent}%
+                </p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Doses taken</p>
@@ -142,14 +149,18 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-card rounded-2xl border-2 border-border p-5">
-              <p className="text-sm text-muted-foreground mb-1">Current streak</p>
+              <p className="text-sm text-muted-foreground mb-1">
+                Current streak
+              </p>
               <p className="text-3xl font-bold text-sahay-sage">
                 {data.currentStreak || 0}
               </p>
               <p className="text-sm text-muted-foreground">days</p>
             </div>
             <div className="bg-card rounded-2xl border-2 border-border p-5">
-              <p className="text-sm text-muted-foreground mb-1">Longest streak</p>
+              <p className="text-sm text-muted-foreground mb-1">
+                Longest streak
+              </p>
               <p className="text-3xl font-bold text-sahay-blue">
                 {data.longestStreak || 0}
               </p>
@@ -167,7 +178,7 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
 
           <div className="space-y-3">
             {data.medications.map((med) => {
-              const stats = getMedicationStats(med.id)
+              const stats = getMedicationStats(med.id);
               return (
                 <div
                   key={med.id}
@@ -176,18 +187,26 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <p className="font-medium text-foreground">{med.name}</p>
-                      <p className="text-sm text-muted-foreground">{med.dosage}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {med.dosage}
+                      </p>
                     </div>
                     {med.color && (
                       <div
                         className={`w-8 h-8 rounded-full border-2 border-border ${
-                          med.color === 'white' ? 'bg-white' :
-                          med.color === 'blue' ? 'bg-blue-300' :
-                          med.color === 'pink' ? 'bg-pink-300' :
-                          med.color === 'yellow' ? 'bg-yellow-300' :
-                          med.color === 'orange' ? 'bg-orange-300' :
-                          med.color === 'green' ? 'bg-green-300' :
-                          'bg-red-300'
+                          med.color === "white"
+                            ? "bg-white"
+                            : med.color === "blue"
+                              ? "bg-blue-300"
+                              : med.color === "pink"
+                                ? "bg-pink-300"
+                                : med.color === "yellow"
+                                  ? "bg-yellow-300"
+                                  : med.color === "orange"
+                                    ? "bg-orange-300"
+                                    : med.color === "green"
+                                      ? "bg-green-300"
+                                      : "bg-red-300"
                         }`}
                       />
                     )}
@@ -195,24 +214,29 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
                   <div className="flex items-center gap-6 text-sm">
                     <div>
                       <span className="text-muted-foreground">Streak: </span>
-                      <span className="font-medium text-sahay-sage">{stats.streak} days</span>
+                      <span className="font-medium text-sahay-sage">
+                        {stats.streak} days
+                      </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Total: </span>
-                      <span className="font-medium text-foreground">{stats.total} doses</span>
+                      <span className="font-medium text-foreground">
+                        {stats.total} doses
+                      </span>
                     </div>
-                    {med.refillDaysLeft !== undefined && med.refillDaysLeft <= 7 && (
-                      <div className="text-sahay-pending font-medium">
-                        Refill soon
-                      </div>
-                    )}
+                    {med.refillDaysLeft !== undefined &&
+                      med.refillDaysLeft <= 7 && (
+                        <div className="text-sahay-pending font-medium">
+                          Refill soon
+                        </div>
+                      )}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </section>
       </div>
     </main>
-  )
+  );
 }
