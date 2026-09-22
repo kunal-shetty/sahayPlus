@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file medication-reminders.tsx
@@ -12,11 +12,11 @@
  * animations to draw attention without being intrusive.
  */
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { useSahay } from '@/lib/sahay-context'
-import { type Medication } from '@/lib/types'
-import { Bell, Clock, X, ChevronLeft } from 'lucide-react'
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { useSahay } from "@/lib/sahay-context";
+import { type Medication } from "@/lib/types";
+import { Bell, Clock, X, ChevronLeft } from "lucide-react";
 
 /**
  * MedicationReminders component.
@@ -25,9 +25,9 @@ import { Bell, Clock, X, ChevronLeft } from 'lucide-react'
  * @returns {JSX.Element | null} A list of floating reminder cards, or null if no medications are currently due.
  */
 export function MedicationReminders() {
-  const { data, markMedicationTaken } = useSahay()
-  const [snoozedMeds, setSnoozedMeds] = useState<{ [key: string]: number }>({})
-  const [dismissedMeds, setDismissedMeds] = useState<Set<string>>(new Set())
+  const { data, markMedicationTaken } = useSahay();
+  const [snoozedMeds, setSnoozedMeds] = useState<{ [key: string]: number }>({});
+  const [dismissedMeds, setDismissedMeds] = useState<Set<string>>(new Set());
 
   /**
    * Identifies medications that are due based on the current time of day
@@ -36,19 +36,20 @@ export function MedicationReminders() {
    * @returns {Medication[]} An array of pending medications for the current time window.
    */
   const getPendingMeds = () => {
-    const hour = new Date().getHours()
-    let currentTime: 'morning' | 'afternoon' | 'evening'
+    const hour = new Date().getHours();
+    let currentTime: "morning" | "afternoon" | "evening";
 
-    if (hour < 12) currentTime = 'morning'
-    else if (hour < 17) currentTime = 'afternoon'
-    else currentTime = 'evening'
+    if (hour < 12) currentTime = "morning";
+    else if (hour < 17) currentTime = "afternoon";
+    else currentTime = "evening";
 
     return data.medications.filter(
-      (m) => m.timeOfDay === currentTime && !m.taken && !dismissedMeds.has(m.id)
-    )
-  }
+      (m) =>
+        m.timeOfDay === currentTime && !m.taken && !dismissedMeds.has(m.id),
+    );
+  };
 
-  const pendingMeds = getPendingMeds()
+  const pendingMeds = getPendingMeds();
 
   /**
    * Snoozes a medication reminder for a specified number of minutes.
@@ -60,8 +61,8 @@ export function MedicationReminders() {
     setSnoozedMeds((prev) => ({
       ...prev,
       [medId]: Date.now() + minutes * 60 * 1000,
-    }))
-  }
+    }));
+  };
 
   /**
    * Dismisses a reminder card from the view without marking the medication as taken.
@@ -69,8 +70,8 @@ export function MedicationReminders() {
    * @param {string} medId - The ID of the medication to dismiss.
    */
   const handleDismiss = (medId: string) => {
-    setDismissedMeds((prev) => new Set([...prev, medId]))
-  }
+    setDismissedMeds((prev) => new Set([...prev, medId]));
+  };
 
   /**
    * Marks a medication as taken and dismisses the reminder card.
@@ -78,11 +79,11 @@ export function MedicationReminders() {
    * @param {string} medId - The ID of the medication that was taken.
    */
   const handleTook = (medId: string) => {
-    markMedicationTaken(medId, true)
-    handleDismiss(medId)
-  }
+    markMedicationTaken(medId, true);
+    handleDismiss(medId);
+  };
 
-  if (pendingMeds.length === 0) return null
+  if (pendingMeds.length === 0) return null;
 
   return (
     <div className="fixed top-0 left-0 right-0 z-40 pointer-events-none">
@@ -143,5 +144,5 @@ export function MedicationReminders() {
         ))}
       </AnimatePresence>
     </div>
-  )
+  );
 }
