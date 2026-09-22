@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * @file splash-screen.tsx
@@ -12,9 +12,9 @@
  * user is presented with a polished, branded interface.
  */
 
-import { useEffect, useState } from "react"
-import { motion, AnimatePresence } from "motion/react"
-import { Heart } from "lucide-react"
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Heart } from "lucide-react";
 
 /**
  * Props for the SplashScreen component.
@@ -22,7 +22,7 @@ import { Heart } from "lucide-react"
  * @property {() => void} onComplete - Callback triggered once the splash sequence is finished.
  */
 interface SplashScreenProps {
-    onComplete: () => void
+    onComplete: () => void;
 }
 
 /**
@@ -33,7 +33,7 @@ interface SplashScreenProps {
  * @returns {JSX.Element} The branded splash screen interface.
  */
 export function SplashScreen({ onComplete }: SplashScreenProps) {
-    const [progress, setProgress] = useState(0)
+    const [progress, setProgress] = useState(0);
 
     /**
      * Simulation of a loading process.
@@ -41,23 +41,23 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
      * eventually calling the onComplete callback to exit the splash screen.
      */
     useEffect(() => {
-        const duration = 2000
-        const interval = 20
-        const increment = 100 / (duration / interval)
+        const duration = 2000;
+        const interval = 20;
+        const increment = 100 / (duration / interval);
 
         const timer = setInterval(() => {
             setProgress((prev) => {
                 if (prev >= 100) {
-                    clearInterval(timer)
-                    setTimeout(onComplete, 300)
-                    return 100
+                    clearInterval(timer);
+                    setTimeout(onComplete, 300);
+                    return 100;
                 }
-                return prev + increment
-            })
-        }, interval)
+                return prev + increment;
+            });
+        }, interval);
 
-        return () => clearInterval(timer)
-    }, [onComplete])
+        return () => clearInterval(timer);
+    }, [onComplete]);
 
     return (
         <AnimatePresence>
@@ -97,9 +97,17 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
                         <motion.div
                             initial={{ pathLength: 0 }}
                             animate={{ pathLength: 1 }}
-                            transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
+                            transition={{
+                                delay: 0.5,
+                                duration: 0.8,
+                                ease: "easeOut",
+                            }}
                         >
-                            <Heart className="h-14 w-14 text-primary" strokeWidth={2} fill="currentColor" />
+                            <Heart
+                                className="h-14 w-14 text-primary"
+                                strokeWidth={2}
+                                fill="currentColor"
+                            />
                         </motion.div>
                     </motion.div>
                 </motion.div>
@@ -139,5 +147,5 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
                 </motion.div>
             </motion.div>
         </AnimatePresence>
-    )
+    );
 }
