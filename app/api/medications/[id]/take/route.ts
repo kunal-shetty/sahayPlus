@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 // POST /api/medications/:id/take — Mark medication as taken
 export async function POST(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         const { id } = await params;
@@ -25,7 +25,10 @@ export async function POST(
             .single();
 
         if (logError) {
-            return NextResponse.json({ error: logError.message }, { status: 500 });
+            return NextResponse.json(
+                { error: logError.message },
+                { status: 500 },
+            );
         }
 
         // Get med details for timeline event
@@ -47,12 +50,12 @@ export async function POST(
 
         return NextResponse.json(
             { message: "Medication marked as taken", log },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to mark medication as taken" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
