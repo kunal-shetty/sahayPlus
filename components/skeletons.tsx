@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file skeletons.tsx
@@ -12,8 +12,8 @@
  * wrapped in Framer Motion components for a smooth fade-in effect.
  */
 
-import { motion } from 'motion/react'
-import { Skeleton } from '@/components/ui/skeleton'
+import { motion } from "motion/react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Default fade-in animation configuration for skeleton screens.
@@ -22,7 +22,7 @@ const fadeIn = {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
     transition: { duration: 0.4 },
-}
+};
 
 /**
  * CaregiverHomeSkeleton component.
@@ -77,7 +77,10 @@ export function CaregiverHomeSkeleton() {
                 {/* Quick actions grid skeleton */}
                 <div className="grid grid-cols-4 gap-3 mb-3">
                     {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5">
+                        <div
+                            key={i}
+                            className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5"
+                        >
                             <Skeleton className="w-5 h-5 rounded" />
                             <Skeleton className="h-3 w-12" />
                         </div>
@@ -85,7 +88,10 @@ export function CaregiverHomeSkeleton() {
                 </div>
                 <div className="grid grid-cols-4 gap-3 mb-6">
                     {[5, 6, 7, 8].map((i) => (
-                        <div key={i} className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5">
+                        <div
+                            key={i}
+                            className="p-3 bg-card border-2 border-border rounded-xl flex flex-col items-center gap-1.5"
+                        >
                             <Skeleton className="w-5 h-5 rounded" />
                             <Skeleton className="h-3 w-12" />
                         </div>
@@ -100,7 +106,10 @@ export function CaregiverHomeSkeleton() {
                     </div>
                     <div className="space-y-2">
                         {[1, 2].map((i) => (
-                            <div key={i} className="p-4 bg-card rounded-xl border-2 border-border">
+                            <div
+                                key={i}
+                                className="p-4 bg-card rounded-xl border-2 border-border"
+                            >
                                 <div className="flex items-center gap-3">
                                     <Skeleton className="w-8 h-8 rounded-full" />
                                     <div className="flex-1 space-y-2">
@@ -142,7 +151,7 @@ export function CaregiverHomeSkeleton() {
                 </div>
             </div>
         </motion.main>
-    )
+    );
 }
 
 /**
@@ -205,7 +214,10 @@ export function CareReceiverHomeSkeleton() {
                     {/* Quick actions skeleton */}
                     <div className="grid grid-cols-3 gap-3">
                         {[1, 2, 3].map((i) => (
-                            <div key={i} className="p-4 border-2 border-border rounded-xl flex flex-col items-center gap-2">
+                            <div
+                                key={i}
+                                className="p-4 border-2 border-border rounded-xl flex flex-col items-center gap-2"
+                            >
                                 <Skeleton className="w-7 h-7 rounded" />
                                 <Skeleton className="h-3 w-14" />
                             </div>
@@ -214,5 +226,5 @@ export function CareReceiverHomeSkeleton() {
                 </div>
             </div>
         </motion.main>
-    )
+    );
 }
