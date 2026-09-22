@@ -8,13 +8,22 @@ export async function GET(req: NextRequest) {
         const token = authHeader?.replace("Bearer ", "");
 
         if (!token) {
-            return NextResponse.json({ error: "No token provided" }, { status: 401 });
+            return NextResponse.json(
+                { error: "No token provided" },
+                { status: 401 },
+            );
         }
 
-        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+        const {
+            data: { user: authUser },
+            error: authError,
+        } = await supabase.auth.getUser(token);
 
         if (authError || !authUser) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 },
+            );
         }
 
         const { data: user, error } = await supabase
@@ -29,9 +38,6 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({ user }, { status: 200 });
     } catch (error) {
-        return NextResponse.json(
-            { error: "Unauthorized" },
-            { status: 401 }
-        );
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 }
