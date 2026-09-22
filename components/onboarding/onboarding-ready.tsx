@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * @file onboarding-ready.tsx
@@ -11,8 +11,8 @@
  * momentum and progress.
  */
 
-import { motion } from "motion/react"
-import { Rocket } from "lucide-react"
+import { motion } from "motion/react";
+import { Rocket } from "lucide-react";
 
 /**
  * OnboardingReady component.
@@ -62,5 +62,5 @@ export function OnboardingReady() {
                 Let&apos;s begin your journey to simpler care management.
             </motion.p>
         </div>
-    )
+    );
 }
