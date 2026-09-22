@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     if (!careRelationshipId) {
       return NextResponse.json(
         { error: "Missing required query param: care_relationship_id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch pharmacist contacts" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     if (!care_relationship_id || !name) {
       return NextResponse.json(
         { error: "Missing required fields: care_relationship_id, name" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -82,12 +82,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { message: "Pharmacist contact added", contact: data },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to add pharmacist contact" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -107,7 +107,7 @@ export async function DELETE(req: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "Missing required query param: id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -122,12 +122,12 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json(
       { message: "Pharmacist contact deleted" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to delete pharmacist contact" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
