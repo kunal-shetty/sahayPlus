@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 // PATCH /api/messages/:id/read — Mark a message as read
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         const { id } = await params;
@@ -22,12 +22,12 @@ export async function PATCH(
 
         return NextResponse.json(
             { message: "Message marked as read", data },
-            { status: 200 }
+            { status: 200 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to mark message as read" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
