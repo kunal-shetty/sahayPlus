@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch wellness entries" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
@@ -60,16 +60,20 @@ export async function POST(req: NextRequest) {
 
         if (!care_relationship_id || !user_id || !level) {
             return NextResponse.json(
-                { error: "Missing required fields: care_relationship_id, user_id, level" },
-                { status: 400 }
+                {
+                    error: "Missing required fields: care_relationship_id, user_id, level",
+                },
+                { status: 400 },
             );
         }
 
         const validLevels = ["great", "okay", "not_great"];
         if (!validLevels.includes(level)) {
             return NextResponse.json(
-                { error: `Invalid level. Must be one of: ${validLevels.join(", ")}` },
-                { status: 400 }
+                {
+                    error: `Invalid level. Must be one of: ${validLevels.join(", ")}`,
+                },
+                { status: 400 },
             );
         }
 
@@ -100,12 +104,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Wellness entry logged", entry: data },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to log wellness entry" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
