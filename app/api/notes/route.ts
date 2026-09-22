@@ -25,7 +25,9 @@ export async function GET(req: NextRequest) {
             query = query.eq("care_relationship_id", careRelationshipId);
         }
 
-        const { data, error } = await query.order("created_at", { ascending: false });
+        const { data, error } = await query.order("created_at", {
+            ascending: false,
+        });
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
@@ -35,7 +37,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch notes" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
@@ -64,15 +66,17 @@ export async function POST(req: NextRequest) {
                 {
                     error: "Missing required fields: care_relationship_id, text, linked_type, created_by",
                 },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
         const validLinkedTypes = ["medication", "day"];
         if (!validLinkedTypes.includes(linked_type)) {
             return NextResponse.json(
-                { error: `Invalid linked_type. Must be one of: ${validLinkedTypes.join(", ")}` },
-                { status: 400 }
+                {
+                    error: `Invalid linked_type. Must be one of: ${validLinkedTypes.join(", ")}`,
+                },
+                { status: 400 },
             );
         }
 
@@ -103,12 +107,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Note added", note: data },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to add note" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
