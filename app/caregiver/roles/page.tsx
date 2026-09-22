@@ -1,10 +1,22 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useSahay } from '@/lib/sahay-context'
-import { type CareRoleStatus, type TimeOfDay, timeOfDayLabels } from '@/lib/types'
-import { User, Calendar, Sun, Cloud, Moon, ArrowLeft, Check } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useState } from "react";
+import { useSahay } from "@/lib/sahay-context";
+import {
+  type CareRoleStatus,
+  type TimeOfDay,
+  timeOfDayLabels,
+} from "@/lib/types";
+import {
+  User,
+  Calendar,
+  Sun,
+  Cloud,
+  Moon,
+  ArrowLeft,
+  Check,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 
 /**
  * Fluid Care Roles Page
@@ -12,36 +24,37 @@ import { useRouter } from 'next/navigation'
  * Reflects real family dynamics and prevents burnout
  */
 export default function RolesPage() {
-  const { data, updateCaregiverStatus, setCareReceiverIndependence } = useSahay()
-  const router = useRouter()
-  const [awayDays, setAwayDays] = useState(1)
+  const { data, updateCaregiverStatus, setCareReceiverIndependence } =
+    useSahay();
+  const router = useRouter();
+  const [awayDays, setAwayDays] = useState(1);
 
-  const currentStatus = data.caregiver?.roleStatus || 'active'
-  const independentTimes = data.careReceiver?.independentTimes || []
+  const currentStatus = data.caregiver?.roleStatus || "active";
+  const independentTimes = data.careReceiver?.independentTimes || [];
 
   const handleStatusChange = (status: CareRoleStatus) => {
-    if (status === 'away') {
-      const awayUntil = new Date()
-      awayUntil.setDate(awayUntil.getDate() + awayDays)
-      updateCaregiverStatus(status, awayUntil.toISOString())
+    if (status === "away") {
+      const awayUntil = new Date();
+      awayUntil.setDate(awayUntil.getDate() + awayDays);
+      updateCaregiverStatus(status, awayUntil.toISOString());
     } else {
-      updateCaregiverStatus(status, undefined)
+      updateCaregiverStatus(status, undefined);
     }
-  }
+  };
 
   const toggleIndependentTime = (time: TimeOfDay) => {
     if (independentTimes.includes(time)) {
-      setCareReceiverIndependence(independentTimes.filter((t) => t !== time))
+      setCareReceiverIndependence(independentTimes.filter((t) => t !== time));
     } else {
-      setCareReceiverIndependence([...independentTimes, time])
+      setCareReceiverIndependence([...independentTimes, time]);
     }
-  }
+  };
 
   const timeIcons: Record<TimeOfDay, any> = {
     morning: Sun,
     afternoon: Cloud,
     evening: Moon,
-  }
+  };
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
@@ -78,10 +91,10 @@ export default function RolesPage() {
 
           <div className="space-y-3">
             <button
-              onClick={() => handleStatusChange('active')}
+              onClick={() => handleStatusChange("active")}
               className={`w-full p-4 rounded-xl border-2 text-left transition-all touch-manipulation
                        focus:outline-none focus:ring-2 focus:ring-ring
-                       ${currentStatus === 'active' ? 'border-sahay-sage bg-sahay-sage-light' : 'border-border bg-card hover:border-sahay-sage/50'}`}
+                       ${currentStatus === "active" ? "border-sahay-sage bg-sahay-sage-light" : "border-border bg-card hover:border-sahay-sage/50"}`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -92,7 +105,7 @@ export default function RolesPage() {
                     You&apos;re managing care as usual
                   </p>
                 </div>
-                {currentStatus === 'active' && (
+                {currentStatus === "active" && (
                   <Check className="w-5 h-5 text-sahay-sage" />
                 )}
               </div>
@@ -100,7 +113,7 @@ export default function RolesPage() {
 
             <div
               className={`w-full p-4 rounded-xl border-2 transition-all
-                       ${currentStatus === 'away' ? 'border-sahay-pending bg-sahay-pending/10' : 'border-border bg-card'}`}
+                       ${currentStatus === "away" ? "border-sahay-pending bg-sahay-pending/10" : "border-border bg-card"}`}
             >
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -111,7 +124,7 @@ export default function RolesPage() {
                     Check-in suggestions will pause
                   </p>
                 </div>
-                {currentStatus === 'away' && (
+                {currentStatus === "away" && (
                   <Check className="w-5 h-5 text-sahay-pending" />
                 )}
               </div>
@@ -129,17 +142,17 @@ export default function RolesPage() {
                   />
                 </div>
                 <span className="text-muted-foreground min-w-[60px]">
-                  {awayDays} day{awayDays > 1 ? 's' : ''}
+                  {awayDays} day{awayDays > 1 ? "s" : ""}
                 </span>
               </div>
 
               <button
-                onClick={() => handleStatusChange('away')}
+                onClick={() => handleStatusChange("away")}
                 className="mt-3 w-full py-3 px-4 bg-secondary text-foreground font-medium
                          rounded-xl transition-all touch-manipulation
                          hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                Mark as away for {awayDays} day{awayDays > 1 ? 's' : ''}
+                Mark as away for {awayDays} day{awayDays > 1 ? "s" : ""}
               </button>
             </div>
           </div>
@@ -150,7 +163,7 @@ export default function RolesPage() {
           <div className="flex items-center gap-2 mb-2">
             <Sun className="w-5 h-5 text-muted-foreground" />
             <h2 className="text-lg font-medium text-foreground">
-              {data.careReceiver?.name || 'Care Receiver'}&apos;s Independence
+              {data.careReceiver?.name || "Care Receiver"}&apos;s Independence
             </h2>
           </div>
           <p className="text-muted-foreground mb-4">
@@ -159,8 +172,8 @@ export default function RolesPage() {
 
           <div className="space-y-3">
             {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map((time) => {
-              const Icon = timeIcons[time]
-              const isIndependent = independentTimes.includes(time)
+              const Icon = timeIcons[time];
+              const isIndependent = independentTimes.includes(time);
 
               return (
                 <button
@@ -168,12 +181,12 @@ export default function RolesPage() {
                   onClick={() => toggleIndependentTime(time)}
                   className={`w-full p-4 rounded-xl border-2 text-left transition-all touch-manipulation
                            focus:outline-none focus:ring-2 focus:ring-ring
-                           ${isIndependent ? 'border-sahay-blue bg-sahay-blue-light' : 'border-border bg-card hover:border-sahay-blue/50'}`}
+                           ${isIndependent ? "border-sahay-blue bg-sahay-blue-light" : "border-border bg-card hover:border-sahay-blue/50"}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Icon
-                        className={`w-5 h-5 ${isIndependent ? 'text-sahay-blue' : 'text-muted-foreground'}`}
+                        className={`w-5 h-5 ${isIndependent ? "text-sahay-blue" : "text-muted-foreground"}`}
                       />
                       <div>
                         <p className="text-lg font-medium text-foreground">
@@ -181,8 +194,8 @@ export default function RolesPage() {
                         </p>
                         <p className="text-muted-foreground">
                           {isIndependent
-                            ? 'Managing independently'
-                            : 'May need support'}
+                            ? "Managing independently"
+                            : "May need support"}
                         </p>
                       </div>
                     </div>
@@ -191,11 +204,11 @@ export default function RolesPage() {
                     )}
                   </div>
                 </button>
-              )
+              );
             })}
           </div>
         </section>
       </div>
     </main>
-  )
+  );
 }
