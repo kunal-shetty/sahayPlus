@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
         if (!careRelationshipId) {
             return NextResponse.json(
                 { error: "Missing required query param: care_relationship_id" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -45,12 +45,12 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(
             { events: data, limit, offset, total: count },
-            { status: 200 }
+            { status: 200 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch timeline" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
