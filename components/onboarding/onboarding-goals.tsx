@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * @file onboarding-goals.tsx
@@ -9,8 +9,8 @@
  * functionality to their personal motivations for using the service.
  */
 
-import { motion } from "motion/react"
-import { Heart, Clock, Sparkles } from "lucide-react"
+import { motion } from "motion/react";
+import { Heart, Clock, Sparkles } from "lucide-react";
 
 /**
  * Data structure for a care goal.
@@ -35,7 +35,7 @@ const goals = [
         title: "Care Together",
         description: "Stay connected with your care circle",
     },
-]
+];
 
 /**
  * OnboardingGoals component.
@@ -79,11 +79,15 @@ export function OnboardingGoals() {
                         >
                             <goal.icon className="h-8 w-8 text-primary" />
                         </motion.div>
-                        <h3 className="font-semibold text-lg text-foreground mb-1">{goal.title}</h3>
-                        <p className="text-sm text-muted-foreground">{goal.description}</p>
+                        <h3 className="font-semibold text-lg text-foreground mb-1">
+                            {goal.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                            {goal.description}
+                        </p>
                     </motion.div>
                 ))}
             </div>
         </div>
-    )
+    );
 }
