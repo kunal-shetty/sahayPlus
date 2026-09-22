@@ -25,7 +25,9 @@ export async function GET(req: NextRequest) {
             query = query.eq("care_relationship_id", careRelationshipId);
         }
 
-        const { data, error } = await query.order("time_of_day").order("created_at");
+        const { data, error } = await query
+            .order("time_of_day")
+            .order("created_at");
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
@@ -35,7 +37,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch medications" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
@@ -67,15 +69,17 @@ export async function POST(req: NextRequest) {
                 {
                     error: "Missing required fields: care_relationship_id, name, dosage, time_of_day",
                 },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
         const validTimes = ["morning", "afternoon", "evening"];
         if (!validTimes.includes(time_of_day)) {
             return NextResponse.json(
-                { error: `Invalid time_of_day. Must be one of: ${validTimes.join(", ")}` },
-                { status: 400 }
+                {
+                    error: `Invalid time_of_day. Must be one of: ${validTimes.join(", ")}`,
+                },
+                { status: 400 },
             );
         }
 
@@ -102,12 +106,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Medication added", medication: data },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to add medication" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
