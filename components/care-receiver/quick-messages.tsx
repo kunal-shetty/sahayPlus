@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file quick-messages.tsx
@@ -8,10 +8,10 @@
  * custom text input. Features high-contrast buttons and immediate visual feedback.
  */
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { useSahay } from '@/lib/sahay-context'
-import { ArrowLeft, Send, Check, MessageCircle } from 'lucide-react'
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { useSahay } from "@/lib/sahay-context";
+import { ArrowLeft, Send, Check, MessageCircle } from "lucide-react";
 
 /**
  * Props for the QuickMessages component.
@@ -19,7 +19,7 @@ import { ArrowLeft, Send, Check, MessageCircle } from 'lucide-react'
  * @property {() => void} onClose - Callback to close the messages screen and return to home.
  */
 interface QuickMessagesProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 /**
@@ -31,24 +31,24 @@ interface QuickMessagesProps {
  * @returns {JSX.Element} The messaging interface.
  */
 export function QuickMessages({ onClose }: QuickMessagesProps) {
-  const { data, sendMessage } = useSahay()
-  const [sentMessage, setSentMessage] = useState<string | null>(null)
-  const [customMessage, setCustomMessage] = useState('')
-  const [sendingIndex, setSendingIndex] = useState<number | null>(null)
+  const { data, sendMessage } = useSahay();
+  const [sentMessage, setSentMessage] = useState<string | null>(null);
+  const [customMessage, setCustomMessage] = useState("");
+  const [sendingIndex, setSendingIndex] = useState<number | null>(null);
 
-  const caregiverName = data.caregiver?.name || 'your caregiver'
+  const caregiverName = data.caregiver?.name || "your caregiver";
 
   /**
    * The list of pre-defined messages.
    * Uses user-specific messages if available, otherwise defaults to a general set.
    */
   const quickMessages = data.careReceiver?.quickMessages || [
-    'I took my medicine',
-    'Feeling good today',
-    'Can you call me?',
-    'Need help with refill',
-    'All done for the day',
-  ]
+    "I took my medicine",
+    "Feeling good today",
+    "Can you call me?",
+    "Need help with refill",
+    "All done for the day",
+  ];
 
   /**
    * Handles sending a pre-defined quick message.
@@ -58,24 +58,24 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
    * @param {number} index - The index of the message in the list for UI tracking.
    */
   const handleSendQuick = (message: string, index: number) => {
-    setSendingIndex(index)
+    setSendingIndex(index);
     setTimeout(() => {
-      sendMessage(message, true)
-      setSentMessage(message)
-      setSendingIndex(null)
-    }, 400)
-  }
+      sendMessage(message, true);
+      setSentMessage(message);
+      setSendingIndex(null);
+    }, 400);
+  };
 
   /**
    * Handles sending a user-typed custom message.
    */
   const handleSendCustom = () => {
     if (customMessage.trim()) {
-      sendMessage(customMessage.trim(), false)
-      setSentMessage(customMessage.trim())
-      setCustomMessage('')
+      sendMessage(customMessage.trim(), false);
+      setSentMessage(customMessage.trim());
+      setCustomMessage("");
     }
-  }
+  };
 
   /**
    * Success View.
@@ -90,12 +90,12 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
             className="w-24 h-24 rounded-full bg-sahay-success/20 flex items-center justify-center mb-6"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
           >
             <motion.div
               initial={{ scale: 0, rotate: -45 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.2, type: 'spring', stiffness: 400 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 400 }}
             >
               <Check className="w-12 h-12 text-sahay-success" />
             </motion.div>
@@ -151,7 +151,7 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
           </motion.div>
         </div>
       </main>
-    )
+    );
   }
 
   return (
@@ -204,10 +204,11 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
                 onClick={() => handleSendQuick(message, index)}
                 className={`w-full p-5 bg-card border-2 rounded-xl text-left
                          transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring
-                         ${sendingIndex === index
-                    ? 'border-sahay-sage bg-sahay-sage-light scale-[0.98]'
-                    : 'border-border hover:border-sahay-sage/50 active:bg-sahay-sage-light'
-                  }`}
+                         ${
+                           sendingIndex === index
+                             ? "border-sahay-sage bg-sahay-sage-light scale-[0.98]"
+                             : "border-border hover:border-sahay-sage/50 active:bg-sahay-sage-light"
+                         }`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.05 * index + 0.2, duration: 0.3 }}
@@ -220,7 +221,7 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 500 }}
+                      transition={{ type: "spring", stiffness: 500 }}
                     >
                       <Check className="w-5 h-5 text-sahay-sage" />
                     </motion.div>
@@ -251,9 +252,9 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
                        focus:outline-none focus:border-sahay-sage focus:ring-2 focus:ring-sahay-sage/20
                        transition-all"
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  handleSendCustom()
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSendCustom();
                 }
               }}
             />
@@ -272,5 +273,5 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
         </motion.div>
       </div>
     </main>
-  )
+  );
 }
