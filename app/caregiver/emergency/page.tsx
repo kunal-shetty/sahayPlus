@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useSahay } from '@/lib/sahay-context'
+import { useState } from "react";
+import { useSahay } from "@/lib/sahay-context";
 import {
   Phone,
   Plus,
@@ -11,50 +11,54 @@ import {
   Building2,
   Stethoscope,
   AlertCircle,
-  CheckCircle2
-} from 'lucide-react'
-import { CaregiverLayout } from '@/components/caregiver/caregiver-layout'
+  CheckCircle2,
+} from "lucide-react";
+import { CaregiverLayout } from "@/components/caregiver/caregiver-layout";
 
 /**
  * Emergency Contacts Page
  * Rapid access to critical contacts and emergency protocols.
  */
 export default function EmergencyPage() {
-  const { data, addEmergencyContact, removeEmergencyContact, setPrimaryContact } =
-    useSahay()
+  const {
+    data,
+    addEmergencyContact,
+    removeEmergencyContact,
+    setPrimaryContact,
+  } = useSahay();
 
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newPhone, setNewPhone] = useState('')
-  const [newRelationship, setNewRelationship] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newRelationship, setNewRelationship] = useState("");
 
   const handleAdd = () => {
     if (newName.trim() && newPhone.trim()) {
       addEmergencyContact({
         name: newName.trim(),
         phone: newPhone.trim(),
-        relationship: newRelationship.trim() || 'Contact',
+        relationship: newRelationship.trim() || "Contact",
         isPrimary: (data.emergencyContacts || []).length === 0,
-      })
-      setNewName('')
-      setNewPhone('')
-      setNewRelationship('')
-      setShowAddForm(false)
+      });
+      setNewName("");
+      setNewPhone("");
+      setNewRelationship("");
+      setShowAddForm(false);
     }
-  }
+  };
 
   const getRelationshipIcon = (relationship: string) => {
-    const lower = relationship.toLowerCase()
-    if (lower.includes('doctor') || lower.includes('dr.')) {
-      return <Stethoscope className="w-5 h-5" />
+    const lower = relationship.toLowerCase();
+    if (lower.includes("doctor") || lower.includes("dr.")) {
+      return <Stethoscope className="w-5 h-5" />;
     }
-    if (lower.includes('hospital') || lower.includes('clinic')) {
-      return <Building2 className="w-5 h-5" />
+    if (lower.includes("hospital") || lower.includes("clinic")) {
+      return <Building2 className="w-5 h-5" />;
     }
-    return <User className="w-5 h-5" />
-  }
+    return <User className="w-5 h-5" />;
+  };
 
-  const contacts = data.emergencyContacts || []
+  const contacts = data.emergencyContacts || [];
 
   return (
     <CaregiverLayout>
@@ -66,7 +70,9 @@ export default function EmergencyPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">Emergency Center</h1>
-              <p className="text-muted-foreground text-sm">Rapid access to critical contacts and crisis protocols</p>
+              <p className="text-muted-foreground text-sm">
+                Rapid access to critical contacts and crisis protocols
+              </p>
             </div>
           </div>
         </header>
@@ -79,19 +85,28 @@ export default function EmergencyPage() {
               <section className="bg-sahay-sage-light rounded-3xl p-6 border-2 border-sahay-sage/30 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                   <Star className="w-4 h-4 text-sahay-sage fill-sahay-sage" />
-                  <span className="text-sm font-bold text-sahay-sage uppercase tracking-wider">Primary Contact</span>
+                  <span className="text-sm font-bold text-sahay-sage uppercase tracking-wider">
+                    Primary Contact
+                  </span>
                 </div>
                 {contacts
                   .filter((c) => c.isPrimary)
                   .map((contact) => (
-                    <div key={contact.id} className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div
+                      key={contact.id}
+                      className="flex flex-col md:flex-row md:items-center justify-between gap-6"
+                    >
                       <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-2xl">
                           {getRelationshipIcon(contact.relationship)}
                         </div>
                         <div>
-                          <p className="text-2xl font-bold text-foreground">{contact.name}</p>
-                          <p className="text-muted-foreground">{contact.relationship}</p>
+                          <p className="text-2xl font-bold text-foreground">
+                            {contact.name}
+                          </p>
+                          <p className="text-muted-foreground">
+                            {contact.relationship}
+                          </p>
                         </div>
                       </div>
                       <a
@@ -123,15 +138,22 @@ export default function EmergencyPage() {
                 {contacts
                   .filter((c) => !c.isPrimary)
                   .map((contact) => (
-                    <div key={contact.id} className="bg-card border-2 border-border rounded-2xl p-5 shadow-sm hover:border-primary/30 transition-all">
+                    <div
+                      key={contact.id}
+                      className="bg-card border-2 border-border rounded-2xl p-5 shadow-sm hover:border-primary/30 transition-all"
+                    >
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground">
                             {getRelationshipIcon(contact.relationship)}
                           </div>
                           <div>
-                            <p className="font-bold text-foreground">{contact.name}</p>
-                            <p className="text-xs text-muted-foreground">{contact.relationship}</p>
+                            <p className="font-bold text-foreground">
+                              {contact.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {contact.relationship}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -162,7 +184,9 @@ export default function EmergencyPage() {
                   ))}
                 {contacts.length === 0 && !showAddForm && (
                   <div className="col-span-2 py-12 text-center bg-secondary/30 rounded-3xl border-2 border-dashed border-border">
-                    <p className="text-muted-foreground italic">No emergency contacts added yet.</p>
+                    <p className="text-muted-foreground italic">
+                      No emergency contacts added yet.
+                    </p>
                   </div>
                 )}
               </div>
@@ -175,10 +199,14 @@ export default function EmergencyPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-card rounded-3xl border-2 border-primary/30 p-8 shadow-xl"
               >
-                <h3 className="text-xl font-bold mb-6">New Emergency Contact</h3>
+                <h3 className="text-xl font-bold mb-6">
+                  New Emergency Contact
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Full Name</label>
+                    <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                      Full Name
+                    </label>
                     <input
                       type="text"
                       value={newName}
@@ -188,7 +216,9 @@ export default function EmergencyPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Phone Number</label>
+                    <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                      Phone Number
+                    </label>
                     <input
                       type="tel"
                       value={newPhone}
@@ -198,7 +228,9 @@ export default function EmergencyPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Relationship</label>
+                    <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                      Relationship
+                    </label>
                     <input
                       type="text"
                       value={newRelationship}
@@ -235,23 +267,49 @@ export default function EmergencyPage() {
                 <h3 className="text-xl font-bold">Crisis Protocol</h3>
               </div>
               <p className="text-sm text-destructive-foreground/80 mb-6 leading-relaxed">
-                Follow these steps in order during an emergency. Stay calm and act quickly.
+                Follow these steps in order during an emergency. Stay calm and
+                act quickly.
               </p>
               <div className="space-y-4">
                 {[
-                  { step: 1, action: 'Call Primary Contact', desc: 'Notify the main doctor or family lead.' },
-                  { step: 2, action: 'Check Vitals', desc: 'Check breathing, pulse, and consciousness.' },
-                  { step: 3, action: 'Emergency Services', desc: 'Call 911/102 if the situation is critical.' },
-                  { step: 4, action: 'Prepare Med List', desc: 'Gather current medications and dosage info.' },
-                  { step: 5, action: 'Notify Next-of-Kin', desc: 'Alert other emergency contacts in the directory.' },
+                  {
+                    step: 1,
+                    action: "Call Primary Contact",
+                    desc: "Notify the main doctor or family lead.",
+                  },
+                  {
+                    step: 2,
+                    action: "Check Vitals",
+                    desc: "Check breathing, pulse, and consciousness.",
+                  },
+                  {
+                    step: 3,
+                    action: "Emergency Services",
+                    desc: "Call 911/102 if the situation is critical.",
+                  },
+                  {
+                    step: 4,
+                    action: "Prepare Med List",
+                    desc: "Gather current medications and dosage info.",
+                  },
+                  {
+                    step: 5,
+                    action: "Notify Next-of-Kin",
+                    desc: "Alert other emergency contacts in the directory.",
+                  },
                 ].map((item) => (
-                  <div key={item.step} className="flex gap-4 p-3 bg-white/10 rounded-2xl border border-white/10">
+                  <div
+                    key={item.step}
+                    className="flex gap-4 p-3 bg-white/10 rounded-2xl border border-white/10"
+                  >
                     <div className="w-6 h-6 rounded-full bg-white text-destructive-dark flex items-center justify-center text-xs font-bold shrink-0">
                       {item.step}
                     </div>
                     <div>
                       <p className="font-bold text-sm">{item.action}</p>
-                      <p className="text-xs text-destructive-foreground/70">{item.desc}</p>
+                      <p className="text-xs text-destructive-foreground/70">
+                        {item.desc}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -259,10 +317,13 @@ export default function EmergencyPage() {
               <div className="mt-8 p-4 bg-white/10 rounded-2xl border border-white/10">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase">Safety Tip</span>
+                  <span className="text-xs font-bold uppercase">
+                    Safety Tip
+                  </span>
                 </div>
                 <p className="text-xs text-destructive-foreground/80 italic">
-                  Always keep a physical copy of the Medication History report near the bedside.
+                  Always keep a physical copy of the Medication History report
+                  near the bedside.
                 </p>
               </div>
             </section>
@@ -270,5 +331,5 @@ export default function EmergencyPage() {
         </div>
       </main>
     </CaregiverLayout>
-  )
+  );
 }
