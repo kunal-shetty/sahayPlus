@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file theme-provider.tsx
@@ -10,11 +10,11 @@
  * during page loads.
  */
 
-import * as React from 'react'
+import * as React from "react";
 import {
   ThemeProvider as NextThemesProvider,
   type ThemeProviderProps,
-} from 'next-themes'
+} from "next-themes";
 
 /**
  * ThemeProvider component.
@@ -25,5 +25,5 @@ import {
  * @returns {JSX.Element} The theme-wrapped application tree.
  */
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
