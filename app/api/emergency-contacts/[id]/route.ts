@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 // DELETE /api/emergency-contacts/:id — Remove an emergency contact
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         const { id } = await params;
@@ -20,12 +20,12 @@ export async function DELETE(
 
         return NextResponse.json(
             { message: "Emergency contact removed", id },
-            { status: 200 }
+            { status: 200 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to remove emergency contact" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
