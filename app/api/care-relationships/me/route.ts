@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
         if (!userId) {
             return NextResponse.json(
                 { error: "user_id is required" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         if (userError || !user) {
             return NextResponse.json(
                 { error: userError?.message || "User not found" },
-                { status: 404 }
+                { status: 404 },
             );
         }
 
@@ -40,15 +40,12 @@ export async function GET(req: NextRequest) {
         const relationship =
             relationships && relationships.length > 0 ? relationships[0] : null;
 
-        return NextResponse.json(
-            { user, relationship },
-            { status: 200 }
-        );
+        return NextResponse.json({ user, relationship }, { status: 200 });
     } catch (error: any) {
         console.error("[/api/care-relationships/me] error:", error);
         return NextResponse.json(
             { error: error?.message || "Failed to fetch" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
