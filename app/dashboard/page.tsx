@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import { useState, useMemo } from 'react'
-import { motion } from 'motion/react'
-import { useSahay } from '@/lib/sahay-context'
+import { useState, useMemo } from "react";
+import { motion } from "motion/react";
+import { useSahay } from "@/lib/sahay-context";
 import {
   type TimeOfDay,
   type Medication,
   timeOfDayLabels,
   formatTime12h,
-} from '@/lib/types'
+} from "@/lib/types";
 import {
   Sun,
   Cloud,
@@ -31,50 +31,68 @@ import {
   Activity,
   Calendar,
   User,
-} from 'lucide-react'
-import { useRouter } from 'next/navigation'
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 
-import { MedicationForm } from '@/components/caregiver/medication-form'
-import { SettingsPanel } from '@/components/caregiver/settings-panel'
-import { CareConfidence } from '@/components/caregiver/care-confidence'
-import { DailyClosure } from '@/components/caregiver/daily-closure'
-import { CaregiverLayout } from '@/components/caregiver/caregiver-layout'
-import { VoiceInput } from '@/components/caregiver/voice-input'
+import { MedicationForm } from "@/components/caregiver/medication-form";
+import { SettingsPanel } from "@/components/caregiver/settings-panel";
+import { CareConfidence } from "@/components/caregiver/care-confidence";
+import { DailyClosure } from "@/components/caregiver/daily-closure";
+import { CaregiverLayout } from "@/components/caregiver/caregiver-layout";
+import { VoiceInput } from "@/components/caregiver/voice-input";
 
 /**
  * Caregiver Responsive Dashboard
  * A high-level oversight view that works on both desktop and mobile.
  */
 export default function DashboardPage() {
-  const {
-    data,
-    isLoading,
-    isDataLoading,
-  } = useSahay()
+  const { data, isLoading, isDataLoading } = useSahay();
 
-  const router = useRouter()
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [editingMed, setEditingMed] = useState<Medication | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
+  const router = useRouter();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingMed, setEditingMed] = useState<Medication | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const groupedMeds: Record<TimeOfDay, Medication[]> = useMemo(() => {
-    const grouped: Record<TimeOfDay, Medication[]> = { morning: [], afternoon: [], evening: [] }
-    data.medications.forEach(med => {
+    const grouped: Record<TimeOfDay, Medication[]> = {
+      morning: [],
+      afternoon: [],
+      evening: [],
+    };
+    data.medications.forEach((med) => {
       if (grouped[med.timeOfDay]) {
-        grouped[med.timeOfDay].push(med)
+        grouped[med.timeOfDay].push(med);
       }
-    })
-    return grouped
-  }, [data.medications])
+    });
+    return grouped;
+  }, [data.medications]);
 
-  const timeIcons: Record<TimeOfDay, any> = { morning: Sun, afternoon: Cloud, evening: Moon }
+  const timeIcons: Record<TimeOfDay, any> = {
+    morning: Sun,
+    afternoon: Cloud,
+    evening: Moon,
+  };
 
-  if (isLoading || isDataLoading) return <div className="min-h-screen flex items-center justify-center">Loading Dashboard...</div>
+  if (isLoading || isDataLoading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading Dashboard...
+      </div>
+    );
 
   if (showAddForm || editingMed) {
-    return <MedicationForm medication={editingMed} onClose={() => { setShowAddForm(false); setEditingMed(null); }} />
+    return (
+      <MedicationForm
+        medication={editingMed}
+        onClose={() => {
+          setShowAddForm(false);
+          setEditingMed(null);
+        }}
+      />
+    );
   }
-  if (showSettings) return <SettingsPanel onClose={() => setShowSettings(false)} />
+  if (showSettings)
+    return <SettingsPanel onClose={() => setShowSettings(false)} />;
 
   return (
     <CaregiverLayout>
@@ -86,8 +104,17 @@ export default function DashboardPage() {
               <LayoutDashboard className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{data.careReceiver?.name}'s Health Dashboard</h1>
-              <p className="text-sm md:text-base text-muted-foreground">Caregiver View • {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                {data.careReceiver?.name}'s Health Dashboard
+              </h1>
+              <p className="text-sm md:text-base text-muted-foreground">
+                Caregiver View •{" "}
+                {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
             </div>
           </div>
 
@@ -114,7 +141,9 @@ export default function DashboardPage() {
                   👤
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">{data.careReceiver?.name}</h2>
+                  <h2 className="text-xl font-bold">
+                    {data.careReceiver?.name}
+                  </h2>
                   <p className="text-sm text-muted-foreground">Care Receiver</p>
                 </div>
               </div>
@@ -122,7 +151,9 @@ export default function DashboardPage() {
                 <CareConfidence />
                 <div className="pt-4 border-t border-border flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Current Streak</span>
-                  <span className="font-bold text-sahay-success flex items-center gap-1">🔥 {data.currentStreak} days</span>
+                  <span className="font-bold text-sahay-success flex items-center gap-1">
+                    🔥 {data.currentStreak} days
+                  </span>
                 </div>
               </div>
             </section>
@@ -140,7 +171,9 @@ export default function DashboardPage() {
                   Add Medication
                 </button>
                 <div className="pt-4 border-t border-white/20 flex flex-col items-center gap-2">
-                  <p className="text-xs font-medium text-white/80 uppercase tracking-wider">Voice Recording</p>
+                  <p className="text-xs font-medium text-white/80 uppercase tracking-wider">
+                    Voice Recording
+                  </p>
                   <VoiceInput />
                 </div>
               </div>
@@ -151,7 +184,10 @@ export default function DashboardPage() {
           <div className="col-span-1 lg:col-span-6 space-y-8 order-1 lg:order-2">
             {/* Urgent Alerts Area */}
             <div className="space-y-4">
-              {data.timeline.find(e => e.type === 'help_requested' && !e.note?.includes('resolved')) && (
+              {data.timeline.find(
+                (e) =>
+                  e.type === "help_requested" && !e.note?.includes("resolved"),
+              ) && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -162,18 +198,33 @@ export default function DashboardPage() {
                       <Heart className="w-10 h-10 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl md:text-2xl font-bold text-center md:text-left">Check-in Requested!</h3>
-                      <p className="text-white/80 text-center md:text-left">{data.careReceiver?.name} needs your attention immediately.</p>
+                      <h3 className="text-xl md:text-2xl font-bold text-center md:text-left">
+                        Check-in Requested!
+                      </h3>
+                      <p className="text-white/80 text-center md:text-left">
+                        {data.careReceiver?.name} needs your attention
+                        immediately.
+                      </p>
                     </div>
                   </div>
                   <div className="flex flex-wrap justify-center md:justify-end gap-3">
-                    <button onClick={() => router.push('/caregiver/emergency')} className="px-6 py-3 bg-white text-sahay-blue font-bold rounded-xl hover:bg-opacity-90 transition-all flex items-center gap-2"><Phone className="w-5 h-5" /> Call</button>
-                    <button onClick={() => router.push('/caregiver/messages')} className="px-6 py-3 bg-sahay-blue-dark text-white font-bold rounded-xl hover:bg-sahay-blue-dark/80 transition-all flex items-center gap-2"><MessageCircle className="w-5 h-5" /> Message</button>
+                    <button
+                      onClick={() => router.push("/caregiver/emergency")}
+                      className="px-6 py-3 bg-white text-sahay-blue font-bold rounded-xl hover:bg-opacity-90 transition-all flex items-center gap-2"
+                    >
+                      <Phone className="w-5 h-5" /> Call
+                    </button>
+                    <button
+                      onClick={() => router.push("/caregiver/messages")}
+                      className="px-6 py-3 bg-sahay-blue-dark text-white font-bold rounded-xl hover:bg-sahay-blue-dark/80 transition-all flex items-center gap-2"
+                    >
+                      <MessageCircle className="w-5 h-5" /> Message
+                    </button>
                   </div>
                 </motion.div>
               )}
 
-              {data.safetyCheck.status === 'escalating' && (
+              {data.safetyCheck.status === "escalating" && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -184,13 +235,28 @@ export default function DashboardPage() {
                       <ShieldAlert className="w-10 h-10 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl md:text-2xl font-bold text-center md:text-left">Safety Alert: No Response</h3>
-                      <p className="text-white/80 text-center md:text-left">{data.careReceiver?.name} has not responded to the safety check.</p>
+                      <h3 className="text-xl md:text-2xl font-bold text-center md:text-left">
+                        Safety Alert: No Response
+                      </h3>
+                      <p className="text-white/80 text-center md:text-left">
+                        {data.careReceiver?.name} has not responded to the
+                        safety check.
+                      </p>
                     </div>
                   </div>
                   <div className="flex flex-wrap justify-center md:justify-end gap-3">
-                    <button onClick={() => router.push('/caregiver/emergency')} className="px-6 py-3 bg-white text-destructive font-bold rounded-xl hover:bg-opacity-90 transition-all flex items-center gap-2"><Phone className="w-5 h-5" /> Call Now</button>
-                    <button onClick={() => router.push('/caregiver/messages')} className="px-6 py-3 bg-destructive-dark text-white font-bold rounded-xl hover:bg-destructive-dark/80 transition-all flex items-center gap-2"><MessageCircle className="w-5 h-5" /> Message</button>
+                    <button
+                      onClick={() => router.push("/caregiver/emergency")}
+                      className="px-6 py-3 bg-white text-destructive font-bold rounded-xl hover:bg-opacity-90 transition-all flex items-center gap-2"
+                    >
+                      <Phone className="w-5 h-5" /> Call Now
+                    </button>
+                    <button
+                      onClick={() => router.push("/caregiver/messages")}
+                      className="px-6 py-3 bg-destructive-dark text-white font-bold rounded-xl hover:bg-destructive-dark/80 transition-all flex items-center gap-2"
+                    >
+                      <MessageCircle className="w-5 h-5" /> Message
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -201,39 +267,61 @@ export default function DashboardPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                 <div>
                   <h2 className="text-2xl font-bold">Today's Checklist</h2>
-                  <p className="text-muted-foreground">Ensure all medications are administered</p>
+                  <p className="text-muted-foreground">
+                    Ensure all medications are administered
+                  </p>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-2 bg-secondary rounded-full text-sm font-medium w-fit">
                   <Pill className="w-4 h-4 text-primary" />
-                  <span>{data.medications.filter(m => m.taken).length} / {data.medications.length} Taken</span>
+                  <span>
+                    {data.medications.filter((m) => m.taken).length} /{" "}
+                    {data.medications.length} Taken
+                  </span>
                 </div>
               </div>
 
               <div className="space-y-8">
-                {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map(time => {
-                  const meds = groupedMeds[time]
-                  if (meds.length === 0) return null
-                  const Icon = timeIcons[time]
+                {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map((time) => {
+                  const meds = groupedMeds[time];
+                  if (meds.length === 0) return null;
+                  const Icon = timeIcons[time];
                   return (
                     <div key={time} className="space-y-4">
                       <div className="flex items-center gap-3 text-muted-foreground mb-2">
                         <Icon className="w-5 h-5" />
-                        <h3 className="text-lg font-semibold uppercase tracking-wider">{timeOfDayLabels[time]}</h3>
+                        <h3 className="text-lg font-semibold uppercase tracking-wider">
+                          {timeOfDayLabels[time]}
+                        </h3>
                       </div>
                       <div className="grid grid-cols-1 gap-3">
                         {meds.map((med) => (
                           <motion.div
                             key={med.id}
-                            className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${med.taken ? 'bg-sahay-success/5 border-sahay-success/20' : 'bg-card border-border hover:border-primary/30'}`}
+                            className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${med.taken ? "bg-sahay-success/5 border-sahay-success/20" : "bg-card border-border hover:border-primary/30"}`}
                             whileHover={{ x: 5 }}
                           >
                             <div className="flex items-center gap-4">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${med.taken ? 'bg-sahay-success text-white' : 'bg-secondary text-muted-foreground'}`}>
-                                {med.taken ? <Check className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center ${med.taken ? "bg-sahay-success text-white" : "bg-secondary text-muted-foreground"}`}
+                              >
+                                {med.taken ? (
+                                  <Check className="w-6 h-6" />
+                                ) : (
+                                  <Clock className="w-6 h-6" />
+                                )}
                               </div>
                               <div>
-                                <p className={`text-lg font-bold ${med.taken ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{med.name}</p>
-                                <p className="text-sm text-muted-foreground">{med.dosage} • {med.time ? formatTime12h(med.time) : 'As needed'}</p>
+                                <p
+                                  className={`text-lg font-bold ${med.taken ? "text-muted-foreground line-through" : "text-foreground"}`}
+                                >
+                                  {med.name}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {med.dosage} •{" "}
+                                  {med.time
+                                    ? formatTime12h(med.time)
+                                    : "As needed"}
+                                </p>
                               </div>
                             </div>
                             <button
@@ -246,7 +334,7 @@ export default function DashboardPage() {
                         ))}
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
 
@@ -266,15 +354,25 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 {data.lastFineCheckIn ? (
                   <div className="p-4 bg-sahay-success/10 border-2 border-sahay-success/20 rounded-2xl">
-                    <p className="text-sm font-medium text-sahay-success mb-1">Latest Check-in</p>
+                    <p className="text-sm font-medium text-sahay-success mb-1">
+                      Latest Check-in
+                    </p>
                     <p className="text-foreground font-bold">Feeling Great</p>
-                    <p className="text-xs text-muted-foreground mt-1">Recorded {new Date(data.lastFineCheckIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Recorded{" "}
+                      {new Date(data.lastFineCheckIn).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">No check-in data available for today</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No check-in data available for today
+                  </p>
                 )}
                 <button
-                  onClick={() => router.push('/caregiver/wellness')}
+                  onClick={() => router.push("/caregiver/wellness")}
                   className="w-full py-3 text-sm font-medium text-center text-primary hover:underline"
                 >
                   View Wellness Trends →
@@ -290,16 +388,19 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div className="p-4 bg-secondary/50 rounded-2xl border-l-4 border-sahay-blue">
                   <p className="text-sm leading-relaxed italic text-foreground">
-                    "{data.careReceiver?.name} has shown a 15% increase in medication adherence this week. Consider a positive reinforcement check-in today."
+                    "{data.careReceiver?.name} has shown a 15% increase in
+                    medication adherence this week. Consider a positive
+                    reinforcement check-in today."
                   </p>
                 </div>
                 <div className="p-4 bg-secondary/50 rounded-2xl border-l-4 border-sahay-pending">
                   <p className="text-sm leading-relaxed italic text-foreground">
-                    "Noticeable trend: Evening medications are occasionally missed. Suggesting a revised alarm schedule."
+                    "Noticeable trend: Evening medications are occasionally
+                    missed. Suggesting a revised alarm schedule."
                   </p>
                 </div>
                 <button
-                  onClick={() => router.push('/caregiver/analytics')}
+                  onClick={() => router.push("/caregiver/analytics")}
                   className="w-full py-3 text-sm font-medium text-center text-primary hover:underline"
                 >
                   Explore Full Analysis →
@@ -314,11 +415,23 @@ export default function DashboardPage() {
               </h3>
               <div className="space-y-3">
                 {data.timeline.slice(0, 5).map((event) => (
-                  <div key={event.id} className="flex gap-3 p-2 border-b border-border last:border-0">
-                    <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${event.type === 'medication_taken' ? 'bg-sahay-success' : 'bg-sahay-blue'}`} />
+                  <div
+                    key={event.id}
+                    className="flex gap-3 p-2 border-b border-border last:border-0"
+                  >
+                    <div
+                      className={`w-2 h-2 rounded-full mt-2 shrink-0 ${event.type === "medication_taken" ? "bg-sahay-success" : "bg-sahay-blue"}`}
+                    />
                     <div>
-                      <p className="text-xs font-bold">{event.medicationName || event.type.replace(/_/g, ' ')}</p>
-                      <p className="text-[10px] text-muted-foreground">{new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      <p className="text-xs font-bold">
+                        {event.medicationName || event.type.replace(/_/g, " ")}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {new Date(event.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -328,5 +441,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </CaregiverLayout>
-  )
+  );
 }
