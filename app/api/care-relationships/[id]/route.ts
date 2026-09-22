@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 // GET /api/care-relationships/:id — Get a specific care relationship
 export async function GET(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         const { id } = await params;
@@ -23,7 +23,7 @@ export async function GET(
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch care relationship" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
@@ -31,7 +31,7 @@ export async function GET(
 // PATCH /api/care-relationships/:id — Update a care relationship
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         const { id } = await params;
@@ -50,12 +50,12 @@ export async function PATCH(
 
         return NextResponse.json(
             { message: "Care relationship updated", relationship: data },
-            { status: 200 }
+            { status: 200 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to update care relationship" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
