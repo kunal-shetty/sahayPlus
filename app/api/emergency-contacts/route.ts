@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
         if (!careRelationshipId) {
             return NextResponse.json(
                 { error: "Missing required query param: care_relationship_id" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch emergency contacts" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
@@ -55,12 +55,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { care_relationship_id, name, relationship, phone, is_primary } = body;
+        const { care_relationship_id, name, relationship, phone, is_primary } =
+            body;
 
         if (!care_relationship_id || !name || !phone) {
             return NextResponse.json(
-                { error: "Missing required fields: care_relationship_id, name, phone" },
-                { status: 400 }
+                {
+                    error: "Missing required fields: care_relationship_id, name, phone",
+                },
+                { status: 400 },
             );
         }
 
@@ -82,12 +85,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Emergency contact added", contact: data },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to add emergency contact" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
