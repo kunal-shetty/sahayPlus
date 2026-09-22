@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file page.tsx
@@ -8,11 +8,11 @@
  * - Care receivers use this page to view and copy their unique care code to share.
  */
 
-import { useState } from 'react'
-import { motion } from 'motion/react'
-import { Heart, Link2, ArrowRight, Loader2, Copy, Check } from 'lucide-react'
-import { useSahay } from '@/lib/sahay-context'
-import { useRouter } from 'next/navigation'
+import { useState } from "react";
+import { motion } from "motion/react";
+import { Heart, Link2, ArrowRight, Loader2, Copy, Check } from "lucide-react";
+import { useSahay } from "@/lib/sahay-context";
+import { useRouter } from "next/navigation";
 
 /**
  * CareCodePage component.
@@ -21,46 +21,48 @@ import { useRouter } from 'next/navigation'
  * @returns {JSX.Element} The care code interface.
  */
 export default function CareCodePage() {
-    const { user, linkCareCode, logout } = useSahay()
-    const router = useRouter()
-    const [code, setCode] = useState('')
-    const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState('')
-    const [copied, setCopied] = useState(false)
+    const { user, linkCareCode, logout } = useSahay();
+    const router = useRouter();
+    const [code, setCode] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [copied, setCopied] = useState(false);
 
-    const isCaregiver = user?.role === 'caregiver'
-    const careCode = user?.care_code
+    const isCaregiver = user?.role === "caregiver";
+    const careCode = user?.care_code;
 
     /**
      * Validates and submits the 6-character care code to link the relationship.
      * After successful linking, redirects the user to their respective home page.
      */
     const handleLink = async () => {
-        if (code.length !== 6) return
-        setIsLoading(true)
-        setError('')
+        if (code.length !== 6) return;
+        setIsLoading(true);
+        setError("");
 
         try {
-            await linkCareCode(code)
+            await linkCareCode(code);
             // Redirect based on user role after linking
-            router.push(user?.role === 'caregiver' ? '/caregiver' : '/care-receiver')
+            router.push(
+                user?.role === "caregiver" ? "/caregiver" : "/care-receiver",
+            );
         } catch (err: any) {
-            setError(err.message || 'Invalid code. Please try again.')
+            setError(err.message || "Invalid code. Please try again.");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
     /**
      * Copies the user's unique care code to the clipboard.
      */
     const handleCopy = async () => {
         if (careCode) {
-            await navigator.clipboard.writeText(careCode)
-            setCopied(true)
-            setTimeout(() => setCopied(false), 2000)
+            await navigator.clipboard.writeText(careCode);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
         }
-    }
+    };
 
     return (
         <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-background safe-top safe-bottom">
@@ -73,18 +75,21 @@ export default function CareCodePage() {
                     className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-sahay-blue/10 mb-6"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ type: 'spring', delay: 0.2 }}
+                    transition={{ type: "spring", delay: 0.2 }}
                 >
-                    <Link2 className="w-10 h-10 text-sahay-blue" strokeWidth={1.5} />
+                    <Link2
+                        className="w-10 h-10 text-sahay-blue"
+                        strokeWidth={1.5}
+                    />
                 </motion.div>
 
                 <h1 className="text-3xl font-semibold text-foreground mb-2">
-                    {isCaregiver ? 'Link to Care Receiver' : 'Your Care Code'}
+                    {isCaregiver ? "Link to Care Receiver" : "Your Care Code"}
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-sm">
                     {isCaregiver
-                        ? 'Enter the 6-character code shared by the person you care for.'
-                        : 'Share this code with your caregiver so they can connect with you.'}
+                        ? "Enter the 6-character code shared by the person you care for."
+                        : "Share this code with your caregiver so they can connect with you."}
                 </p>
             </motion.div>
 
@@ -100,8 +105,15 @@ export default function CareCodePage() {
                         <input
                             type="text"
                             value={code}
-                            onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
-                            onKeyDown={(e) => e.key === 'Enter' && handleLink()}
+                            onChange={(e) =>
+                                setCode(
+                                    e.target.value
+                                        .toUpperCase()
+                                        .replace(/[^A-Z0-9]/g, "")
+                                        .slice(0, 6),
+                                )
+                            }
+                            onKeyDown={(e) => e.key === "Enter" && handleLink()}
                             placeholder="Enter 6-char code"
                             maxLength={6}
                             className="w-full py-5 px-6 text-center text-3xl font-mono font-bold tracking-[0.5em]
@@ -144,7 +156,7 @@ export default function CareCodePage() {
                                 Your Code
                             </p>
                             <p className="text-4xl font-mono font-bold tracking-[0.5em] text-foreground">
-                                {careCode || '------'}
+                                {careCode || "------"}
                             </p>
                         </div>
 
@@ -188,8 +200,8 @@ export default function CareCodePage() {
                 {/* Logout option to restart auth process */}
                 <button
                     onClick={() => {
-                        logout()
-                        router.push('/login')
+                        logout();
+                        router.push("/login");
                     }}
                     className="w-full mt-6 text-center text-muted-foreground text-base py-2 hover:text-foreground transition-colors"
                 >
@@ -197,5 +209,5 @@ export default function CareCodePage() {
                 </button>
             </div>
         </main>
-    )
+    );
 }
