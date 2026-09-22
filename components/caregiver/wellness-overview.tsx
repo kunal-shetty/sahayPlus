@@ -1,11 +1,11 @@
-'use client'
+"use client";
 
-import { useSahay } from '@/lib/sahay-context'
-import { ArrowLeft, Smile, Meh, Frown, MessageCircle } from 'lucide-react'
-import type { WellnessLevel } from '@/lib/types'
+import { useSahay } from "@/lib/sahay-context";
+import { ArrowLeft, Smile, Meh, Frown, MessageCircle } from "lucide-react";
+import type { WellnessLevel } from "@/lib/types";
 
 interface WellnessOverviewProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 const wellnessConfig: Record<
@@ -14,44 +14,43 @@ const wellnessConfig: Record<
 > = {
   great: {
     icon: Smile,
-    label: 'Feeling great',
-    color: 'text-sahay-success',
-    bgColor: 'bg-sahay-success/10',
+    label: "Feeling great",
+    color: "text-sahay-success",
+    bgColor: "bg-sahay-success/10",
   },
   okay: {
     icon: Meh,
-    label: 'Doing okay',
-    color: 'text-sahay-pending',
-    bgColor: 'bg-sahay-pending/10',
+    label: "Doing okay",
+    color: "text-sahay-pending",
+    bgColor: "bg-sahay-pending/10",
   },
   notGreat: {
     icon: Frown,
-    label: 'Not feeling great',
-    color: 'text-destructive',
-    bgColor: 'bg-destructive/10',
+    label: "Not feeling great",
+    color: "text-destructive",
+    bgColor: "bg-destructive/10",
   },
-}
+};
 
 export function WellnessOverview({ onClose }: WellnessOverviewProps) {
-  const { data, getWellnessTrend, getTodayWellness } = useSahay()
+  const { data, getWellnessTrend, getTodayWellness } = useSahay();
 
-  const trend = getWellnessTrend()
-  const todayWellness = getTodayWellness()
-  const careReceiverName = data.careReceiver?.name || 'Care Receiver'
+  const trend = getWellnessTrend();
+  const todayWellness = getTodayWellness();
+  const careReceiverName = data.careReceiver?.name || "Care Receiver";
 
   // Count wellness levels in last 7 days
   const wellnessCounts = trend.reduce(
     (acc, entry) => {
-      acc[entry.level] = (acc[entry.level] || 0) + 1
-      return acc
+      acc[entry.level] = (acc[entry.level] || 0) + 1;
+      return acc;
     },
-    {} as Record<WellnessLevel, number>
-  )
+    {} as Record<WellnessLevel, number>,
+  );
 
-  const mostCommon =
-    Object.entries(wellnessCounts).sort(([, a], [, b]) => b - a)[0]?.[0] as
-      | WellnessLevel
-      | undefined
+  const mostCommon = Object.entries(wellnessCounts).sort(
+    ([, a], [, b]) => b - a,
+  )[0]?.[0] as WellnessLevel | undefined;
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
@@ -88,8 +87,8 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
             </p>
             <div className="flex items-center gap-4">
               {(() => {
-                const config = wellnessConfig[todayWellness.level]
-                const Icon = config.icon
+                const config = wellnessConfig[todayWellness.level];
+                const Icon = config.icon;
                 return (
                   <>
                     <div
@@ -108,7 +107,7 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
                       )}
                     </div>
                   </>
-                )
+                );
               })()}
             </div>
           </div>
@@ -129,18 +128,18 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
               This Week
             </h2>
             <p className="text-muted-foreground">
-              {careReceiverName} has mostly been{' '}
+              {careReceiverName} has mostly been{" "}
               <span className={wellnessConfig[mostCommon].color}>
                 {wellnessConfig[mostCommon].label.toLowerCase()}
-              </span>{' '}
+              </span>{" "}
               this week.
             </p>
             <div className="flex items-center gap-4 mt-4">
-              {(['great', 'okay', 'notGreat'] as WellnessLevel[]).map(
+              {(["great", "okay", "notGreat"] as WellnessLevel[]).map(
                 (level) => {
-                  const config = wellnessConfig[level]
-                  const Icon = config.icon
-                  const count = wellnessCounts[level] || 0
+                  const config = wellnessConfig[level];
+                  const Icon = config.icon;
+                  const count = wellnessCounts[level] || 0;
                   return (
                     <div
                       key={level}
@@ -151,8 +150,8 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
                         {count}
                       </span>
                     </div>
-                  )
-                }
+                  );
+                },
               )}
             </div>
           </div>
@@ -165,9 +164,9 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
           </h2>
           <div className="space-y-3">
             {trend.map((entry) => {
-              const config = wellnessConfig[entry.level]
-              const Icon = config.icon
-              const date = new Date(entry.timestamp)
+              const config = wellnessConfig[entry.level];
+              const Icon = config.icon;
+              const date = new Date(entry.timestamp);
               return (
                 <div
                   key={entry.id}
@@ -185,10 +184,10 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
                           {config.label}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {date.toLocaleDateString('en', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
+                          {date.toLocaleDateString("en", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
                           })}
                         </p>
                       </div>
@@ -203,7 +202,7 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
                     </div>
                   )}
                 </div>
-              )
+              );
             })}
 
             {trend.length === 0 && (
@@ -217,5 +216,5 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
         </section>
       </div>
     </main>
-  )
+  );
 }
