@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file page.tsx
@@ -9,11 +9,11 @@
  * 3. If the user is new, they are prompted to provide their name and select a role.
  */
 
-import { useState } from 'react'
-import { motion } from 'motion/react'
-import { Heart, Mail, User, ArrowRight, Users, Loader2 } from 'lucide-react'
-import { useSahay } from '@/lib/sahay-context'
-import { useRouter } from 'next/navigation'
+import { useState } from "react";
+import { motion } from "motion/react";
+import { Heart, Mail, User, ArrowRight, Users, Loader2 } from "lucide-react";
+import { useSahay } from "@/lib/sahay-context";
+import { useRouter } from "next/navigation";
 
 /**
  * LoginPage component.
@@ -22,79 +22,88 @@ import { useRouter } from 'next/navigation'
  * @returns {JSX.Element} The login/signup interface.
  */
 export default function LoginPage() {
-    const { login } = useSahay()
-    const router = useRouter()
-    const [email, setEmail] = useState('')
-    const [name, setName] = useState('')
-    const [role, setRole] = useState<'caregiver' | 'care_receiver' | null>(null)
-    const [step, setStep] = useState<'email' | 'details'>('email')
-    const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState('')
+    const { login } = useSahay();
+    const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [name, setName] = useState("");
+    const [role, setRole] = useState<"caregiver" | "care_receiver" | null>(
+        null,
+    );
+    const [step, setStep] = useState<"email" | "details">("email");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
 
     /**
      * Handles the first step of the login process (email submission).
      * Checks if the user already exists or if they need to complete a profile setup.
      */
     const handleEmailSubmit = async () => {
-        if (!email.trim()) return
-        setIsLoading(true)
-        setError('')
+        if (!email.trim()) return;
+        setIsLoading(true);
+        setError("");
 
         try {
             // Attempt to login with email; the server determines if the user is new or existing
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: email.trim() }),
-            })
-            const data = await res.json()
+            });
+            const data = await res.json();
 
             if (res.ok && !data.is_new) {
                 // Existing user: Log in directly via context
-                login(data.user, data.care_relationship)
-                router.push('/')
-            } else if (res.status === 400 && data.error?.includes('Name and role')) {
+                login(data.user, data.care_relationship);
+                router.push("/");
+            } else if (
+                res.status === 400 &&
+                data.error?.includes("Name and role")
+            ) {
                 // New user: transition to the details step to collect name and role
-                setStep('details')
+                setStep("details");
             } else {
-                setError(data.error || 'Something went wrong')
+                setError(data.error || "Something went wrong");
             }
         } catch {
-            setError('Could not connect to server')
+            setError("Could not connect to server");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
     /**
      * Handles the second step of the login process (signup/profile creation).
      * Registers the new user with the provided name and role.
      */
     const handleSignup = async () => {
-        if (!name.trim() || !role) return
-        setIsLoading(true)
-        setError('')
+        if (!name.trim() || !role) return;
+        setIsLoading(true);
+        setError("");
 
         try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email.trim(), name: name.trim(), role }),
-            })
-            const data = await res.json()
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: email.trim(),
+                    name: name.trim(),
+                    role,
+                }),
+            });
+            const data = await res.json();
 
             if (res.ok) {
-                login(data.user, data.care_relationship)
-                router.push('/')
+                login(data.user, data.care_relationship);
+                router.push("/");
             } else {
-                setError(data.error || 'Something went wrong')
+                setError(data.error || "Something went wrong");
             }
         } catch {
-            setError('Could not connect to server')
+            setError("Could not connect to server");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
     return (
         <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-background safe-top safe-bottom">
@@ -109,9 +118,12 @@ export default function LoginPage() {
                     className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ type: 'spring', delay: 0.2 }}
+                    transition={{ type: "spring", delay: 0.2 }}
                 >
-                    <Heart className="w-10 h-10 text-primary" strokeWidth={1.5} />
+                    <Heart
+                        className="w-10 h-10 text-primary"
+                        strokeWidth={1.5}
+                    />
                 </motion.div>
 
                 <motion.h1
@@ -128,12 +140,14 @@ export default function LoginPage() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4 }}
                 >
-                    {step === 'email' ? 'Sign in to continue' : 'Tell us about yourself'}
+                    {step === "email"
+                        ? "Sign in to continue"
+                        : "Tell us about yourself"}
                 </motion.p>
             </motion.div>
 
             <div className="w-full max-w-md">
-                {step === 'email' ? (
+                {step === "email" ? (
                     <motion.div
                         className="space-y-4"
                         initial={{ opacity: 0, y: 20 }}
@@ -147,7 +161,9 @@ export default function LoginPage() {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleEmailSubmit()}
+                                onKeyDown={(e) =>
+                                    e.key === "Enter" && handleEmailSubmit()
+                                }
                                 placeholder="Enter your email"
                                 className="w-full pl-12 pr-4 py-4 text-lg bg-card border-2 border-border rounded-2xl
                          focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20
@@ -207,31 +223,47 @@ export default function LoginPage() {
 
                         <div className="grid grid-cols-2 gap-3">
                             <motion.button
-                                onClick={() => setRole('caregiver')}
+                                onClick={() => setRole("caregiver")}
                                 className={`p-5 rounded-2xl border-2 text-left transition-all touch-manipulation
-                          ${role === 'caregiver'
-                                        ? 'border-primary bg-primary/5'
-                                        : 'border-border bg-card hover:border-primary/50'}`}
+                          ${
+                              role === "caregiver"
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border bg-card hover:border-primary/50"
+                          }`}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                             >
-                                <Users className={`w-7 h-7 mb-2 ${role === 'caregiver' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                <p className="text-base font-semibold text-foreground">Caregiver</p>
-                                <p className="text-sm text-muted-foreground mt-1">I care for someone</p>
+                                <Users
+                                    className={`w-7 h-7 mb-2 ${role === "caregiver" ? "text-primary" : "text-muted-foreground"}`}
+                                />
+                                <p className="text-base font-semibold text-foreground">
+                                    Caregiver
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    I care for someone
+                                </p>
                             </motion.button>
 
                             <motion.button
-                                onClick={() => setRole('care_receiver')}
+                                onClick={() => setRole("care_receiver")}
                                 className={`p-5 rounded-2xl border-2 text-left transition-all touch-manipulation
-                          ${role === 'care_receiver'
-                                        ? 'border-sahay-blue bg-sahay-blue/5'
-                                        : 'border-border bg-card hover:border-sahay-blue/50'}`}
+                          ${
+                              role === "care_receiver"
+                                  ? "border-sahay-blue bg-sahay-blue/5"
+                                  : "border-border bg-card hover:border-sahay-blue/50"
+                          }`}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                             >
-                                <Heart className={`w-7 h-7 mb-2 ${role === 'care_receiver' ? 'text-sahay-blue' : 'text-muted-foreground'}`} />
-                                <p className="text-base font-semibold text-foreground">Care Receiver</p>
-                                <p className="text-sm text-muted-foreground mt-1">I manage my care</p>
+                                <Heart
+                                    className={`w-7 h-7 mb-2 ${role === "care_receiver" ? "text-sahay-blue" : "text-muted-foreground"}`}
+                                />
+                                <p className="text-base font-semibold text-foreground">
+                                    Care Receiver
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    I manage my care
+                                </p>
                             </motion.button>
                         </div>
 
@@ -259,7 +291,7 @@ export default function LoginPage() {
 
                         {/* Navigation back to email step */}
                         <button
-                            onClick={() => setStep('email')}
+                            onClick={() => setStep("email")}
                             className="w-full text-center text-muted-foreground text-base py-2 hover:text-foreground transition-colors"
                         >
                             ← Use a different email
@@ -288,5 +320,5 @@ export default function LoginPage() {
                 Everyday care, made a little easier.
             </motion.p>
         </main>
-    )
+    );
 }
