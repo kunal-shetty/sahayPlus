@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
         if (!email) {
             return NextResponse.json(
                 { error: "Email is required" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -38,13 +38,18 @@ export async function POST(req: NextRequest) {
             const { data: relationships } = await supabase
                 .from("care_relationships")
                 .select("*")
-                .or(`caregiver_id.eq.${existingUser.id},care_receiver_id.eq.${existingUser.id}`)
+                .or(
+                    `caregiver_id.eq.${existingUser.id},care_receiver_id.eq.${existingUser.id}`,
+                )
                 .limit(1);
 
             return NextResponse.json({
                 message: "Login successful",
                 user: existingUser,
-                care_relationship: relationships && relationships.length > 0 ? relationships[0] : null,
+                care_relationship:
+                    relationships && relationships.length > 0
+                        ? relationships[0]
+                        : null,
                 is_new: false,
             });
         }
@@ -53,15 +58,17 @@ export async function POST(req: NextRequest) {
         if (!name || !role) {
             return NextResponse.json(
                 { error: "Name and role are required for new users" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
         const validRoles = ["caregiver", "care_receiver", "pharmacist"];
         if (!validRoles.includes(role)) {
             return NextResponse.json(
-                { error: `Invalid role. Must be one of: ${validRoles.join(", ")}` },
-                { status: 400 }
+                {
+                    error: `Invalid role. Must be one of: ${validRoles.join(", ")}`,
+                },
+                { status: 400 },
             );
         }
 
@@ -72,21 +79,27 @@ export async function POST(req: NextRequest) {
         //    up the existing auth.users row and re-creating public.users
         //    from it instead of failing the whole request.
         let newUserId: string;
-        const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
-            email: normalizedEmail,
-            email_confirm: true,
-            user_metadata: { name, role },
-        });
+        const { data: authData, error: signUpError } =
+            await supabase.auth.admin.createUser({
+                email: normalizedEmail,
+                email_confirm: true,
+                user_metadata: { name, role },
+            });
 
         if (signUpError || !authData?.user) {
             const isAlreadyRegistered =
-                signUpError?.message?.toLowerCase().includes("already registered") ||
+                signUpError?.message
+                    ?.toLowerCase()
+                    .includes("already registered") ||
                 signUpError?.status === 422;
 
             if (!isAlreadyRegistered) {
                 return NextResponse.json(
-                    { error: signUpError?.message || "Failed to create account" },
-                    { status: 500 }
+                    {
+                        error:
+                            signUpError?.message || "Failed to create account",
+                    },
+                    { status: 500 },
                 );
             }
 
@@ -97,35 +110,42 @@ export async function POST(req: NextRequest) {
                 await supabase.auth.admin.listUsers();
             if (listError) {
                 return NextResponse.json(
-                    { error: `Orphan auth row but can't list users: ${listError.message}` },
-                    { status: 500 }
+                    {
+                        error: `Orphan auth row but can't list users: ${listError.message}`,
+                    },
+                    { status: 500 },
                 );
             }
             const match = recoveredAuth?.users?.find(
-                (u: any) => (u.email ?? "").toLowerCase() === normalizedEmail
+                (u: any) => (u.email ?? "").toLowerCase() === normalizedEmail,
             );
             if (!match) {
                 return NextResponse.json(
-                    { error: "Auth reports email registered but row not found." },
-                    { status: 500 }
+                    {
+                        error: "Auth reports email registered but row not found.",
+                    },
+                    { status: 500 },
                 );
             }
             newUserId = match.id;
 
             // Manually create the public.users row the trigger would have
             // made, so the rest of the flow can update it.
-            const { error: insertErr } = await supabase
-                .from("users")
-                .insert({
-                    id: newUserId,
-                    email: normalizedEmail,
-                    name,
-                    role,
-                });
-            if (insertErr && !insertErr.message.toLowerCase().includes("duplicate")) {
+            const { error: insertErr } = await supabase.from("users").insert({
+                id: newUserId,
+                email: normalizedEmail,
+                name,
+                role,
+            });
+            if (
+                insertErr &&
+                !insertErr.message.toLowerCase().includes("duplicate")
+            ) {
                 return NextResponse.json(
-                    { error: `Failed to rebuild public.users: ${insertErr.message}` },
-                    { status: 500 }
+                    {
+                        error: `Failed to rebuild public.users: ${insertErr.message}`,
+                    },
+                    { status: 500 },
                 );
             }
         } else {
@@ -149,8 +169,10 @@ export async function POST(req: NextRequest) {
             }
             if (!isUnique) {
                 return NextResponse.json(
-                    { error: "Could not generate a unique care code, please try again" },
-                    { status: 500 }
+                    {
+                        error: "Could not generate a unique care code, please try again",
+                    },
+                    { status: 500 },
                 );
             }
         }
@@ -171,7 +193,7 @@ export async function POST(req: NextRequest) {
         if (updateError) {
             return NextResponse.json(
                 { error: updateError.message },
-                { status: 500 }
+                { status: 500 },
             );
         }
 
@@ -191,7 +213,9 @@ export async function POST(req: NextRequest) {
         if (cause?.message) messages.push(`cause: ${cause.message}`);
         if (cause?.code) messages.push(`code: ${cause.code}`);
         if (cause?.errno) messages.push(`errno: ${cause.errno}`);
-        const detail = messages.length ? messages.join(" | ") : "Failed to login";
+        const detail = messages.length
+            ? messages.join(" | ")
+            : "Failed to login";
         console.error("[/api/auth/login] error:", error);
         return NextResponse.json({ error: detail }, { status: 500 });
     }
