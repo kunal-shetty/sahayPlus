@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file onboarding.tsx
@@ -13,15 +13,15 @@
  * cognitive load by presenting only one primary action per screen.
  */
 
-import { useState } from 'react'
-import { useSahay } from '@/lib/sahay-context'
-import { type TimeOfDay, timeOfDayLabels } from '@/lib/types'
-import { ArrowLeft, ArrowRight, Check, Sun, Cloud, Moon } from 'lucide-react'
+import { useState } from "react";
+import { useSahay } from "@/lib/sahay-context";
+import { type TimeOfDay, timeOfDayLabels } from "@/lib/types";
+import { ArrowLeft, ArrowRight, Check, Sun, Cloud, Moon } from "lucide-react";
 
 /**
  * Type definition for the current step of the onboarding process.
  */
-type OnboardingStep = 'names' | 'medication'
+type OnboardingStep = "names" | "medication";
 
 /**
  * CaregiverOnboarding component.
@@ -30,19 +30,24 @@ type OnboardingStep = 'names' | 'medication'
  * @returns {JSX.Element} The onboarding interface.
  */
 export function CaregiverOnboarding() {
-  const { data, setCaregiver, setCareReceiver, addMedication, logout } = useSahay()
-  const [step, setStep] = useState<OnboardingStep>('names')
+  const { data, setCaregiver, setCareReceiver, addMedication, logout } =
+    useSahay();
+  const [step, setStep] = useState<OnboardingStep>("names");
 
   // Names step state
-  const [caregiverName, setCaregiverName] = useState(data.caregiver?.name || '')
-  const [careReceiverName, setCareReceiverName] = useState(data.careReceiver?.name || '')
+  const [caregiverName, setCaregiverName] = useState(
+    data.caregiver?.name || "",
+  );
+  const [careReceiverName, setCareReceiverName] = useState(
+    data.careReceiver?.name || "",
+  );
 
   // Medication step state
-  const [medName, setMedName] = useState('')
-  const [medDosage, setMedDosage] = useState('')
-  const [medTimeOfDay, setMedTimeOfDay] = useState<TimeOfDay>('morning')
-  const [medTime, setMedTime] = useState('')
-  const [medNotes, setMedNotes] = useState('')
+  const [medName, setMedName] = useState("");
+  const [medDosage, setMedDosage] = useState("");
+  const [medTimeOfDay, setMedTimeOfDay] = useState<TimeOfDay>("morning");
+  const [medTime, setMedTime] = useState("");
+  const [medNotes, setMedNotes] = useState("");
 
   /**
    * Validates and saves the names for both parties.
@@ -53,12 +58,12 @@ export function CaregiverOnboarding() {
       setCaregiver({
         name: caregiverName.trim(),
         setupComplete: false,
-        roleStatus: 'active',
-      })
-      setCareReceiver({ name: careReceiverName.trim() })
-      setStep('medication')
+        roleStatus: "active",
+      });
+      setCareReceiver({ name: careReceiverName.trim() });
+      setStep("medication");
     }
-  }
+  };
 
   /**
    * Validates and adds the first medication.
@@ -72,34 +77,34 @@ export function CaregiverOnboarding() {
         timeOfDay: medTimeOfDay,
         time: medTime || undefined,
         notes: medNotes.trim() || undefined,
-      })
+      });
       // Mark setup as complete
       setCaregiver({
         name: caregiverName.trim(),
         setupComplete: true,
-        roleStatus: 'active',
-      })
+        roleStatus: "active",
+      });
     }
-  }
+  };
 
   /**
    * Navigates backward through the onboarding steps.
    * If at the first step, it triggers a logout.
    */
   const handleBack = () => {
-    if (step === 'medication') {
-      setStep('names')
+    if (step === "medication") {
+      setStep("names");
     } else {
-      logout()
+      logout();
     }
-  }
+  };
 
   /** Mapping of time of day slugs to their corresponding Lucide icons. */
   const timeIcons: Record<TimeOfDay, typeof Sun> = {
     morning: Sun,
     afternoon: Cloud,
     evening: Moon,
-  }
+  };
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
@@ -117,14 +122,14 @@ export function CaregiverOnboarding() {
         <div>
           <p className="text-sm text-muted-foreground">Getting started</p>
           <p className="text-lg font-semibold text-foreground">
-            {step === 'names' ? 'Step 1 of 2' : 'Step 2 of 2'}
+            {step === "names" ? "Step 1 of 2" : "Step 2 of 2"}
           </p>
         </div>
       </header>
 
       {/* Content */}
       <div className="flex-1 p-6 overflow-y-auto">
-        {step === 'names' && (
+        {step === "names" && (
           <div className="max-w-md mx-auto">
             <h1 className="text-2xl font-semibold text-foreground mb-2 text-balance">
               Let&apos;s get to know you
@@ -179,7 +184,7 @@ export function CaregiverOnboarding() {
           </div>
         )}
 
-        {step === 'medication' && (
+        {step === "medication" && (
           <div className="max-w-md mx-auto">
             <h1 className="text-2xl font-semibold text-foreground mb-2 text-balance">
               Add the first medication
@@ -238,8 +243,8 @@ export function CaregiverOnboarding() {
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map((time) => {
-                    const Icon = timeIcons[time]
-                    const isSelected = medTimeOfDay === time
+                    const Icon = timeIcons[time];
+                    const isSelected = medTimeOfDay === time;
                     return (
                       <button
                         key={time}
@@ -247,23 +252,24 @@ export function CaregiverOnboarding() {
                         onClick={() => setMedTimeOfDay(time)}
                         className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
                                   touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage
-                                  ${isSelected
-                            ? 'border-sahay-sage bg-sahay-sage-light'
-                            : 'border-border bg-card hover:border-sahay-sage/50'
-                          }`}
+                                  ${
+                                    isSelected
+                                      ? "border-sahay-sage bg-sahay-sage-light"
+                                      : "border-border bg-card hover:border-sahay-sage/50"
+                                  }`}
                         aria-pressed={isSelected}
                       >
                         <Icon
-                          className={`w-6 h-6 ${isSelected ? 'text-sahay-sage' : 'text-muted-foreground'}`}
+                          className={`w-6 h-6 ${isSelected ? "text-sahay-sage" : "text-muted-foreground"}`}
                           strokeWidth={1.5}
                         />
                         <span
-                          className={`text-base font-medium ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}
+                          className={`text-base font-medium ${isSelected ? "text-foreground" : "text-muted-foreground"}`}
                         >
                           {timeOfDayLabels[time]}
                         </span>
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -274,7 +280,10 @@ export function CaregiverOnboarding() {
                   htmlFor="medTime"
                   className="block text-lg font-medium text-foreground mb-2"
                 >
-                  Exact time <span className="text-muted-foreground font-normal">(optional)</span>
+                  Exact time{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (optional)
+                  </span>
                 </label>
                 <input
                   id="medTime"
@@ -293,7 +302,10 @@ export function CaregiverOnboarding() {
                   htmlFor="medNotes"
                   className="block text-lg font-medium text-foreground mb-2"
                 >
-                  Notes <span className="text-muted-foreground font-normal">(optional)</span>
+                  Notes{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (optional)
+                  </span>
                 </label>
                 <input
                   id="medNotes"
@@ -315,7 +327,7 @@ export function CaregiverOnboarding() {
       {/* Footer with action button */}
       <footer className="p-6 border-t border-border bg-card">
         <div className="max-w-md mx-auto">
-          {step === 'names' && (
+          {step === "names" && (
             <button
               onClick={handleNamesSubmit}
               disabled={!caregiverName.trim() || !careReceiverName.trim()}
@@ -329,7 +341,7 @@ export function CaregiverOnboarding() {
             </button>
           )}
 
-          {step === 'medication' && (
+          {step === "medication" && (
             <button
               onClick={handleMedicationSubmit}
               disabled={!medName.trim() || !medDosage.trim()}
@@ -345,5 +357,5 @@ export function CaregiverOnboarding() {
         </div>
       </footer>
     </main>
-  )
+  );
 }
