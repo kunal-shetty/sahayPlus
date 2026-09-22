@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * @file onboarding-flow.tsx
@@ -12,14 +12,14 @@
  * and polished first impression of the application.
  */
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "motion/react"
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { OnboardingWelcome } from "./onboarding-welcome"
-import { OnboardingFeatures } from "./onboarding-features"
-import { OnboardingGoals } from "./onboarding-goals"
-import { OnboardingReady } from "./onboarding-ready"
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { OnboardingWelcome } from "./onboarding-welcome";
+import { OnboardingFeatures } from "./onboarding-features";
+import { OnboardingGoals } from "./onboarding-goals";
+import { OnboardingReady } from "./onboarding-ready";
 
 /**
  * Props for the OnboardingFlow component.
@@ -27,7 +27,7 @@ import { OnboardingReady } from "./onboarding-ready"
  * @property {() => void} onComplete - Callback triggered when the user finishes the entire flow or skips it.
  */
 interface OnboardingFlowProps {
-    onComplete: () => void
+    onComplete: () => void;
 }
 
 /**
@@ -39,7 +39,7 @@ const STEPS = [
     { id: "features", component: OnboardingFeatures },
     { id: "goals", component: OnboardingGoals },
     { id: "ready", component: OnboardingReady },
-]
+];
 
 /**
  * OnboardingFlow component.
@@ -49,8 +49,8 @@ const STEPS = [
  * @returns {JSX.Element} The full-screen onboarding experience.
  */
 export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
-    const [currentStep, setCurrentStep] = useState(0)
-    const [direction, setDirection] = useState(0)
+    const [currentStep, setCurrentStep] = useState(0);
+    const [direction, setDirection] = useState(0);
 
     /**
      * Advances the user to the next step in the sequence.
@@ -58,24 +58,24 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
      */
     const goNext = () => {
         if (currentStep < STEPS.length - 1) {
-            setDirection(1)
-            setCurrentStep((prev) => prev + 1)
+            setDirection(1);
+            setCurrentStep((prev) => prev + 1);
         } else {
-            onComplete()
+            onComplete();
         }
-    }
+    };
 
     /**
      * Navigates the user back to the previous step in the sequence.
      */
     const goPrev = () => {
         if (currentStep > 0) {
-            setDirection(-1)
-            setCurrentStep((prev) => prev - 1)
+            setDirection(-1);
+            setCurrentStep((prev) => prev - 1);
         }
-    }
+    };
 
-    const CurrentStepComponent = STEPS[currentStep].component
+    const CurrentStepComponent = STEPS[currentStep].component;
 
     /**
      * Animation variants for the step transitions.
@@ -94,13 +94,18 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
             x: direction < 0 ? 300 : -300,
             opacity: 0,
         }),
-    }
+    };
 
     return (
         <div className="fixed inset-0 z-40 flex flex-col bg-background safe-top safe-bottom">
             {/* Skip button */}
             <div className="flex justify-end p-4">
-                <Button variant="ghost" size="sm" onClick={onComplete} className="text-muted-foreground">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onComplete}
+                    className="text-muted-foreground"
+                >
                     Skip
                 </Button>
             </div>
@@ -133,8 +138,11 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                     {STEPS.map((_, index) => (
                         <motion.div
                             key={index}
-                            className={`h-2 rounded-full transition-all duration-300 ${index === currentStep ? "w-6 bg-primary" : "w-2 bg-muted"
-                                }`}
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                                index === currentStep
+                                    ? "w-6 bg-primary"
+                                    : "w-2 bg-muted"
+                            }`}
                             initial={false}
                             animate={{
                                 scale: index === currentStep ? 1 : 0.8,
@@ -146,7 +154,12 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                 {/* Navigation buttons */}
                 <div className="flex gap-3">
                     {currentStep > 0 && (
-                        <Button variant="outline" size="lg" onClick={goPrev} className="flex-1 bg-transparent">
+                        <Button
+                            variant="outline"
+                            size="lg"
+                            onClick={goPrev}
+                            className="flex-1 bg-transparent"
+                        >
                             <ChevronLeft className="mr-2 h-4 w-4" />
                             Back
                         </Button>
@@ -167,5 +180,5 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                 </div>
             </div>
         </div>
-    )
+    );
 }
