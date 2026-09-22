@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
         if (!handover_id) {
             return NextResponse.json(
                 { error: "Missing required field: handover_id" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -41,12 +41,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Handover ended", handover: data },
-            { status: 200 }
+            { status: 200 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to end handover" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
