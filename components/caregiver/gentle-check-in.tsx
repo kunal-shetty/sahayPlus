@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file gentle-check-in.tsx
@@ -9,9 +9,9 @@
  * reduces the anxiety associated with robotic alerts.
  */
 
-import { useState } from 'react'
-import { useSahay } from '@/lib/sahay-context'
-import { Phone, MessageCircle, X, Heart } from 'lucide-react'
+import { useState } from "react";
+import { useSahay } from "@/lib/sahay-context";
+import { Phone, MessageCircle, X, Heart } from "lucide-react";
 
 /**
  * GentleCheckIn component.
@@ -21,42 +21,46 @@ import { Phone, MessageCircle, X, Heart } from 'lucide-react'
  * @returns {JSX.Element | null} The check-in suggestion UI or null if no suggestion is active.
  */
 export function GentleCheckIn() {
-  const { getSuggestedCheckIn, dismissCheckInSuggestion, addTimelineEvent, data } =
-    useSahay()
-  const [isVisible, setIsVisible] = useState(true)
+  const {
+    getSuggestedCheckIn,
+    dismissCheckInSuggestion,
+    addTimelineEvent,
+    data,
+  } = useSahay();
+  const [isVisible, setIsVisible] = useState(true);
 
   /** The suggested check-in message (e.g., "Maybe a quick call?"). */
-  const suggestion = getSuggestedCheckIn()
+  const suggestion = getSuggestedCheckIn();
 
-  if (!suggestion || !isVisible) return null
+  if (!suggestion || !isVisible) return null;
 
   /**
    * Handles the "Call" action.
    * Logs the activity to the care timeline and dismisses the suggestion.
    */
   const handleCall = () => {
-    addTimelineEvent('check_in', undefined, 'Called to check in')
-    dismissCheckInSuggestion()
-    setIsVisible(false)
-  }
+    addTimelineEvent("check_in", undefined, "Called to check in");
+    dismissCheckInSuggestion();
+    setIsVisible(false);
+  };
 
   /**
    * Handles the "Message" action.
    * Logs the activity to the care timeline and dismisses the suggestion.
    */
   const handleMessage = () => {
-    addTimelineEvent('check_in', undefined, 'Sent a message to check in')
-    dismissCheckInSuggestion()
-    setIsVisible(false)
-  }
+    addTimelineEvent("check_in", undefined, "Sent a message to check in");
+    dismissCheckInSuggestion();
+    setIsVisible(false);
+  };
 
   /**
    * Dismisses the suggestion without logging a check-in activity.
    */
   const handleDismiss = () => {
-    dismissCheckInSuggestion()
-    setIsVisible(false)
-  }
+    dismissCheckInSuggestion();
+    setIsVisible(false);
+  };
 
   return (
     <div className="bg-sahay-blue-light border-2 border-sahay-blue/20 rounded-2xl p-5 mb-6">
@@ -117,5 +121,5 @@ export function GentleCheckIn() {
         </button>
       </div>
     </div>
-  )
+  );
 }
