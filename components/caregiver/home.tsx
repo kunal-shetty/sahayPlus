@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file home.tsx
@@ -12,16 +12,16 @@
  * a clean, focused experience and avoid cognitive overload.
  */
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { useSahay } from '@/lib/sahay-context'
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { useSahay } from "@/lib/sahay-context";
 import {
   type TimeOfDay,
   type Medication,
   timeOfDayLabels,
   getCurrentTimeOfDay,
   formatTime12h,
-} from '@/lib/types'
+} from "@/lib/types";
 import {
   Sun,
   Cloud,
@@ -46,23 +46,23 @@ import {
   Smile,
   ArrowLeft,
   Pill,
-} from 'lucide-react'
-import { MedicationForm } from './medication-form'
-import { SettingsPanel } from './settings-panel'
-import { CareTimeline } from './care-timeline'
-import { GentleCheckIn } from './gentle-check-in'
-import { CareConfidence } from './care-confidence'
-import { DailyClosure } from './daily-closure'
-import { RoleStatus } from './role-status'
-import { ContextualNotes } from './contextual-notes'
-import { AnalyticsDashboard } from './analytics-dashboard'
-import { EmergencyContacts } from './emergency-contacts'
-import { Messages } from './messages'
-import { WellnessOverview } from './wellness-overview'
-import { MedicationHistory } from './medication-history'
-import { QuickPillActions } from './quick-pill-actions'
-import { CaregiverHomeSkeleton } from '../skeletons'
-import { CaregiverBottomNav, type CaregiverTab } from './bottom-nav'
+} from "lucide-react";
+import { MedicationForm } from "./medication-form";
+import { SettingsPanel } from "./settings-panel";
+import { CareTimeline } from "./care-timeline";
+import { GentleCheckIn } from "./gentle-check-in";
+import { CareConfidence } from "./care-confidence";
+import { DailyClosure } from "./daily-closure";
+import { RoleStatus } from "./role-status";
+import { ContextualNotes } from "./contextual-notes";
+import { AnalyticsDashboard } from "./analytics-dashboard";
+import { EmergencyContacts } from "./emergency-contacts";
+import { Messages } from "./messages";
+import { WellnessOverview } from "./wellness-overview";
+import { MedicationHistory } from "./medication-history";
+import { QuickPillActions } from "./quick-pill-actions";
+import { CaregiverHomeSkeleton } from "../skeletons";
+import { CaregiverBottomNav, type CaregiverTab } from "./bottom-nav";
 
 /**
  * PharmacistInlineForm component.
@@ -71,20 +71,20 @@ import { CaregiverBottomNav, type CaregiverTab } from './bottom-nav'
  * @returns {JSX.Element} The pharmacist edit/add interface.
  */
 function PharmacistInlineForm() {
-  const { data, updatePharmacist } = useSahay()
-  const [editing, setEditing] = useState(false)
-  const [name, setName] = useState(data.pharmacist?.name || '')
-  const [saving, setSaving] = useState(false)
+  const { data, updatePharmacist } = useSahay();
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(data.pharmacist?.name || "");
+  const [saving, setSaving] = useState(false);
 
   /** Persists the pharmacist's name to the backend. */
   const handleSave = () => {
-    setSaving(true)
-    updatePharmacist({ name: name.trim() || undefined })
+    setSaving(true);
+    updatePharmacist({ name: name.trim() || undefined });
     setTimeout(() => {
-      setSaving(false)
-      setEditing(false)
-    }, 300)
-  }
+      setSaving(false);
+      setEditing(false);
+    }, 300);
+  };
 
   if (!editing) {
     return (
@@ -94,9 +94,9 @@ function PharmacistInlineForm() {
                  rounded-xl transition-all active:scale-[0.97] touch-manipulation
                  hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
       >
-        {data.pharmacist?.name ? 'Edit Pharmacist' : '+ Add Pharmacist'}
+        {data.pharmacist?.name ? "Edit Pharmacist" : "+ Add Pharmacist"}
       </button>
-    )
+    );
   }
 
   return (
@@ -125,16 +125,19 @@ function PharmacistInlineForm() {
                    disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {saving ? (
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+            >
               <Clock className="w-4 h-4" />
             </motion.div>
           ) : (
-            'Save'
+            "Save"
           )}
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 /**
@@ -146,22 +149,22 @@ function PharmacistInlineForm() {
  * @returns {JSX.Element} The medication-specific pharmacist note interface.
  */
 function MedPharmacistNote({ med }: { med: Medication }) {
-  const { addPharmacistNote } = useSahay()
-  const [expanded, setExpanded] = useState(false)
-  const [note, setNote] = useState('')
-  const [saving, setSaving] = useState(false)
+  const { addPharmacistNote } = useSahay();
+  const [expanded, setExpanded] = useState(false);
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
 
   /** Saves the pharmacist note for the specific medication. */
   const handleSave = () => {
-    if (!note.trim()) return
-    setSaving(true)
-    addPharmacistNote(med.id, note.trim())
+    if (!note.trim()) return;
+    setSaving(true);
+    addPharmacistNote(med.id, note.trim());
     setTimeout(() => {
-      setSaving(false)
-      setNote('')
-      setExpanded(false)
-    }, 300)
-  }
+      setSaving(false);
+      setNote("");
+      setExpanded(false);
+    }, 300);
+  };
 
   return (
     <div className="border-2 border-border rounded-xl overflow-hidden">
@@ -171,32 +174,46 @@ function MedPharmacistNote({ med }: { med: Medication }) {
                  hover:bg-secondary/50 active:scale-[0.99] transition-all touch-manipulation"
       >
         <div className="flex items-center gap-3">
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${med.taken ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}>
-            {med.taken ? <Check className="w-3 h-3 text-sahay-success" /> : <Clock className="w-3 h-3 text-sahay-pending" />}
+          <div
+            className={`w-6 h-6 rounded-full flex items-center justify-center ${med.taken ? "bg-sahay-success/20" : "bg-sahay-pending/20"}`}
+          >
+            {med.taken ? (
+              <Check className="w-3 h-3 text-sahay-success" />
+            ) : (
+              <Clock className="w-3 h-3 text-sahay-pending" />
+            )}
           </div>
           <div>
             <p className="font-medium text-foreground">{med.name}</p>
             {med.pharmacistNote && (
-              <p className="text-xs text-sahay-blue mt-0.5">Has pharmacist note</p>
+              <p className="text-xs text-sahay-blue mt-0.5">
+                Has pharmacist note
+              </p>
             )}
           </div>
         </div>
-        <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`} />
+        <ChevronRight
+          className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? "rotate-90" : ""}`}
+        />
       </button>
 
       <AnimatePresence>
         {expanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
             <div className="p-3 pt-0 space-y-2">
               {med.pharmacistNote && (
                 <div className="p-2 bg-sahay-blue/10 rounded-lg">
-                  <p className="text-sm text-sahay-blue font-medium">Current note:</p>
-                  <p className="text-sm text-foreground">{med.pharmacistNote}</p>
+                  <p className="text-sm text-sahay-blue font-medium">
+                    Current note:
+                  </p>
+                  <p className="text-sm text-foreground">
+                    {med.pharmacistNote}
+                  </p>
                 </div>
               )}
               <textarea
@@ -215,11 +232,18 @@ function MedPharmacistNote({ med }: { med: Medication }) {
                          disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {saving ? (
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  >
                     <Clock className="w-3 h-3" />
                   </motion.div>
                 ) : (
-                  'Save Note'
+                  "Save Note"
                 )}
               </button>
             </div>
@@ -227,7 +251,7 @@ function MedPharmacistNote({ med }: { med: Medication }) {
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
 /**
@@ -248,60 +272,60 @@ export function CaregiverHome() {
     getDoctorPrepSummary,
     endHandover,
     startHandover,
-  } = useSahay()
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [editingMed, setEditingMed] = useState<Medication | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
-  const [showTimeline, setShowTimeline] = useState(false)
-  const [showRoleStatus, setShowRoleStatus] = useState(false)
-  const [showNotes, setShowNotes] = useState(false)
-  const [showAnalytics, setShowAnalytics] = useState(false)
-  const [showEmergency, setShowEmergency] = useState(false)
-  const [showMessages, setShowMessages] = useState(false)
-  const [showWellness, setShowWellness] = useState(false)
-  const [showHistory, setShowHistory] = useState(false)
-  const [showDoctorPrep, setShowDoctorPrep] = useState(false)
-  const [showPharmacist, setShowPharmacist] = useState(false)
-  const [showHandoverSetup, setShowHandoverSetup] = useState(false)
-  const [handoverName, setHandoverName] = useState('')
-  const [handoverDays, setHandoverDays] = useState('3')
-  const [activeTab, setActiveTab] = useState<CaregiverTab>('home')
+  } = useSahay();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingMed, setEditingMed] = useState<Medication | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [showRoleStatus, setShowRoleStatus] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showEmergency, setShowEmergency] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
+  const [showWellness, setShowWellness] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showDoctorPrep, setShowDoctorPrep] = useState(false);
+  const [showPharmacist, setShowPharmacist] = useState(false);
+  const [showHandoverSetup, setShowHandoverSetup] = useState(false);
+  const [handoverName, setHandoverName] = useState("");
+  const [handoverDays, setHandoverDays] = useState("3");
+  const [activeTab, setActiveTab] = useState<CaregiverTab>("home");
 
-  const unreadMessages = getUnreadCount()
-  const currentTimeOfDay = getCurrentTimeOfDay()
+  const unreadMessages = getUnreadCount();
+  const currentTimeOfDay = getCurrentTimeOfDay();
 
   /** Group medications by time of day for structured display. */
   const groupedMeds: Record<TimeOfDay, Medication[]> = {
     morning: [],
     afternoon: [],
     evening: [],
-  }
+  };
 
   for (const med of data.medications) {
-    groupedMeds[med.timeOfDay].push(med)
+    groupedMeds[med.timeOfDay].push(med);
   }
 
   /** Overall adherence metrics for the current day. */
-  const totalMeds = data.medications.length
-  const takenMeds = data.medications.filter((m) => m.taken).length
-  const allTaken = totalMeds > 0 && takenMeds === totalMeds
+  const totalMeds = data.medications.length;
+  const takenMeds = data.medications.filter((m) => m.taken).length;
+  const allTaken = totalMeds > 0 && takenMeds === totalMeds;
 
   const timeIcons: Record<TimeOfDay, typeof Sun> = {
     morning: Sun,
     afternoon: Cloud,
     evening: Moon,
-  }
+  };
 
   /** Returns a time-appropriate greeting. */
   const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Good morning'
-    if (hour < 17) return 'Good afternoon'
-    return 'Good evening'
-  }
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
 
   if (isLoading || isDataLoading) {
-    return <CaregiverHomeSkeleton />
+    return <CaregiverHomeSkeleton />;
   }
 
   if (showAddForm || editingMed) {
@@ -309,47 +333,47 @@ export function CaregiverHome() {
       <MedicationForm
         medication={editingMed}
         onClose={() => {
-          setShowAddForm(false)
-          setEditingMed(null)
+          setShowAddForm(false);
+          setEditingMed(null);
         }}
       />
-    )
+    );
   }
 
   if (showSettings) {
-    return <SettingsPanel onClose={() => setShowSettings(false)} />
+    return <SettingsPanel onClose={() => setShowSettings(false)} />;
   }
 
   if (showTimeline) {
-    return <CareTimeline onClose={() => setShowTimeline(false)} />
+    return <CareTimeline onClose={() => setShowTimeline(false)} />;
   }
 
   if (showRoleStatus) {
-    return <RoleStatus onClose={() => setShowRoleStatus(false)} />
+    return <RoleStatus onClose={() => setShowRoleStatus(false)} />;
   }
 
   if (showNotes) {
-    return <ContextualNotes onClose={() => setShowNotes(false)} />
+    return <ContextualNotes onClose={() => setShowNotes(false)} />;
   }
 
   if (showAnalytics) {
-    return <AnalyticsDashboard onClose={() => setShowAnalytics(false)} />
+    return <AnalyticsDashboard onClose={() => setShowAnalytics(false)} />;
   }
 
   if (showEmergency) {
-    return <EmergencyContacts onClose={() => setShowEmergency(false)} />
+    return <EmergencyContacts onClose={() => setShowEmergency(false)} />;
   }
 
   if (showMessages) {
-    return <Messages onClose={() => setShowMessages(false)} />
+    return <Messages onClose={() => setShowMessages(false)} />;
   }
 
   if (showWellness) {
-    return <WellnessOverview onClose={() => setShowWellness(false)} />
+    return <WellnessOverview onClose={() => setShowWellness(false)} />;
   }
 
   if (showHistory) {
-    return <MedicationHistory onClose={() => setShowHistory(false)} />
+    return <MedicationHistory onClose={() => setShowHistory(false)} />;
   }
 
   if (showPharmacist) {
@@ -373,27 +397,40 @@ export function CaregiverHome() {
                 <Pill className="w-5 h-5 text-sahay-blue" />
               </div>
               <div>
-                <h2 className="text-lg font-medium text-foreground">Local Pharmacist</h2>
-                <p className="text-sm text-muted-foreground">A silent helper for refill notes</p>
+                <h2 className="text-lg font-medium text-foreground">
+                  Local Pharmacist
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  A silent helper for refill notes
+                </p>
               </div>
             </div>
             {data.pharmacist?.name ? (
               <div className="mb-4 p-3 bg-secondary/50 rounded-xl">
-                <p className="text-foreground font-medium">{data.pharmacist.name}</p>
+                <p className="text-foreground font-medium">
+                  {data.pharmacist.name}
+                </p>
                 {data.pharmacist.lastRefillConfirm && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    Last refill: {new Date(data.pharmacist.lastRefillConfirm).toLocaleDateString()}
+                    Last refill:{" "}
+                    {new Date(
+                      data.pharmacist.lastRefillConfirm,
+                    ).toLocaleDateString()}
                   </p>
                 )}
               </div>
             ) : (
-              <p className="text-muted-foreground mb-4">No pharmacist added yet</p>
+              <p className="text-muted-foreground mb-4">
+                No pharmacist added yet
+              </p>
             )}
             <PharmacistInlineForm />
           </section>
           {data.medications.length > 0 && (
             <section className="p-5 bg-card rounded-2xl border-2 border-border">
-              <h3 className="text-lg font-medium text-foreground mb-4">Medication Notes</h3>
+              <h3 className="text-lg font-medium text-foreground mb-4">
+                Medication Notes
+              </h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Add notes from your pharmacist for specific medications
               </p>
@@ -406,33 +443,43 @@ export function CaregiverHome() {
           )}
         </div>
       </main>
-    )
+    );
   }
 
   if (showDoctorPrep) {
     return (
       <main className="min-h-screen flex flex-col bg-background p-6">
         <header className="flex items-center gap-4 mb-8">
-          <button onClick={() => setShowDoctorPrep(false)} className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center"><ArrowLeft className="w-6 h-6" /></button>
+          <button
+            onClick={() => setShowDoctorPrep(false)}
+            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
           <h1 className="text-2xl font-bold">Doctor Visit Prep</h1>
         </header>
         <div className="bg-card border-2 border-border rounded-2xl p-6 whitespace-pre-wrap leading-relaxed">
           {getDoctorPrepSummary()}
         </div>
-        <button onClick={() => window.print()} className="mt-6 w-full py-4 bg-primary text-primary-foreground font-bold rounded-xl">Share or Print</button>
+        <button
+          onClick={() => window.print()}
+          className="mt-6 w-full py-4 bg-primary text-primary-foreground font-bold rounded-xl"
+        >
+          Share or Print
+        </button>
       </main>
-    )
+    );
   }
 
   return (
     <main className="min-h-screen flex flex-col bg-background safe-top safe-bottom">
       <AnimatePresence mode="wait">
-        {activeTab !== 'messages' && (
+        {activeTab !== "messages" && (
           <motion.header
             key="main-header"
             className="p-6 pb-4"
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
@@ -457,10 +504,11 @@ export function CaregiverHome() {
             </div>
 
             <motion.div
-              className={`p-5 rounded-2xl glass-card ${allTaken
-                ? 'bg-sahay-sage-light/80 border-2 border-sahay-sage/30'
-                : 'bg-card/80 border-2 border-border'
-                }`}
+              className={`p-5 rounded-2xl glass-card ${
+                allTaken
+                  ? "bg-sahay-sage-light/80 border-2 border-sahay-sage/30"
+                  : "bg-card/80 border-2 border-border"
+              }`}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 }}
@@ -517,14 +565,20 @@ export function CaregiverHome() {
           <p className="text-xs font-bold text-white uppercase tracking-widest flex items-center justify-center gap-2">
             <ArrowLeftRight className="w-3 h-3" />
             Care handed over to {data.caregiver.handover.targetName}
-            <button onClick={endHandover} className="ml-2 underline opacity-80 hover:opacity-100">End Now</button>
+            <button
+              onClick={endHandover}
+              className="ml-2 underline opacity-80 hover:opacity-100"
+            >
+              End Now
+            </button>
           </p>
         </div>
       )}
 
-      <div className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden' : 'overflow-y-auto px-6 pb-24 overflow-x-hidden'}`}>
-
-        {activeTab === 'home' && (
+      <div
+        className={`flex-1 ${activeTab === "messages" ? "overflow-hidden" : "overflow-y-auto px-6 pb-24 overflow-x-hidden"}`}
+      >
+        {activeTab === "home" && (
           <>
             <motion.button
               onClick={() => setShowAddForm(true)}
@@ -541,7 +595,10 @@ export function CaregiverHome() {
               Add medication
             </motion.button>
 
-            {data.timeline.find(e => e.type === 'help_requested' && !e.note?.includes('resolved')) && (
+            {data.timeline.find(
+              (e) =>
+                e.type === "help_requested" && !e.note?.includes("resolved"),
+            ) && (
               <motion.div
                 className="bg-sahay-blue/10 border-2 border-sahay-blue/30 rounded-2xl p-6 mb-6 shadow-lg shadow-sahay-blue/10"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -556,18 +613,30 @@ export function CaregiverHome() {
                       Check-in Requested
                     </h3>
                     <p className="text-foreground leading-snug">
-                      {data.careReceiver?.name} just tapped &quot;I need help&quot;. No alarm was triggered, but they&apos;d appreciate a check-in.
+                      {data.careReceiver?.name} just tapped &quot;I need
+                      help&quot;. No alarm was triggered, but they&apos;d
+                      appreciate a check-in.
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => setShowEmergency(true)} className="flex items-center justify-center gap-2 py-3 px-4 bg-sahay-blue text-white font-bold rounded-xl"><Phone className="w-5 h-5" /> Call</button>
-                  <button onClick={() => setActiveTab('messages')} className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl"><MessageCircle className="w-5 h-5" /> Message</button>
+                  <button
+                    onClick={() => setShowEmergency(true)}
+                    className="flex items-center justify-center gap-2 py-3 px-4 bg-sahay-blue text-white font-bold rounded-xl"
+                  >
+                    <Phone className="w-5 h-5" /> Call
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("messages")}
+                    className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl"
+                  >
+                    <MessageCircle className="w-5 h-5" /> Message
+                  </button>
                 </div>
               </motion.div>
             )}
 
-            {data.safetyCheck.status === 'escalating' && (
+            {data.safetyCheck.status === "escalating" && (
               <motion.div
                 className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-6 mb-6 shadow-lg shadow-destructive/10"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -583,8 +652,8 @@ export function CaregiverHome() {
                       Safety Alert: No Response
                     </h3>
                     <p className="text-foreground leading-snug">
-                      {data.careReceiver?.name} did not respond to the safety check.
-                      Please try to reach them immediately.
+                      {data.careReceiver?.name} did not respond to the safety
+                      check. Please try to reach them immediately.
                     </p>
                   </div>
                 </div>
@@ -597,7 +666,7 @@ export function CaregiverHome() {
                     Call Them
                   </button>
                   <button
-                    onClick={() => setActiveTab('messages')}
+                    onClick={() => setActiveTab("messages")}
                     className="flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-foreground font-bold rounded-xl border-2 border-border"
                   >
                     <MessageCircle className="w-5 h-5" />
@@ -616,10 +685,16 @@ export function CaregiverHome() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Current Streak</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Current Streak
+                    </p>
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-3xl font-bold text-sahay-sage">{data.currentStreak}</h3>
-                      <span className="text-lg text-muted-foreground">days</span>
+                      <h3 className="text-3xl font-bold text-sahay-sage">
+                        {data.currentStreak}
+                      </h3>
+                      <span className="text-lg text-muted-foreground">
+                        days
+                      </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
                       Best: {data.longestStreak} days
@@ -638,7 +713,9 @@ export function CaregiverHome() {
 
             {totalMeds > 0 && <QuickPillActions />}
 
-            {data.lastFineCheckIn?.startsWith(new Date().toISOString().split('T')[0]) && (
+            {data.lastFineCheckIn?.startsWith(
+              new Date().toISOString().split("T")[0],
+            ) && (
               <motion.div
                 className="bg-sahay-success/10 border-2 border-sahay-success/20 rounded-2xl p-5 mb-6 flex items-center gap-4"
                 initial={{ opacity: 0, y: 10 }}
@@ -648,49 +725,61 @@ export function CaregiverHome() {
                   <Smile className="w-6 h-6 text-sahay-success" />
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-foreground">{data.careReceiver?.name} checked in</p>
-                  <p className="text-muted-foreground">They tapped &quot;I&apos;m fine today&quot; at {new Date(data.lastFineCheckIn!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="text-lg font-bold text-foreground">
+                    {data.careReceiver?.name} checked in
+                  </p>
+                  <p className="text-muted-foreground">
+                    They tapped &quot;I&apos;m fine today&quot; at{" "}
+                    {new Date(data.lastFineCheckIn!).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
                 </div>
               </motion.div>
             )}
 
             {data.medications.some(
-              (m) => m.refillDaysLeft !== undefined && m.refillDaysLeft <= 7
+              (m) => m.refillDaysLeft !== undefined && m.refillDaysLeft <= 7,
             ) && (
-                <div className="bg-sahay-pending/10 border-2 border-sahay-pending/30 rounded-2xl p-4 mb-6">
-                  <div className="flex items-center gap-3">
-                    <RefreshCw className="w-5 h-5 text-sahay-pending" />
-                    <div>
-                      <p className="font-medium text-foreground">
-                        Refill may be needed soon
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {data.medications
-                          .filter((m) => m.refillDaysLeft !== undefined && m.refillDaysLeft <= 7)
-                          .map((m) => m.name)
-                          .join(', ')}
-                      </p>
-                    </div>
+              <div className="bg-sahay-pending/10 border-2 border-sahay-pending/30 rounded-2xl p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <RefreshCw className="w-5 h-5 text-sahay-pending" />
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Refill may be needed soon
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {data.medications
+                        .filter(
+                          (m) =>
+                            m.refillDaysLeft !== undefined &&
+                            m.refillDaysLeft <= 7,
+                        )
+                        .map((m) => m.name)
+                        .join(", ")}
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
             {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map((timeOfDay) => {
-              const meds = groupedMeds[timeOfDay]
-              if (meds.length === 0) return null
+              const meds = groupedMeds[timeOfDay];
+              if (meds.length === 0) return null;
 
-              const Icon = timeIcons[timeOfDay]
-              const isCurrent = timeOfDay === currentTimeOfDay
+              const Icon = timeIcons[timeOfDay];
+              const isCurrent = timeOfDay === currentTimeOfDay;
 
               return (
                 <section key={timeOfDay} className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
                     <Icon
-                      className={`w-5 h-5 ${isCurrent ? 'text-sahay-sage' : 'text-muted-foreground'}`}
+                      className={`w-5 h-5 ${isCurrent ? "text-sahay-sage" : "text-muted-foreground"}`}
                       strokeWidth={1.5}
                     />
                     <h2
-                      className={`text-lg font-medium ${isCurrent ? 'text-foreground' : 'text-muted-foreground'}`}
+                      className={`text-lg font-medium ${isCurrent ? "text-foreground" : "text-muted-foreground"}`}
                     >
                       {timeOfDayLabels[timeOfDay]}
                     </h2>
@@ -712,15 +801,22 @@ export function CaregiverHome() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.1 + idx * 0.05, duration: 0.4 }}
-                        whileHover={{ x: 4, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)' }}
+                        whileHover={{
+                          x: 4,
+                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                        }}
                         whileTap={{ scale: 0.98 }}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 flex-1">
                             <motion.div
                               className={`w-8 h-8 rounded-full flex items-center justify-center
-                                        ${med.taken ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}
-                              animate={med.taken ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+                                        ${med.taken ? "bg-sahay-success/20" : "bg-sahay-pending/20"}`}
+                              animate={
+                                med.taken
+                                  ? { scale: [1, 1.1, 1] }
+                                  : { scale: 1 }
+                              }
                               transition={{ duration: 2, repeat: Infinity }}
                             >
                               {med.taken ? (
@@ -735,7 +831,9 @@ export function CaregiverHome() {
                               )}
                             </motion.div>
                             <div>
-                              <p className={`text-lg font-medium ${med.taken ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                              <p
+                                className={`text-lg font-medium ${med.taken ? "text-muted-foreground line-through" : "text-foreground"}`}
+                              >
                                 {med.name}
                               </p>
                               <p className="text-muted-foreground flex items-center gap-1.5 flex-wrap">
@@ -762,9 +860,13 @@ export function CaregiverHome() {
                                 animate={{ opacity: 1 }}
                               >
                                 {med.streak && med.streak > 0 ? (
-                                  <span className="text-sahay-success">🔥 {med.streak} day streak</span>
+                                  <span className="text-sahay-success">
+                                    🔥 {med.streak} day streak
+                                  </span>
                                 ) : (
-                                  <span className="text-muted-foreground italic">No streak yet 🔥</span>
+                                  <span className="text-muted-foreground italic">
+                                    No streak yet 🔥
+                                  </span>
                                 )}
                               </motion.p>
                             </div>
@@ -780,7 +882,7 @@ export function CaregiverHome() {
                     ))}
                   </div>
                 </section>
-              )
+              );
             })}
 
             {totalMeds === 0 && (
@@ -799,13 +901,17 @@ export function CaregiverHome() {
           </>
         )}
 
-        {activeTab === 'activity' && (
+        {activeTab === "activity" && (
           <div className="space-y-3 pt-2">
-            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Activity & Insights</h2>
+            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
+              Activity & Insights
+            </h2>
 
             {getHumanInsights().length > 0 && (
               <div className="space-y-3 mb-4">
-                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest pl-1">Daily Insights</h3>
+                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest pl-1">
+                  Daily Insights
+                </h3>
                 {getHumanInsights().map((insight, idx) => (
                   <motion.div
                     key={idx}
@@ -817,7 +923,9 @@ export function CaregiverHome() {
                     <div className="w-10 h-10 rounded-full bg-sahay-warm/10 flex items-center justify-center shrink-0">
                       <FileText className="w-5 h-5 text-sahay-warm" />
                     </div>
-                    <p className="text-lg font-medium text-foreground leading-snug pt-1">{insight}</p>
+                    <p className="text-lg font-medium text-foreground leading-snug pt-1">
+                      {insight}
+                    </p>
                   </motion.div>
                 ))}
               </div>
@@ -837,10 +945,38 @@ export function CaregiverHome() {
             )}
 
             {[
-              { label: 'Care Timeline', desc: 'Full history of care events', icon: BookOpen, bgColor: 'bg-sahay-sage/10', iconColor: 'text-sahay-sage', action: () => setShowTimeline(true) },
-              { label: 'Analytics', desc: 'Charts, trends & patterns', icon: BarChart3, bgColor: 'bg-sahay-blue/10', iconColor: 'text-sahay-blue', action: () => setShowAnalytics(true) },
-              { label: 'Wellness Log', desc: 'Track how they\'re feeling', icon: Heart, bgColor: 'bg-sahay-success/10', iconColor: 'text-sahay-success', action: () => setShowWellness(true) },
-              { label: 'Medication History', desc: 'Past medications & changes', icon: History, bgColor: 'bg-sahay-blue/10', iconColor: 'text-sahay-blue', action: () => setShowHistory(true) },
+              {
+                label: "Care Timeline",
+                desc: "Full history of care events",
+                icon: BookOpen,
+                bgColor: "bg-sahay-sage/10",
+                iconColor: "text-sahay-sage",
+                action: () => setShowTimeline(true),
+              },
+              {
+                label: "Analytics",
+                desc: "Charts, trends & patterns",
+                icon: BarChart3,
+                bgColor: "bg-sahay-blue/10",
+                iconColor: "text-sahay-blue",
+                action: () => setShowAnalytics(true),
+              },
+              {
+                label: "Wellness Log",
+                desc: "Track how they're feeling",
+                icon: Heart,
+                bgColor: "bg-sahay-success/10",
+                iconColor: "text-sahay-success",
+                action: () => setShowWellness(true),
+              },
+              {
+                label: "Medication History",
+                desc: "Past medications & changes",
+                icon: History,
+                bgColor: "bg-sahay-blue/10",
+                iconColor: "text-sahay-blue",
+                action: () => setShowHistory(true),
+              },
             ].map((item, idx) => (
               <motion.button
                 key={item.label}
@@ -853,11 +989,15 @@ export function CaregiverHome() {
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl ${item.bgColor} flex items-center justify-center`}>
+                  <div
+                    className={`w-10 h-10 rounded-xl ${item.bgColor} flex items-center justify-center`}
+                  >
                     <item.icon className={`w-5 h-5 ${item.iconColor}`} />
                   </div>
                   <div className="text-left">
-                    <p className="text-base font-semibold text-foreground">{item.label}</p>
+                    <p className="text-base font-semibold text-foreground">
+                      {item.label}
+                    </p>
                     <p className="text-sm text-muted-foreground">{item.desc}</p>
                   </div>
                 </div>
@@ -867,16 +1007,53 @@ export function CaregiverHome() {
           </div>
         )}
 
-        {activeTab === 'care' && (
+        {activeTab === "care" && (
           <div className="space-y-3 pt-2">
-            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Care Tools</h2>
+            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
+              Care Tools
+            </h2>
 
             {[
-              { label: 'Contextual Notes', desc: 'Quick notes about care', icon: FileText, bgColor: 'bg-sahay-warm/10', iconColor: 'text-sahay-warm', action: () => setShowNotes(true) },
-              { label: 'Care Roles', desc: 'Manage who helps with care', icon: Users, bgColor: 'bg-sahay-blue/10', iconColor: 'text-sahay-blue', action: () => setShowRoleStatus(true) },
-              { label: 'Emergency Contacts', desc: 'Quick-dial important numbers', icon: Phone, bgColor: 'bg-destructive/10', iconColor: 'text-destructive', action: () => setShowEmergency(true) },
-              { label: 'Pharmacist', desc: 'Pharmacist info & med notes', icon: Pill, bgColor: 'bg-sahay-blue/10', iconColor: 'text-sahay-blue', action: () => setShowPharmacist(true) },
-              { label: 'Doctor Visit Prep', desc: 'Summary for your next visit', icon: BookOpen, bgColor: 'bg-sahay-sage/10', iconColor: 'text-sahay-sage', action: () => setShowDoctorPrep(true) },
+              {
+                label: "Contextual Notes",
+                desc: "Quick notes about care",
+                icon: FileText,
+                bgColor: "bg-sahay-warm/10",
+                iconColor: "text-sahay-warm",
+                action: () => setShowNotes(true),
+              },
+              {
+                label: "Care Roles",
+                desc: "Manage who helps with care",
+                icon: Users,
+                bgColor: "bg-sahay-blue/10",
+                iconColor: "text-sahay-blue",
+                action: () => setShowRoleStatus(true),
+              },
+              {
+                label: "Emergency Contacts",
+                desc: "Quick-dial important numbers",
+                icon: Phone,
+                bgColor: "bg-destructive/10",
+                iconColor: "text-destructive",
+                action: () => setShowEmergency(true),
+              },
+              {
+                label: "Pharmacist",
+                desc: "Pharmacist info & med notes",
+                icon: Pill,
+                bgColor: "bg-sahay-blue/10",
+                iconColor: "text-sahay-blue",
+                action: () => setShowPharmacist(true),
+              },
+              {
+                label: "Doctor Visit Prep",
+                desc: "Summary for your next visit",
+                icon: BookOpen,
+                bgColor: "bg-sahay-sage/10",
+                iconColor: "text-sahay-sage",
+                action: () => setShowDoctorPrep(true),
+              },
             ].map((item, idx) => (
               <motion.button
                 key={item.label}
@@ -889,11 +1066,15 @@ export function CaregiverHome() {
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl ${item.bgColor} flex items-center justify-center`}>
+                  <div
+                    className={`w-10 h-10 rounded-xl ${item.bgColor} flex items-center justify-center`}
+                  >
                     <item.icon className={`w-5 h-5 ${item.iconColor}`} />
                   </div>
                   <div className="text-left">
-                    <p className="text-base font-semibold text-foreground">{item.label}</p>
+                    <p className="text-base font-semibold text-foreground">
+                      {item.label}
+                    </p>
                     <p className="text-sm text-muted-foreground">{item.desc}</p>
                   </div>
                 </div>
@@ -912,11 +1093,17 @@ export function CaregiverHome() {
                     <ArrowLeftRight className="w-5 h-5 text-sahay-blue" />
                   </div>
                   <div className="text-left">
-                    <p className="text-base font-semibold text-foreground">Temporary Handover</p>
-                    <p className="text-sm text-muted-foreground">Let someone else handle care</p>
+                    <p className="text-base font-semibold text-foreground">
+                      Temporary Handover
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Let someone else handle care
+                    </p>
                   </div>
                 </div>
-                <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${showHandoverSetup ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
+                <ChevronRight
+                  className={`w-5 h-5 text-muted-foreground transition-transform ${showHandoverSetup ? "rotate-90" : "group-hover:translate-x-1"}`}
+                />
               </motion.button>
 
               <AnimatePresence>
@@ -924,13 +1111,15 @@ export function CaregiverHome() {
                   <motion.div
                     className="bg-card border-2 border-border rounded-2xl p-5 mt-3 overflow-hidden"
                     initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
+                    animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                   >
                     <h4 className="text-lg font-bold mb-4">Handover Details</h4>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1">Trusted Person&apos;s Name</label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">
+                          Trusted Person&apos;s Name
+                        </label>
                         <input
                           type="text"
                           value={handoverName}
@@ -940,7 +1129,9 @@ export function CaregiverHome() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1">For how many days?</label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">
+                          For how many days?
+                        </label>
                         <select
                           value={handoverDays}
                           onChange={(e) => setHandoverDays(e.target.value)}
@@ -971,9 +1162,9 @@ export function CaregiverHome() {
           </div>
         )}
 
-        {activeTab === 'messages' && (
+        {activeTab === "messages" && (
           <div className="h-full">
-            <Messages onClose={() => setActiveTab('home')} />
+            <Messages onClose={() => setActiveTab("home")} />
           </div>
         )}
       </div>
@@ -981,10 +1172,10 @@ export function CaregiverHome() {
       <CaregiverBottomNav
         activeTab={activeTab}
         onTabChange={(tab) => {
-          setActiveTab(tab)
+          setActiveTab(tab);
         }}
         unreadMessages={unreadMessages}
       />
     </main>
-  )
+  );
 }
