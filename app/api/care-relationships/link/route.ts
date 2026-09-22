@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
         if (!caregiver_id || !care_code) {
             return NextResponse.json(
                 { error: "caregiver_id and care_code are required" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -23,15 +23,17 @@ export async function POST(req: NextRequest) {
 
         if (lookupError || !careReceiver) {
             return NextResponse.json(
-                { error: "No care receiver found with that code. Please check and try again." },
-                { status: 404 }
+                {
+                    error: "No care receiver found with that code. Please check and try again.",
+                },
+                { status: 404 },
             );
         }
 
         if (careReceiver.role !== "care_receiver") {
             return NextResponse.json(
                 { error: "That code does not belong to a care receiver." },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest) {
         if (insertError) {
             return NextResponse.json(
                 { error: insertError.message },
-                { status: 500 }
+                { status: 500 },
             );
         }
 
@@ -76,7 +78,7 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to link care code" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
