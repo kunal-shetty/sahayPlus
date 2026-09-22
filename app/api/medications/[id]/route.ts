@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 // GET /api/medications/:id — Get a specific medication
 export async function GET(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         const { id } = await params;
@@ -23,7 +23,7 @@ export async function GET(
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch medication" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
@@ -31,7 +31,7 @@ export async function GET(
 // PATCH /api/medications/:id — Update a medication
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         const { id } = await params;
@@ -50,12 +50,12 @@ export async function PATCH(
 
         return NextResponse.json(
             { message: "Medication updated", medication: data },
-            { status: 200 }
+            { status: 200 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to update medication" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
@@ -63,7 +63,7 @@ export async function PATCH(
 // DELETE /api/medications/:id — Remove a medication
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         const { id } = await params;
@@ -79,12 +79,12 @@ export async function DELETE(
 
         return NextResponse.json(
             { message: "Medication removed", id },
-            { status: 200 }
+            { status: 200 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to remove medication" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
