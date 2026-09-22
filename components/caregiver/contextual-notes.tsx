@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file contextual-notes.tsx
@@ -10,9 +10,9 @@
  * managing an infinite log of outdated information.
  */
 
-import { useState } from 'react'
-import { useSahay } from '@/lib/sahay-context'
-import { FileText, Plus, X, ArrowLeft } from 'lucide-react'
+import { useState } from "react";
+import { useSahay } from "@/lib/sahay-context";
+import { FileText, Plus, X, ArrowLeft } from "lucide-react";
 
 /**
  * ContextualNotes component.
@@ -23,17 +23,17 @@ import { FileText, Plus, X, ArrowLeft } from 'lucide-react'
  * @returns {JSX.Element} The notes management interface.
  */
 export function ContextualNotes({ onClose }: { onClose: () => void }) {
-  const { data, addContextualNote, removeContextualNote } = useSahay()
-  const [isAdding, setIsAdding] = useState(false)
-  const [noteText, setNoteText] = useState('')
-  const [linkedType, setLinkedType] = useState<'day' | 'medication'>('day')
-  const [linkedMedId, setLinkedMedId] = useState<string | undefined>()
+  const { data, addContextualNote, removeContextualNote } = useSahay();
+  const [isAdding, setIsAdding] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [linkedType, setLinkedType] = useState<"day" | "medication">("day");
+  const [linkedMedId, setLinkedMedId] = useState<string | undefined>();
 
   /** Filter out notes that have already passed their expiration date. */
-  const now = new Date()
+  const now = new Date();
   const activeNotes = data.contextualNotes.filter((note) => {
-    return new Date(note.fadingAt) > now
-  })
+    return new Date(note.fadingAt) > now;
+  });
 
   /**
    * Calculates visual opacity based on the remaining time before the note fades.
@@ -42,34 +42,34 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
    * @returns {number} Opacity value between 0.4 and 1.0.
    */
   const getNoteOpacity = (fadingAt: string) => {
-    const fadeDate = new Date(fadingAt)
+    const fadeDate = new Date(fadingAt);
     const daysLeft = Math.ceil(
-      (fadeDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-    )
-    if (daysLeft >= 5) return 1
-    if (daysLeft >= 3) return 0.8
-    if (daysLeft >= 1) return 0.6
-    return 0.4
-  }
+      (fadeDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    if (daysLeft >= 5) return 1;
+    if (daysLeft >= 3) return 0.8;
+    if (daysLeft >= 1) return 0.6;
+    return 0.4;
+  };
 
   /**
    * Handles the creation of a new note.
    * Determines whether the note is a general daily note or linked to a specific medication.
    */
   const handleAddNote = () => {
-    if (!noteText.trim()) return
+    if (!noteText.trim()) return;
 
     const linkedTo =
-      linkedType === 'medication' && linkedMedId
-        ? { type: 'medication' as const, id: linkedMedId }
-        : { type: 'day' as const }
+      linkedType === "medication" && linkedMedId
+        ? { type: "medication" as const, id: linkedMedId }
+        : { type: "day" as const };
 
-    addContextualNote(noteText.trim(), linkedTo)
-    setNoteText('')
-    setIsAdding(false)
-    setLinkedType('day')
-    setLinkedMedId(undefined)
-  }
+    addContextualNote(noteText.trim(), linkedTo);
+    setNoteText("");
+    setIsAdding(false);
+    setLinkedType("day");
+    setLinkedMedId(undefined);
+  };
 
   /**
    * Formats a date string into a user-friendly relative label (e.g., Today, Yesterday).
@@ -78,22 +78,22 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
    * @returns {string} The formatted date label.
    */
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Today'
+      return "Today";
     }
     if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday'
+      return "Yesterday";
     }
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   /**
    * Retrieves the name of a medication given its ID.
@@ -102,9 +102,9 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
    * @returns {string | null} The medication name or null if not found.
    */
   const getMedName = (medId: string | undefined) => {
-    if (!medId) return null
-    return data.medications.find((m) => m.id === medId)?.name
-  }
+    if (!medId) return null;
+    return data.medications.find((m) => m.id === medId)?.name;
+  };
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
@@ -147,11 +147,11 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
               .sort(
                 (a, b) =>
                   new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime()
+                  new Date(a.createdAt).getTime(),
               )
               .map((note) => {
-                const opacity = getNoteOpacity(note.fadingAt)
-                const medName = getMedName(note.linkedTo?.id)
+                const opacity = getNoteOpacity(note.fadingAt);
+                const medName = getMedName(note.linkedTo?.id);
 
                 return (
                   <div
@@ -184,7 +184,7 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
                       </button>
                     </div>
                   </div>
-                )
+                );
               })}
           </div>
         )}
@@ -207,11 +207,11 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 onClick={() => {
-                  setLinkedType('day')
-                  setLinkedMedId(undefined)
+                  setLinkedType("day");
+                  setLinkedMedId(undefined);
                 }}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-                         ${linkedType === 'day' && !linkedMedId ? 'bg-sahay-sage text-primary-foreground' : 'bg-secondary text-foreground'}`}
+                         ${linkedType === "day" && !linkedMedId ? "bg-sahay-sage text-primary-foreground" : "bg-secondary text-foreground"}`}
               >
                 General note
               </button>
@@ -219,11 +219,11 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
                 <button
                   key={med.id}
                   onClick={() => {
-                    setLinkedType('medication')
-                    setLinkedMedId(med.id)
+                    setLinkedType("medication");
+                    setLinkedMedId(med.id);
                   }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-                           ${linkedMedId === med.id ? 'bg-sahay-sage text-primary-foreground' : 'bg-secondary text-foreground'}`}
+                           ${linkedMedId === med.id ? "bg-sahay-sage text-primary-foreground" : "bg-secondary text-foreground"}`}
                 >
                   {med.name}
                 </button>
@@ -244,8 +244,8 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
               </button>
               <button
                 onClick={() => {
-                  setIsAdding(false)
-                  setNoteText('')
+                  setIsAdding(false);
+                  setNoteText("");
                 }}
                 className="py-3 px-4 bg-secondary text-foreground font-medium
                          rounded-xl transition-all touch-manipulation
@@ -276,5 +276,5 @@ export function ContextualNotes({ onClose }: { onClose: () => void }) {
         </div>
       )}
     </main>
-  )
+  );
 }
