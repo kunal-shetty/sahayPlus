@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file safety-check-prompt.tsx
@@ -8,10 +8,10 @@
  * If ignored for a set period (5 minutes), it escalates the status to notify the caregiver.
  */
 
-import { useState, useEffect } from 'react'
-import { useSahay } from '@/lib/sahay-context'
-import { ShieldAlert, Heart, Info } from 'lucide-react'
-import { motion, AnimatePresence } from 'motion/react'
+import { useState, useEffect } from "react";
+import { useSahay } from "@/lib/sahay-context";
+import { ShieldAlert, Heart, Info } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 /**
  * SafetyCheckPrompt component.
@@ -21,38 +21,38 @@ import { motion, AnimatePresence } from 'motion/react'
  * @returns {JSX.Element | null} The safety check prompt or null if no check is pending.
  */
 export function SafetyCheckPrompt() {
-    const { data, dismissSafetyCheck, triggerSafetyCheck } = useSahay()
-    const [countdown, setCountdown] = useState(300) // 5 minutes in seconds
+    const { data, dismissSafetyCheck, triggerSafetyCheck } = useSahay();
+    const [countdown, setCountdown] = useState(300); // 5 minutes in seconds
 
     /**
      * Countdown logic to track the time remaining before escalation.
      * Syncs with the `lastTriggered` timestamp from the backend.
      */
     useEffect(() => {
-        if (data.safetyCheck.status !== 'pending_check') return
+        if (data.safetyCheck.status !== "pending_check") return;
 
         const triggeredAt = data.safetyCheck.lastTriggered
             ? new Date(data.safetyCheck.lastTriggered).getTime()
-            : Date.now()
+            : Date.now();
 
         const updateCountdown = () => {
-            const now = Date.now()
-            const elapsed = Math.floor((now - triggeredAt) / 1000)
-            const remaining = Math.max(0, 300 - elapsed)
-            setCountdown(remaining)
-        }
+            const now = Date.now();
+            const elapsed = Math.floor((now - triggeredAt) / 1000);
+            const remaining = Math.max(0, 300 - elapsed);
+            setCountdown(remaining);
+        };
 
-        updateCountdown()
-        const timer = setInterval(updateCountdown, 1000)
+        updateCountdown();
+        const timer = setInterval(updateCountdown, 1000);
 
-        return () => clearInterval(timer)
-    }, [data.safetyCheck.status, data.safetyCheck.lastTriggered])
+        return () => clearInterval(timer);
+    }, [data.safetyCheck.status, data.safetyCheck.lastTriggered]);
 
-    if (data.safetyCheck.status !== 'pending_check') return null
+    if (data.safetyCheck.status !== "pending_check") return null;
 
-    const minutes = Math.floor(countdown / 60)
-    const seconds = countdown % 60
-    const progress = (countdown / 300) * 100
+    const minutes = Math.floor(countdown / 60);
+    const seconds = countdown % 60;
+    const progress = (countdown / 300) * 100;
 
     /**
      * Device motion listener.
@@ -60,32 +60,32 @@ export function SafetyCheckPrompt() {
      * ensuring that the prompt remains active during active movement.
      */
     useEffect(() => {
-      let lastTriggerTime = 0;
+        let lastTriggerTime = 0;
 
-      const handleMotion = (event: DeviceMotionEvent) => {
-        const acc = event.accelerationIncludingGravity;
-        if (!acc) return;
+        const handleMotion = (event: DeviceMotionEvent) => {
+            const acc = event.accelerationIncludingGravity;
+            if (!acc) return;
 
-        const x = acc.x || 0;
-        const y = acc.y || 0;
-        const z = acc.z || 0;
+            const x = acc.x || 0;
+            const y = acc.y || 0;
+            const z = acc.z || 0;
 
-        const magnitude = Math.sqrt(x * x + y * y + z * z);
-        const now = Date.now();
+            const magnitude = Math.sqrt(x * x + y * y + z * z);
+            const now = Date.now();
 
-        // Shake threshold: magnitude > 20, rate-limited to once every 5 seconds
-        if (magnitude > 20 && now - lastTriggerTime > 5000) {
-          lastTriggerTime = now;
+            // Shake threshold: magnitude > 20, rate-limited to once every 5 seconds
+            if (magnitude > 20 && now - lastTriggerTime > 5000) {
+                lastTriggerTime = now;
 
-          triggerSafetyCheck('motion');
-        }
-      };
+                triggerSafetyCheck("motion");
+            }
+        };
 
-      window.addEventListener("devicemotion", handleMotion);
+        window.addEventListener("devicemotion", handleMotion);
 
-      return () => {
-        window.removeEventListener("devicemotion", handleMotion);
-      };
+        return () => {
+            window.removeEventListener("devicemotion", handleMotion);
+        };
     }, [triggerSafetyCheck]);
 
     return (
@@ -134,17 +134,19 @@ export function SafetyCheckPrompt() {
                                 No rush at all.
                             </p>
                             <p className="text-muted-foreground leading-relaxed">
-                                If you don&apos;t respond in {minutes > 0 ? `${minutes}m ` : ''}{seconds}s,
-                                we&apos;ll quietly let {data.caregiver?.name || 'your caregiver'} know.
+                                If you don&apos;t respond in{" "}
+                                {minutes > 0 ? `${minutes}m ` : ""}
+                                {seconds}s, we&apos;ll quietly let{" "}
+                                {data.caregiver?.name || "your caregiver"} know.
                             </p>
 
                             {/* Subtle Progress Bar */}
                             <div className="mt-4 h-1.5 w-full bg-muted rounded-full overflow-hidden">
                                 <motion.div
                                     className="h-full bg-sahay-sage"
-                                    initial={{ width: '100%' }}
+                                    initial={{ width: "100%" }}
                                     animate={{ width: `${progress}%` }}
-                                    transition={{ duration: 1, ease: 'linear' }}
+                                    transition={{ duration: 1, ease: "linear" }}
                                 />
                             </div>
                         </div>
@@ -152,5 +154,5 @@ export function SafetyCheckPrompt() {
                 </div>
             </motion.div>
         </AnimatePresence>
-    )
+    );
 }
