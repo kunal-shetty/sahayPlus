@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 // POST /api/medications/:id/skip — Mark medication as skipped
 export async function POST(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         const { id } = await params;
@@ -24,7 +24,10 @@ export async function POST(
             .single();
 
         if (logError) {
-            return NextResponse.json({ error: logError.message }, { status: 500 });
+            return NextResponse.json(
+                { error: logError.message },
+                { status: 500 },
+            );
         }
 
         // Get med details for timeline event
@@ -47,12 +50,12 @@ export async function POST(
 
         return NextResponse.json(
             { message: "Medication marked as skipped", log },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to mark medication as skipped" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
