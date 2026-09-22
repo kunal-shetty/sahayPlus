@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 // DELETE /api/notes/:id — Remove a contextual note
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         const { id } = await params;
@@ -20,12 +20,12 @@ export async function DELETE(
 
         return NextResponse.json(
             { message: "Note removed", id },
-            { status: 200 }
+            { status: 200 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to remove note" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
