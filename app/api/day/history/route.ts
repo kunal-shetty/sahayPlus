@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
         if (!careRelationshipId) {
             return NextResponse.json(
                 { error: "Missing required query param: care_relationship_id" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch day closure history" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
