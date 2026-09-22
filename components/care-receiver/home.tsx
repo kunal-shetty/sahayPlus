@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file home.tsx
@@ -14,15 +14,15 @@
  * - Emotional reassurance: Uses calm, supportive messaging and soft colors.
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { useSahay } from '@/lib/sahay-context'
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { useSahay } from "@/lib/sahay-context";
 import {
   type Medication,
   getCurrentTimeOfDay,
   timeOfDayLabels,
   formatTime12h,
-} from '@/lib/types'
+} from "@/lib/types";
 import {
   Heart,
   Check,
@@ -40,13 +40,13 @@ import {
   Info,
   ShieldAlert,
   AlertTriangle,
-} from 'lucide-react'
-import { WellnessCheckin } from './wellness-checkin'
-import { QuickMessages } from './quick-messages'
-import { EmergencyCall } from './emergency-call'
-import { SafetyCheckPrompt } from './safety-check-prompt'
-import { CareReceiverHomeSkeleton } from '../skeletons'
-import { useRouter } from 'next/navigation'
+} from "lucide-react";
+import { WellnessCheckin } from "./wellness-checkin";
+import { QuickMessages } from "./quick-messages";
+import { EmergencyCall } from "./emergency-call";
+import { SafetyCheckPrompt } from "./safety-check-prompt";
+import { CareReceiverHomeSkeleton } from "../skeletons";
+import { useRouter } from "next/navigation";
 
 /**
  * CareReceiverHome component.
@@ -67,8 +67,8 @@ export function CareReceiverHome() {
     completeDailyCheckIn,
     requestHelp,
     dismissChangeIndicator,
-  } = useSahay()
-  const router = useRouter()
+  } = useSahay();
+  const router = useRouter();
 
   /**
    * Exposes a safety check trigger to the window object.
@@ -76,55 +76,55 @@ export function CareReceiverHome() {
    * to automatically trigger safety checks in the app.
    */
   useEffect(() => {
-  if (typeof window !== "undefined") {
-    window.triggerMotionSafetyCheck = () => {
-      triggerSafetyCheck('motion');
-    };
-  }
+    if (typeof window !== "undefined") {
+      window.triggerMotionSafetyCheck = () => {
+        triggerSafetyCheck("motion");
+      };
+    }
 
-  return () => {
-    window.triggerMotionSafetyCheck = null;
-  };
-}, [triggerSafetyCheck]);
+    return () => {
+      window.triggerMotionSafetyCheck = null;
+    };
+  }, [triggerSafetyCheck]);
 
   // UI State Management
-  const [confirmedMed, setConfirmedMed] = useState<Medication | null>(null)
-  const [showUndo, setShowUndo] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [showWellness, setShowWellness] = useState(false)
-  const [showMessages, setShowMessages] = useState(false)
-  const [showEmergency, setShowEmergency] = useState(false)
-  const [isListening, setIsListening] = useState(false)
-  const [showHelpConfirmed, setShowHelpConfirmed] = useState(false)
+  const [confirmedMed, setConfirmedMed] = useState<Medication | null>(null);
+  const [showUndo, setShowUndo] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showWellness, setShowWellness] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
+  const [showEmergency, setShowEmergency] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [showHelpConfirmed, setShowHelpConfirmed] = useState(false);
 
   /**
    * Theme state: 'light' for standard, 'dark' for forced dark mode,
    * or 'auto' for automatic transition between 9 PM and 6 AM.
    */
-  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light')
+  const [theme, setTheme] = useState<"light" | "dark" | "auto">("light");
 
   /** Restore theme preference from localStorage on initial mount. */
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const saved = window.localStorage.getItem('sahay_receiver_theme')
-    if (saved === 'light' || saved === 'dark' || saved === 'auto') {
-      setTheme(saved)
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("sahay_receiver_theme");
+    if (saved === "light" || saved === "dark" || saved === "auto") {
+      setTheme(saved);
     }
-  }, [])
+  }, []);
 
   /** Updates theme preference and persists it to local storage. */
-  const updateTheme = (next: 'light' | 'dark' | 'auto') => {
-    setTheme(next)
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('sahay_receiver_theme', next)
+  const updateTheme = (next: "light" | "dark" | "auto") => {
+    setTheme(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("sahay_receiver_theme", next);
     }
-  }
+  };
 
-  const hour = new Date().getHours()
-  const isAutoNight = hour >= 21 || hour < 6
-  const isNight = theme === 'dark' || (theme === 'auto' && isAutoNight)
+  const hour = new Date().getHours();
+  const isAutoNight = hour >= 21 || hour < 6;
+  const isNight = theme === "dark" || (theme === "auto" && isAutoNight);
 
-  const currentTimeOfDay = getCurrentTimeOfDay()
+  const currentTimeOfDay = getCurrentTimeOfDay();
 
   /**
    * Determines the next medication the user should take.
@@ -134,28 +134,27 @@ export function CareReceiverHome() {
    * @returns {Medication | null} The next pending medication or null if none remain.
    */
   const getNextMedication = useCallback((): Medication | null => {
-    const pendingMeds = data.medications.filter((m) => !m.taken)
-    if (pendingMeds.length === 0) return null
+    const pendingMeds = data.medications.filter((m) => !m.taken);
+    if (pendingMeds.length === 0) return null;
 
     const currentTimeMeds = pendingMeds.filter(
-      (m) => m.timeOfDay === currentTimeOfDay
-    )
-    if (currentTimeMeds.length > 0) return currentTimeMeds[0]
+      (m) => m.timeOfDay === currentTimeOfDay,
+    );
+    if (currentTimeMeds.length > 0) return currentTimeMeds[0];
 
-    const timeOrder = ['morning', 'afternoon', 'evening']
+    const timeOrder = ["morning", "afternoon", "evening"];
     for (const time of timeOrder) {
-      const timeMeds = pendingMeds.filter((m) => m.timeOfDay === time)
-      if (timeMeds.length > 0) return timeMeds[0]
+      const timeMeds = pendingMeds.filter((m) => m.timeOfDay === time);
+      if (timeMeds.length > 0) return timeMeds[0];
     }
 
-    return pendingMeds[0]
-  }, [data.medications, currentTimeOfDay])
+    return pendingMeds[0];
+  }, [data.medications, currentTimeOfDay]);
 
-  const nextMed = getNextMedication()
+  const nextMed = getNextMedication();
   const allDone =
-    data.medications.length > 0 &&
-    data.medications.every((m) => m.taken)
-  const dayClosed = isDayClosed()
+    data.medications.length > 0 && data.medications.every((m) => m.taken);
+  const dayClosed = isDayClosed();
 
   /**
    * Handles the "I took it" action.
@@ -163,61 +162,61 @@ export function CareReceiverHome() {
    */
   const handleTookIt = () => {
     if (nextMed) {
-      markMedicationTaken(nextMed.id, true)
-      setConfirmedMed(nextMed)
-      setShowUndo(true)
+      markMedicationTaken(nextMed.id, true);
+      setConfirmedMed(nextMed);
+      setShowUndo(true);
     }
-  }
+  };
 
   /**
    * Reverts the medication status if the user accidentally tapped the confirmation.
    */
   const handleUndo = () => {
     if (confirmedMed) {
-      markMedicationTaken(confirmedMed.id, false)
-      setConfirmedMed(null)
-      setShowUndo(false)
+      markMedicationTaken(confirmedMed.id, false);
+      setConfirmedMed(null);
+      setShowUndo(false);
     }
-  }
+  };
 
   /** Automatically clears the undo state after a 3-second timeout. */
   useEffect(() => {
     if (showUndo) {
       const timer = setTimeout(() => {
-        setShowUndo(false)
-        setConfirmedMed(null)
-      }, 3000)
-      return () => clearTimeout(timer)
+        setShowUndo(false);
+        setConfirmedMed(null);
+      }, 3000);
+      return () => clearTimeout(timer);
     }
-  }, [showUndo])
+  }, [showUndo]);
 
   const timeIcons = {
     morning: Sun,
     afternoon: Cloud,
     evening: Moon,
-  }
+  };
 
   /** Returns a context-appropriate greeting based on the current hour. */
   const getGreeting = () => {
-    if (hour < 12) return 'Good morning'
-    if (hour < 17) return 'Good afternoon'
-    return 'Good evening'
-  }
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
 
   if (isLoading || isDataLoading) {
-    return <CareReceiverHomeSkeleton />
+    return <CareReceiverHomeSkeleton />;
   }
 
   if (showWellness) {
-    return <WellnessCheckin onClose={() => setShowWellness(false)} />
+    return <WellnessCheckin onClose={() => setShowWellness(false)} />;
   }
 
   if (showMessages) {
-    return <QuickMessages onClose={() => setShowMessages(false)} />
+    return <QuickMessages onClose={() => setShowMessages(false)} />;
   }
 
   if (showEmergency) {
-    return <EmergencyCall onClose={() => setShowEmergency(false)} />
+    return <EmergencyCall onClose={() => setShowEmergency(false)} />;
   }
 
   if (showSettings) {
@@ -240,10 +239,16 @@ export function CareReceiverHome() {
                 Appearance
               </p>
               <div className="grid grid-cols-3 gap-2">
-                {(['light', 'auto', 'dark'] as const).map((opt) => {
-                  const active = theme === opt
-                  const Icon = opt === 'light' ? Sun : opt === 'dark' ? Moon : Cloud
-                  const label = opt === 'light' ? 'Light' : opt === 'dark' ? 'Dark' : 'Auto'
+                {(["light", "auto", "dark"] as const).map((opt) => {
+                  const active = theme === opt;
+                  const Icon =
+                    opt === "light" ? Sun : opt === "dark" ? Moon : Cloud;
+                  const label =
+                    opt === "light"
+                      ? "Light"
+                      : opt === "dark"
+                        ? "Dark"
+                        : "Auto";
                   return (
                     <button
                       key={opt}
@@ -251,17 +256,19 @@ export function CareReceiverHome() {
                       className={`py-4 px-3 rounded-xl text-base font-medium flex flex-col items-center gap-2
                                   transition-all active:scale-[0.97] touch-manipulation
                                   focus:outline-none focus:ring-2 focus:ring-sahay-sage
-                                  ${active
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-secondary text-foreground'}`}
+                                  ${
+                                    active
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-secondary text-foreground"
+                                  }`}
                     >
                       <Icon className="w-5 h-5" strokeWidth={1.5} />
                       {label}
                     </button>
-                  )
+                  );
                 })}
               </div>
-              {theme === 'auto' && (
+              {theme === "auto" && (
                 <p className="text-xs text-muted-foreground text-center mt-2">
                   Auto: dark between 9pm and 6am
                 </p>
@@ -270,8 +277,8 @@ export function CareReceiverHome() {
 
             <button
               onClick={() => {
-                triggerSafetyCheck('manual')
-                setShowSettings(false)
+                triggerSafetyCheck("manual");
+                setShowSettings(false);
               }}
               className="w-full py-4 px-6 bg-secondary text-foreground text-xl font-medium
                        rounded-2xl transition-all active:scale-[0.97] touch-manipulation flex items-center justify-center gap-3
@@ -302,7 +309,7 @@ export function CareReceiverHome() {
           </div>
         </div>
       </main>
-    )
+    );
   }
 
   if (showUndo && confirmedMed) {
@@ -336,7 +343,7 @@ export function CareReceiverHome() {
           </div>
         </div>
       </main>
-    )
+    );
   }
 
   if (dayClosed) {
@@ -365,7 +372,7 @@ export function CareReceiverHome() {
           </p>
         </div>
       </main>
-    )
+    );
   }
 
   if (allDone) {
@@ -395,7 +402,7 @@ export function CareReceiverHome() {
           </p>
         </div>
       </main>
-    )
+    );
   }
 
   if (data.medications.length === 0) {
@@ -424,26 +431,32 @@ export function CareReceiverHome() {
           </p>
         </div>
       </main>
-    )
+    );
   }
 
-  const TimeIcon = timeIcons[nextMed!.timeOfDay]
-  const isFineCheckedIn = data.lastFineCheckIn?.startsWith(new Date().toISOString().split('T')[0])
+  const TimeIcon = timeIcons[nextMed!.timeOfDay];
+  const isFineCheckedIn = data.lastFineCheckIn?.startsWith(
+    new Date().toISOString().split("T")[0],
+  );
 
   return (
-    <main className={`min-h-screen flex flex-col transition-colors duration-1000 ${isNight ? 'bg-[#0f172a] text-slate-300' : 'bg-background'}`}>
+    <main
+      className={`min-h-screen flex flex-col transition-colors duration-1000 ${isNight ? "bg-[#0f172a] text-slate-300" : "bg-background"}`}
+    >
       <AnimatePresence>
         {data.lastChangeNotifiedAt && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="bg-sahay-blue/10 border-b border-sahay-blue/20 overflow-hidden"
           >
             <div className="p-4 flex items-center justify-between max-w-md mx-auto">
               <div className="flex items-center gap-3">
                 <Info className="w-5 h-5 text-sahay-blue" />
-                <span className="text-sm font-medium text-sahay-blue">Something is a little different today.</span>
+                <span className="text-sm font-medium text-sahay-blue">
+                  Something is a little different today.
+                </span>
               </div>
               <button
                 onClick={dismissChangeIndicator}
@@ -459,15 +472,19 @@ export function CareReceiverHome() {
       <header className="p-6 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className={`text-lg ${isNight ? 'text-slate-400' : 'text-muted-foreground'}`}>{getGreeting()}</p>
+            <p
+              className={`text-lg ${isNight ? "text-slate-400" : "text-muted-foreground"}`}
+            >
+              {getGreeting()}
+            </p>
             <h1 className="text-2xl font-semibold">
-              {data.careReceiver?.name || 'Your care'}
+              {data.careReceiver?.name || "Your care"}
             </h1>
           </div>
           <button
             onClick={() => setShowSettings(true)}
             className={`w-12 h-12 rounded-xl flex items-center justify-center touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage
-                      ${isNight ? 'bg-slate-800/50 text-slate-400' : 'bg-secondary/50 text-muted-foreground'}`}
+                      ${isNight ? "bg-slate-800/50 text-slate-400" : "bg-secondary/50 text-muted-foreground"}`}
             aria-label="Settings"
           >
             <Settings className="w-5 h-5" />
@@ -481,27 +498,32 @@ export function CareReceiverHome() {
             <motion.button
               onClick={completeDailyCheckIn}
               className={`w-full p-6 rounded-2xl border-2 mb-8 flex items-center gap-4 touch-manipulation transition-all
-                        ${isNight ? 'bg-slate-800/40 border-slate-700/50' : 'bg-sahay-sage-light/30 border-sahay-sage/20'}`}
+                        ${isNight ? "bg-slate-800/40 border-slate-700/50" : "bg-sahay-sage-light/30 border-sahay-sage/20"}`}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               whileTap={{ scale: 0.98 }}
             >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isNight ? 'bg-slate-700' : 'bg-white shadow-sm'}`}>
+              <div
+                className={`w-12 h-12 rounded-full flex items-center justify-center ${isNight ? "bg-slate-700" : "bg-white shadow-sm"}`}
+              >
                 <Smile className="w-6 h-6 text-sahay-sage" />
               </div>
               <div className="text-left">
                 <p className="text-xl font-bold">I&apos;m fine today</p>
-                <p className={`text-sm ${isNight ? 'text-slate-400' : 'text-muted-foreground'}`}>Tap to let {data.caregiver?.name} know</p>
+                <p
+                  className={`text-sm ${isNight ? "text-slate-400" : "text-muted-foreground"}`}
+                >
+                  Tap to let {data.caregiver?.name} know
+                </p>
               </div>
             </motion.button>
           )}
 
           <div className="flex items-center justify-center gap-2 mb-6">
-            <TimeIcon
-              className="w-6 h-6 text-sahay-sage"
-              strokeWidth={1.5}
-            />
-            <span className={`text-lg font-medium ${isNight ? 'text-slate-400' : 'text-muted-foreground'}`}>
+            <TimeIcon className="w-6 h-6 text-sahay-sage" strokeWidth={1.5} />
+            <span
+              className={`text-lg font-medium ${isNight ? "text-slate-400" : "text-muted-foreground"}`}
+            >
               {timeOfDayLabels[nextMed!.timeOfDay]}
               {nextMed?.time && ` at ${formatTime12h(nextMed.time)}`}
             </span>
@@ -509,7 +531,7 @@ export function CareReceiverHome() {
 
           <motion.div
             className={`rounded-3xl p-8 border-2 mb-8 text-center glass-card
-                      ${isNight ? 'bg-slate-800/60 border-slate-700/80 shadow-2xl' : 'bg-card border-border'}`}
+                      ${isNight ? "bg-slate-800/60 border-slate-700/80 shadow-2xl" : "bg-card border-border"}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -520,31 +542,47 @@ export function CareReceiverHome() {
             {nextMed?.time && (
               <div className="flex items-center justify-center gap-2 mb-2 text-sahay-blue">
                 <Clock className="w-5 h-5" strokeWidth={2.5} />
-                <span className="text-2xl font-bold">{formatTime12h(nextMed.time)}</span>
+                <span className="text-2xl font-bold">
+                  {formatTime12h(nextMed.time)}
+                </span>
               </div>
             )}
-            <p className={`text-2xl ${isNight ? 'text-slate-300' : 'text-muted-foreground'}`}>{nextMed!.dosage}</p>
+            <p
+              className={`text-2xl ${isNight ? "text-slate-300" : "text-muted-foreground"}`}
+            >
+              {nextMed!.dosage}
+            </p>
 
             {nextMed!.simpleExplanation && (
-              <p className={`text-lg font-medium mt-4 py-3 border-t ${isNight ? 'border-slate-700 text-sahay-sage' : 'border-border text-sahay-sage'}`}>
+              <p
+                className={`text-lg font-medium mt-4 py-3 border-t ${isNight ? "border-slate-700 text-sahay-sage" : "border-border text-sahay-sage"}`}
+              >
                 {nextMed!.simpleExplanation}
               </p>
             )}
 
             {nextMed!.notes && (
-              <p className={`text-lg mt-3 pt-3 border-t ${isNight ? 'border-slate-700 text-slate-400' : 'border-border text-muted-foreground/80'}`}>
+              <p
+                className={`text-lg mt-3 pt-3 border-t ${isNight ? "border-slate-700 text-slate-400" : "border-border text-muted-foreground/80"}`}
+              >
                 {nextMed!.notes}
               </p>
             )}
             {nextMed!.pharmacistNote && (
-              <div className={`mt-4 pt-4 border-t ${isNight ? 'border-slate-700' : 'border-border'}`}>
+              <div
+                className={`mt-4 pt-4 border-t ${isNight ? "border-slate-700" : "border-border"}`}
+              >
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Pill className="w-4 h-4 text-sahay-blue" />
                   <span className="text-sm text-sahay-blue font-medium">
                     From pharmacist
                   </span>
                 </div>
-                <p className={`${isNight ? 'text-slate-400' : 'text-muted-foreground'}`}>{nextMed!.pharmacistNote}</p>
+                <p
+                  className={`${isNight ? "text-slate-400" : "text-muted-foreground"}`}
+                >
+                  {nextMed!.pharmacistNote}
+                </p>
               </div>
             )}
           </motion.div>
@@ -561,26 +599,30 @@ export function CareReceiverHome() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Check className="w-7 h-7" strokeWidth={2.5} />
-              I took it
+              <Check className="w-7 h-7" strokeWidth={2.5} />I took it
             </motion.button>
 
             <motion.button
               onClick={() => {
-                setIsListening(true)
+                setIsListening(true);
                 setTimeout(() => {
-                  setIsListening(false)
-                  handleTookIt()
-                }, 2000)
+                  setIsListening(false);
+                  handleTookIt();
+                }, 2000);
               }}
               className={`w-20 rounded-2xl flex items-center justify-center border-2 transition-all
-                        ${isListening ? 'bg-sahay-blue text-white border-sahay-blue animate-pulse' :
-                  isNight ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-card border-border text-muted-foreground hover:border-sahay-blue/50'}`}
+                        ${
+                          isListening
+                            ? "bg-sahay-blue text-white border-sahay-blue animate-pulse"
+                            : isNight
+                              ? "bg-slate-800 border-slate-700 text-slate-400"
+                              : "bg-card border-border text-muted-foreground hover:border-sahay-blue/50"
+                        }`}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.25 }}
             >
-              <Mic className={`w-8 h-8 ${isListening ? 'scale-125' : ''}`} />
+              <Mic className={`w-8 h-8 ${isListening ? "scale-125" : ""}`} />
             </motion.button>
           </div>
 
@@ -588,7 +630,7 @@ export function CareReceiverHome() {
             <motion.button
               onClick={() => setShowWellness(true)}
               className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive
-                        ${isNight ? 'bg-slate-800/40 border-slate-700 hover:border-sahay-success/50' : 'bg-card border-border hover:border-sahay-success/50'}`}
+                        ${isNight ? "bg-slate-800/40 border-slate-700 hover:border-sahay-success/50" : "bg-card border-border hover:border-sahay-success/50"}`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -598,13 +640,18 @@ export function CareReceiverHome() {
 
             <motion.button
               onClick={() => {
-                requestHelp()
-                setShowHelpConfirmed(true)
-                setTimeout(() => setShowHelpConfirmed(false), 3000)
+                requestHelp();
+                setShowHelpConfirmed(true);
+                setTimeout(() => setShowHelpConfirmed(false), 3000);
               }}
               className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive
-                        ${showHelpConfirmed ? 'bg-sahay-blue/20 border-sahay-blue' :
-                  isNight ? 'bg-slate-800/40 border-slate-700 hover:border-sahay-blue/50' : 'bg-card border-border hover:border-sahay-blue/50'}`}
+                        ${
+                          showHelpConfirmed
+                            ? "bg-sahay-blue/20 border-sahay-blue"
+                            : isNight
+                              ? "bg-slate-800/40 border-slate-700 hover:border-sahay-blue/50"
+                              : "bg-card border-border hover:border-sahay-blue/50"
+                        }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -613,13 +660,15 @@ export function CareReceiverHome() {
               ) : (
                 <Heart className="w-7 h-7 text-sahay-blue" />
               )}
-              <span className="text-sm font-medium">{showHelpConfirmed ? 'Notified!' : 'I need help'}</span>
+              <span className="text-sm font-medium">
+                {showHelpConfirmed ? "Notified!" : "I need help"}
+              </span>
             </motion.button>
 
             <motion.button
               onClick={() => setShowEmergency(true)}
               className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive
-                        ${isNight ? 'bg-slate-800/40 border-slate-700 hover:border-destructive/50' : 'bg-card border-border hover:border-destructive/50'}`}
+                        ${isNight ? "bg-slate-800/40 border-slate-700 hover:border-destructive/50" : "bg-card border-border hover:border-destructive/50"}`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -638,11 +687,13 @@ export function CareReceiverHome() {
             animate={{ opacity: 1 }}
           >
             <Moon className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase tracking-widest">Quiet Night Mode Active</span>
+            <span className="text-xs font-medium uppercase tracking-widest">
+              Quiet Night Mode Active
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
       <SafetyCheckPrompt />
     </main>
-  )
+  );
 }
