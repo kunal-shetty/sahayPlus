@@ -5,35 +5,35 @@
  * application in the SahayProvider for global state management.
  */
 
-import React from "react"
-import type { Metadata, Viewport } from 'next'
-import { Nunito } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import { SahayProvider } from '@/lib/sahay-context'
-import './globals.css'
+import React from "react";
+import type { Metadata, Viewport } from "next";
+import { Nunito } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SahayProvider } from "@/lib/sahay-context";
+import "./globals.css";
 
 /** Nunito font configuration for a soft, accessible look. */
 const nunito = Nunito({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-})
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 /** SEO and application metadata. */
 export const metadata: Metadata = {
-  title: 'Sahay+ | Gentle Medication Care',
+  title: "Sahay+ | Gentle Medication Care",
   description:
-    'A calm, human-centered healthcare app for families managing everyday medication routines together.',
-}
+    "A calm, human-centered healthcare app for families managing everyday medication routines together.",
+};
 
 /** Viewport settings to optimize the mobile experience and prevent unwanted zooming. */
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#f5f3ed',
-}
+  themeColor: "#f5f3ed",
+};
 
 /**
  * The Root Layout component.
@@ -47,7 +47,7 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -58,5 +58,5 @@ export default function RootLayout({
         <Analytics />
       </body>
     </html>
-  )
+  );
 }
