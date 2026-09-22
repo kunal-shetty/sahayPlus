@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file settings-panel.tsx
@@ -12,9 +12,9 @@
  * accidental data loss.
  */
 
-import { useState } from 'react'
-import { useSahay } from '@/lib/sahay-context'
-import { ArrowLeft, LogOut, Trash2, Heart, Pill, Plus } from 'lucide-react'
+import { useState } from "react";
+import { useSahay } from "@/lib/sahay-context";
+import { ArrowLeft, LogOut, Trash2, Heart, Pill, Plus } from "lucide-react";
 
 /**
  * Props for the SettingsPanel component.
@@ -23,7 +23,7 @@ import { ArrowLeft, LogOut, Trash2, Heart, Pill, Plus } from 'lucide-react'
  * @property {() => void} onClose - Callback function to close the settings panel and return to the previous view.
  */
 interface SettingsPanelProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 /**
@@ -35,50 +35,50 @@ interface SettingsPanelProps {
  */
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { data, logout, resetApp, updatePharmacist, addPharmacistNote } =
-    useSahay()
-  const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [showPharmacistForm, setShowPharmacistForm] = useState(false)
+    useSahay();
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showPharmacistForm, setShowPharmacistForm] = useState(false);
   const [pharmacistName, setPharmacistName] = useState(
-    data.pharmacist?.name || ''
-  )
+    data.pharmacist?.name || "",
+  );
   const [selectedMedForNote, setSelectedMedForNote] = useState<string | null>(
-    null
-  )
-  const [pharmacistNote, setPharmacistNote] = useState('')
+    null,
+  );
+  const [pharmacistNote, setPharmacistNote] = useState("");
 
   /**
    * Triggers the logout process to allow the user to switch roles
    * (e.g., from caregiver to care receiver).
    */
   const handleSwitchRole = () => {
-    logout()
-  }
+    logout();
+  };
 
   /**
    * Wipes all stored application data and resets the app to its initial state.
    */
   const handleReset = () => {
-    resetApp()
-  }
+    resetApp();
+  };
 
   /**
    * Persists the pharmacist's name to the backend.
    */
   const handleSavePharmacist = () => {
-    updatePharmacist({ name: pharmacistName.trim() || undefined })
-    setShowPharmacistForm(false)
-  }
+    updatePharmacist({ name: pharmacistName.trim() || undefined });
+    setShowPharmacistForm(false);
+  };
 
   /**
    * Adds a specific note from the pharmacist to a selected medication.
    */
   const handleAddPharmacistNote = () => {
     if (selectedMedForNote && pharmacistNote.trim()) {
-      addPharmacistNote(selectedMedForNote, pharmacistNote.trim())
-      setSelectedMedForNote(null)
-      setPharmacistNote('')
+      addPharmacistNote(selectedMedForNote, pharmacistNote.trim());
+      setSelectedMedForNote(null);
+      setPharmacistNote("");
     }
-  }
+  };
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
@@ -117,7 +117,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             <div className="pt-4 border-t border-border">
               <p className="text-sm text-muted-foreground">
                 {data.medications.length} medication
-                {data.medications.length !== 1 ? 's' : ''} set up
+                {data.medications.length !== 1 ? "s" : ""} set up
               </p>
             </div>
           </section>
@@ -145,9 +145,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                     <p className="text-foreground">{data.pharmacist.name}</p>
                     {data.pharmacist.lastRefillConfirm && (
                       <p className="text-sm text-muted-foreground mt-1">
-                        Last refill:{' '}
+                        Last refill:{" "}
                         {new Date(
-                          data.pharmacist.lastRefillConfirm
+                          data.pharmacist.lastRefillConfirm,
                         ).toLocaleDateString()}
                       </p>
                     )}
@@ -161,8 +161,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                            hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   {data.pharmacist?.name
-                    ? 'Update pharmacist'
-                    : 'Add pharmacist name'}
+                    ? "Update pharmacist"
+                    : "Add pharmacist name"}
                 </button>
               </>
             ) : (
@@ -205,10 +205,10 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 {selectedMedForNote ? (
                   <div className="space-y-3">
                     <p className="text-foreground font-medium">
-                      Note for:{' '}
+                      Note for:{" "}
                       {
                         data.medications.find(
-                          (m) => m.id === selectedMedForNote
+                          (m) => m.id === selectedMedForNote,
                         )?.name
                       }
                     </p>
@@ -223,8 +223,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                     <div className="flex gap-3">
                       <button
                         onClick={() => {
-                          setSelectedMedForNote(null)
-                          setPharmacistNote('')
+                          setSelectedMedForNote(null);
+                          setPharmacistNote("");
                         }}
                         className="flex-1 py-3 px-4 bg-secondary text-foreground font-medium
                                  rounded-xl transition-colors touch-manipulation
@@ -359,5 +359,5 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         </div>
       </div>
     </main>
-  )
+  );
 }
