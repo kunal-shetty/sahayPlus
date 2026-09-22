@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * @file onboarding-welcome.tsx
@@ -9,8 +9,8 @@
  * create a friendly and welcoming first impression.
  */
 
-import { motion } from "motion/react"
-import { Activity, Heart, Users } from "lucide-react"
+import { motion } from "motion/react";
+import { Activity, Heart, Users } from "lucide-react";
 
 /**
  * OnboardingWelcome component.
@@ -66,8 +66,9 @@ export function OnboardingWelcome() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
             >
-                Simplifying care management for you and your loved ones. Connect, coordinate, and care together.
+                Simplifying care management for you and your loved ones.
+                Connect, coordinate, and care together.
             </motion.p>
         </div>
-    )
+    );
 }
