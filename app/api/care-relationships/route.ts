@@ -24,10 +24,14 @@ export async function GET(req: NextRequest) {
         let query = supabase.from("care_relationships").select("*");
 
         if (userId) {
-            query = query.or(`caregiver_id.eq.${userId},care_receiver_id.eq.${userId},alt_caregiver_id.eq.${userId}`);
+            query = query.or(
+                `caregiver_id.eq.${userId},care_receiver_id.eq.${userId},alt_caregiver_id.eq.${userId}`,
+            );
         }
 
-        const { data, error } = await query.order("created_at", { ascending: false });
+        const { data, error } = await query.order("created_at", {
+            ascending: false,
+        });
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
@@ -37,7 +41,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch care relationships" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
@@ -56,8 +60,10 @@ export async function POST(req: NextRequest) {
 
         if (!caregiver_id || !care_receiver_id) {
             return NextResponse.json(
-                { error: "Missing required fields: caregiver_id, care_receiver_id" },
-                { status: 400 }
+                {
+                    error: "Missing required fields: caregiver_id, care_receiver_id",
+                },
+                { status: 400 },
             );
         }
 
@@ -81,12 +87,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Care relationship created", relationship: data },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to create care relationship" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
