@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file role-selection.tsx
@@ -12,9 +12,9 @@
  * step.
  */
 
-import { motion } from 'motion/react'
-import { useSahay } from '@/lib/sahay-context'
-import { Heart, Users } from 'lucide-react'
+import { motion } from "motion/react";
+import { useSahay } from "@/lib/sahay-context";
+import { Heart, Users } from "lucide-react";
 
 /**
  * RoleSelection component.
@@ -23,7 +23,7 @@ import { Heart, Users } from 'lucide-react'
  * @returns {JSX.Element} The role selection interface.
  */
 export function RoleSelection() {
-  const { setUserRole } = useSahay()
+  const { setUserRole } = useSahay();
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-background safe-top safe-bottom">
@@ -38,7 +38,7 @@ export function RoleSelection() {
           className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ type: 'spring', delay: 0.2 }}
+          transition={{ type: "spring", delay: 0.2 }}
         >
           <Heart className="w-10 h-10 text-primary" strokeWidth={1.5} />
         </motion.div>
@@ -75,7 +75,7 @@ export function RoleSelection() {
 
         {/* Caregiver option */}
         <motion.button
-          onClick={() => setUserRole('caregiver')}
+          onClick={() => setUserRole("caregiver")}
           className="w-full p-6 bg-card rounded-2xl border-2 border-border hover:border-primary
                      transition-colors duration-200 text-left group focus:outline-none focus:ring-2
                      focus:ring-primary focus:ring-offset-2 focus:ring-offset-background
@@ -83,7 +83,7 @@ export function RoleSelection() {
           aria-label="I help care for someone"
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6, type: 'spring' }}
+          transition={{ delay: 0.6, type: "spring" }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -112,7 +112,7 @@ export function RoleSelection() {
 
         {/* Care Receiver option */}
         <motion.button
-          onClick={() => setUserRole('careReceiver')}
+          onClick={() => setUserRole("careReceiver")}
           className="w-full p-6 bg-card rounded-2xl border-2 border-border hover:border-sahay-blue
                      transition-colors duration-200 text-left group focus:outline-none focus:ring-2
                      focus:ring-sahay-blue focus:ring-offset-2 focus:ring-offset-background
@@ -120,7 +120,7 @@ export function RoleSelection() {
           aria-label="I manage my own care"
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.7, type: 'spring' }}
+          transition={{ delay: 0.7, type: "spring" }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -158,5 +158,5 @@ export function RoleSelection() {
         You can change this anytime.
       </motion.p>
     </main>
-  )
+  );
 }
