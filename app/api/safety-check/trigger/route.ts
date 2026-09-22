@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
         if (!care_relationship_id) {
             return NextResponse.json(
                 { error: "Missing required field: care_relationship_id" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -40,12 +40,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Safety check triggered", safetyCheck: data },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to trigger safety check" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
