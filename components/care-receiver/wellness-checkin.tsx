@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file wellness-checkin.tsx
@@ -8,49 +8,49 @@
  * the caregiver to provide a baseline of the receiver's daily well-being.
  */
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { useSahay } from '@/lib/sahay-context'
-import { ArrowLeft, Smile, Meh, Frown, Check } from 'lucide-react'
-import type { WellnessLevel } from '@/lib/types'
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { useSahay } from "@/lib/sahay-context";
+import { ArrowLeft, Smile, Meh, Frown, Check } from "lucide-react";
+import type { WellnessLevel } from "@/lib/types";
 
 /**
  * Configuration for wellness levels.
  * Defines the visual and textual representation for each possible wellness state.
  */
 const wellnessOptions: {
-  level: WellnessLevel
-  icon: typeof Smile
-  label: string
-  description: string
-  color: string
-  bgColor: string
+  level: WellnessLevel;
+  icon: typeof Smile;
+  label: string;
+  description: string;
+  color: string;
+  bgColor: string;
 }[] = [
   {
-    level: 'great',
+    level: "great",
     icon: Smile,
-    label: 'Feeling Great',
-    description: 'I feel good today',
-    color: 'text-sahay-success',
-    bgColor: 'bg-sahay-success/10 border-sahay-success/30',
+    label: "Feeling Great",
+    description: "I feel good today",
+    color: "text-sahay-success",
+    bgColor: "bg-sahay-success/10 border-sahay-success/30",
   },
   {
-    level: 'okay',
+    level: "okay",
     icon: Meh,
-    label: 'Doing Okay',
-    description: 'I\'m managing alright',
-    color: 'text-sahay-pending',
-    bgColor: 'bg-sahay-pending/10 border-sahay-pending/30',
+    label: "Doing Okay",
+    description: "I'm managing alright",
+    color: "text-sahay-pending",
+    bgColor: "bg-sahay-pending/10 border-sahay-pending/30",
   },
   {
-    level: 'notGreat',
+    level: "notGreat",
     icon: Frown,
-    label: 'Not Feeling Great',
-    description: 'Could be better',
-    color: 'text-destructive',
-    bgColor: 'bg-destructive/10 border-destructive/30',
+    label: "Not Feeling Great",
+    description: "Could be better",
+    color: "text-destructive",
+    bgColor: "bg-destructive/10 border-destructive/30",
   },
-]
+];
 
 /**
  * WellnessCheckin component.
@@ -62,31 +62,35 @@ const wellnessOptions: {
  * @returns {JSX.Element} The wellness check-in interface.
  */
 export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
-  const { logWellness, getTodayWellness, data } = useSahay()
-  const [selectedLevel, setSelectedLevel] = useState<WellnessLevel | null>(null)
-  const [note, setNote] = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  const { logWellness, getTodayWellness, data } = useSahay();
+  const [selectedLevel, setSelectedLevel] = useState<WellnessLevel | null>(
+    null,
+  );
+  const [note, setNote] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
-  const todayWellness = getTodayWellness()
-  const caregiverName = data.caregiver?.name || 'your caregiver'
+  const todayWellness = getTodayWellness();
+  const caregiverName = data.caregiver?.name || "your caregiver";
 
   /**
    * Submits the selected wellness level and optional note to the backend.
    */
   const handleSubmit = () => {
     if (selectedLevel) {
-      logWellness(selectedLevel, note.trim() || undefined)
-      setSubmitted(true)
+      logWellness(selectedLevel, note.trim() || undefined);
+      setSubmitted(true);
     }
-  }
+  };
 
   /**
    * Read-only view.
    * Rendered when the user has already completed their check-in for the day.
    */
   if (todayWellness && !submitted) {
-    const config = wellnessOptions.find((o) => o.level === todayWellness.level)!
-    const Icon = config.icon
+    const config = wellnessOptions.find(
+      (o) => o.level === todayWellness.level,
+    )!;
+    const Icon = config.icon;
 
     return (
       <main className="min-h-screen flex flex-col bg-background p-6">
@@ -127,7 +131,7 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
           </button>
         </div>
       </main>
-    )
+    );
   }
 
   /**
@@ -142,12 +146,12 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
             className="w-24 h-24 rounded-full bg-sahay-success/20 flex items-center justify-center mb-6"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
           >
             <motion.div
               initial={{ scale: 0, rotate: -45 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.2, type: 'spring' }}
+              transition={{ delay: 0.2, type: "spring" }}
             >
               <Check className="w-12 h-12 text-sahay-success" />
             </motion.div>
@@ -184,7 +188,7 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
           </motion.button>
         </div>
       </main>
-    )
+    );
   }
 
   return (
@@ -210,8 +214,8 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
         {/* Wellness options selection grid */}
         <div className="space-y-4 mb-8">
           {wellnessOptions.map((option, idx) => {
-            const Icon = option.icon
-            const isSelected = selectedLevel === option.level
+            const Icon = option.icon;
+            const isSelected = selectedLevel === option.level;
             return (
               <motion.button
                 key={option.level}
@@ -222,7 +226,7 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
                          ${
                            isSelected
                              ? option.bgColor
-                             : 'bg-card border-border hover:border-muted-foreground/50'
+                             : "bg-card border-border hover:border-muted-foreground/50"
                          }`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -231,16 +235,16 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
               >
                 <div
                   className={`w-16 h-16 rounded-full flex items-center justify-center
-                            ${isSelected ? option.bgColor : 'bg-secondary'}`}
+                            ${isSelected ? option.bgColor : "bg-secondary"}`}
                 >
                   <Icon
-                    className={`w-8 h-8 ${isSelected ? option.color : 'text-muted-foreground'}`}
+                    className={`w-8 h-8 ${isSelected ? option.color : "text-muted-foreground"}`}
                   />
                 </div>
                 <div className="text-left">
                   <p
                     className={`text-xl font-semibold ${
-                      isSelected ? option.color : 'text-foreground'
+                      isSelected ? option.color : "text-foreground"
                     }`}
                   >
                     {option.label}
@@ -248,7 +252,7 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
                   <p className="text-muted-foreground">{option.description}</p>
                 </div>
               </motion.button>
-            )
+            );
           })}
         </div>
 
@@ -258,13 +262,15 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
             <motion.div
               className="mb-8"
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
             >
               <label className="block text-lg font-medium text-foreground mb-2">
-                Anything you want to add?{' '}
-                <span className="text-muted-foreground font-normal">(optional)</span>
+                Anything you want to add?{" "}
+                <span className="text-muted-foreground font-normal">
+                  (optional)
+                </span>
               </label>
               <input
                 type="text"
@@ -293,5 +299,5 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
         </motion.button>
       </div>
     </main>
-  )
+  );
 }
