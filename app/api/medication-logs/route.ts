@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
         if (!careRelationshipId) {
             return NextResponse.json(
                 { error: "Missing required query param: care_relationship_id" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -36,7 +36,10 @@ export async function GET(req: NextRequest) {
             .eq("care_relationship_id", careRelationshipId);
 
         if (medsError) {
-            return NextResponse.json({ error: medsError.message }, { status: 500 });
+            return NextResponse.json(
+                { error: medsError.message },
+                { status: 500 },
+            );
         }
 
         const medIds = (meds || []).map((m) => m.id);
@@ -66,7 +69,7 @@ export async function GET(req: NextRequest) {
         console.error("[/api/medication-logs] error:", error);
         return NextResponse.json(
             { error: error?.message || "Failed to fetch logs" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
