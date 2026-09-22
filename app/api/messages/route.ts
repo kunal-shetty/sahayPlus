@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         if (!careRelationshipId) {
             return NextResponse.json(
                 { error: "Missing required query param: care_relationship_id" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -44,12 +44,12 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(
             { messages: data, limit, offset, total: count },
-            { status: 200 }
+            { status: 200 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch messages" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
                 {
                     error: "Missing required fields: care_relationship_id, from_user_id, text",
                 },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -91,12 +91,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Message sent", data },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to send message" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
