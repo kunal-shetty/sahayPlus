@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file daily-closure.tsx
@@ -9,8 +9,8 @@
  * care routine.
  */
 
-import { useSahay } from '@/lib/sahay-context'
-import { Moon, Check } from 'lucide-react'
+import { useSahay } from "@/lib/sahay-context";
+import { Moon, Check } from "lucide-react";
 
 /**
  * DailyClosure component.
@@ -21,21 +21,21 @@ import { Moon, Check } from 'lucide-react'
  * @returns {JSX.Element | null} The daily closure ritual interface or null if not applicable.
  */
 export function DailyClosure() {
-  const { data, closeDay, isDayClosed } = useSahay()
+  const { data, closeDay, isDayClosed } = useSahay();
 
-  const dayClosed = isDayClosed()
-  const totalMeds = data.medications.length
-  const takenMeds = data.medications.filter((m) => m.taken).length
-  const allTaken = totalMeds > 0 && takenMeds === totalMeds
+  const dayClosed = isDayClosed();
+  const totalMeds = data.medications.length;
+  const takenMeds = data.medications.filter((m) => m.taken).length;
+  const allTaken = totalMeds > 0 && takenMeds === totalMeds;
 
   /**
    * Visibility logic: Show the closure ritual if it's late in the day (>= 6 PM)
    * or if all scheduled medications have been taken.
    */
-  const hour = new Date().getHours()
-  const shouldShow = hour >= 18 || allTaken
+  const hour = new Date().getHours();
+  const shouldShow = hour >= 18 || allTaken;
 
-  if (!shouldShow || totalMeds === 0) return null
+  if (!shouldShow || totalMeds === 0) return null;
 
   /**
    * Completed State.
@@ -58,7 +58,7 @@ export function DailyClosure() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   /**
@@ -102,5 +102,5 @@ export function DailyClosure() {
         Close today
       </button>
     </div>
-  )
+  );
 }
