@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file emergency-call.tsx
@@ -8,7 +8,7 @@
  * highlighted primary contact and a fallback to the national emergency number.
  */
 
-import { useSahay } from '@/lib/sahay-context'
+import { useSahay } from "@/lib/sahay-context";
 import {
   ArrowLeft,
   Phone,
@@ -16,7 +16,7 @@ import {
   User,
   Building2,
   Stethoscope,
-} from 'lucide-react'
+} from "lucide-react";
 
 /**
  * Props for the EmergencyCall component.
@@ -24,7 +24,7 @@ import {
  * @property {() => void} onClose - Callback to close the emergency call screen and return to home.
  */
 interface EmergencyCallProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 /**
@@ -36,11 +36,11 @@ interface EmergencyCallProps {
  * @returns {JSX.Element} The emergency call contact list.
  */
 export function EmergencyCall({ onClose }: EmergencyCallProps) {
-  const { data } = useSahay()
+  const { data } = useSahay();
 
-  const contacts = data.emergencyContacts || []
-  const primaryContact = contacts.find((c) => c.isPrimary)
-  const otherContacts = contacts.filter((c) => !c.isPrimary)
+  const contacts = data.emergencyContacts || [];
+  const primaryContact = contacts.find((c) => c.isPrimary);
+  const otherContacts = contacts.filter((c) => !c.isPrimary);
 
   /**
    * Determines the most appropriate icon based on the contact's relationship.
@@ -49,15 +49,15 @@ export function EmergencyCall({ onClose }: EmergencyCallProps) {
    * @returns {JSX.Element} The corresponding Lucide icon.
    */
   const getRelationshipIcon = (relationship: string) => {
-    const lower = relationship.toLowerCase()
-    if (lower.includes('doctor') || lower.includes('dr.')) {
-      return <Stethoscope className="w-6 h-6" />
+    const lower = relationship.toLowerCase();
+    if (lower.includes("doctor") || lower.includes("dr.")) {
+      return <Stethoscope className="w-6 h-6" />;
     }
-    if (lower.includes('hospital') || lower.includes('clinic')) {
-      return <Building2 className="w-6 h-6" />
+    if (lower.includes("hospital") || lower.includes("clinic")) {
+      return <Building2 className="w-6 h-6" />;
     }
-    return <User className="w-6 h-6" />
-  }
+    return <User className="w-6 h-6" />;
+  };
 
   return (
     <main className="min-h-screen flex flex-col bg-background p-6">
@@ -172,5 +172,5 @@ export function EmergencyCall({ onClose }: EmergencyCallProps) {
         </div>
       </div>
     </main>
-  )
+  );
 }
