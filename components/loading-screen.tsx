@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file loading-screen.tsx
@@ -9,8 +9,8 @@
  * and reassuring atmosphere while the user waits.
  */
 
-import { motion } from 'motion/react'
-import { Heart } from 'lucide-react'
+import { motion } from "motion/react";
+import { Heart } from "lucide-react";
 
 /**
  * LoadingScreen component.
@@ -25,7 +25,7 @@ export function LoadingScreen() {
         className="relative"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
         {/* Outer pulsing ring */}
         <motion.div
@@ -80,7 +80,9 @@ export function LoadingScreen() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.4 }}
       >
-        <p className="text-muted-foreground font-medium">Loading your care data</p>
+        <p className="text-muted-foreground font-medium">
+          Loading your care data
+        </p>
         {/* Animated dots */}
         <div className="flex gap-1.5">
           {[0, 1, 2].map((i) => (
@@ -102,5 +104,5 @@ export function LoadingScreen() {
         </div>
       </motion.div>
     </main>
-  )
+  );
 }
