@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file medication-form.tsx
@@ -12,9 +12,9 @@
  * stressful or hurried situations.
  */
 
-import { useState } from 'react'
-import { useSahay } from '@/lib/sahay-context'
-import { type TimeOfDay, type Medication, timeOfDayLabels } from '@/lib/types'
+import { useState } from "react";
+import { useSahay } from "@/lib/sahay-context";
+import { type TimeOfDay, type Medication, timeOfDayLabels } from "@/lib/types";
 import {
   ArrowLeft,
   Check,
@@ -23,7 +23,7 @@ import {
   Cloud,
   Moon,
   RefreshCw,
-} from 'lucide-react'
+} from "lucide-react";
 
 /**
  * Props for the MedicationForm component.
@@ -33,8 +33,8 @@ import {
  * @property {() => void} onClose - Callback function to close the form and return to the previous view.
  */
 interface MedicationFormProps {
-  medication?: Medication | null
-  onClose: () => void
+  medication?: Medication | null;
+  onClose: () => void;
 }
 
 /**
@@ -46,21 +46,25 @@ interface MedicationFormProps {
  * @returns {JSX.Element} The medication entry/edit interface.
  */
 export function MedicationForm({ medication, onClose }: MedicationFormProps) {
-  const { addMedication, updateMedication, removeMedication, updateRefillStatus } =
-    useSahay()
-  const isEditing = !!medication
+  const {
+    addMedication,
+    updateMedication,
+    removeMedication,
+    updateRefillStatus,
+  } = useSahay();
+  const isEditing = !!medication;
 
-  const [name, setName] = useState(medication?.name || '')
-  const [dosage, setDosage] = useState(medication?.dosage || '')
+  const [name, setName] = useState(medication?.name || "");
+  const [dosage, setDosage] = useState(medication?.dosage || "");
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(
-    medication?.timeOfDay || 'morning'
-  )
-  const [notes, setNotes] = useState(medication?.notes || '')
-  const [time, setTime] = useState(medication?.time || '')
+    medication?.timeOfDay || "morning",
+  );
+  const [notes, setNotes] = useState(medication?.notes || "");
+  const [time, setTime] = useState(medication?.time || "");
   const [refillDaysLeft, setRefillDaysLeft] = useState<number | undefined>(
-    medication?.refillDaysLeft
-  )
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    medication?.refillDaysLeft,
+  );
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   /**
    * Validates and persists the medication data.
@@ -68,7 +72,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
    * Also updates the refill status if a refill value is provided.
    */
   const handleSubmit = () => {
-    if (!name.trim() || !dosage.trim()) return
+    if (!name.trim() || !dosage.trim()) return;
 
     if (isEditing && medication) {
       updateMedication(medication.id, {
@@ -78,9 +82,9 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
         time: time || undefined,
         notes: notes.trim() || undefined,
         refillDaysLeft,
-      })
+      });
       if (refillDaysLeft !== undefined) {
-        updateRefillStatus(medication.id, refillDaysLeft)
+        updateRefillStatus(medication.id, refillDaysLeft);
       }
     } else {
       addMedication({
@@ -90,27 +94,27 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
         time: time || undefined,
         notes: notes.trim() || undefined,
         refillDaysLeft,
-      })
+      });
     }
-    onClose()
-  }
+    onClose();
+  };
 
   /**
    * Removes the current medication from the system and closes the form.
    */
   const handleDelete = () => {
     if (medication) {
-      removeMedication(medication.id)
-      onClose()
+      removeMedication(medication.id);
+      onClose();
     }
-  }
+  };
 
   /** Mapping of time of day slugs to their corresponding Lucide icons. */
   const timeIcons: Record<TimeOfDay, typeof Sun> = {
     morning: Sun,
     afternoon: Cloud,
     evening: Moon,
-  }
+  };
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
@@ -126,7 +130,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
           <ArrowLeft className="w-6 h-6 text-foreground" />
         </button>
         <h1 className="text-xl font-semibold text-foreground">
-          {isEditing ? 'Edit medication' : 'Add medication'}
+          {isEditing ? "Edit medication" : "Add medication"}
         </h1>
       </header>
 
@@ -182,8 +186,8 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
             </label>
             <div className="grid grid-cols-3 gap-3">
               {(Object.keys(timeOfDayLabels) as TimeOfDay[]).map((time) => {
-                const Icon = timeIcons[time]
-                const isSelected = timeOfDay === time
+                const Icon = timeIcons[time];
+                const isSelected = timeOfDay === time;
                 return (
                   <button
                     key={time}
@@ -191,23 +195,24 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
                     onClick={() => setTimeOfDay(time)}
                     className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
                               touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage
-                              ${isSelected
-                        ? 'border-sahay-sage bg-sahay-sage-light'
-                        : 'border-border bg-card hover:border-sahay-sage/50'
-                      }`}
+                              ${
+                                isSelected
+                                  ? "border-sahay-sage bg-sahay-sage-light"
+                                  : "border-border bg-card hover:border-sahay-sage/50"
+                              }`}
                     aria-pressed={isSelected}
                   >
                     <Icon
-                      className={`w-6 h-6 ${isSelected ? 'text-sahay-sage' : 'text-muted-foreground'}`}
+                      className={`w-6 h-6 ${isSelected ? "text-sahay-sage" : "text-muted-foreground"}`}
                       strokeWidth={1.5}
                     />
                     <span
-                      className={`text-base font-medium ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}
+                      className={`text-base font-medium ${isSelected ? "text-foreground" : "text-muted-foreground"}`}
                     >
                       {timeOfDayLabels[time]}
                     </span>
                   </button>
-                )
+                );
               })}
             </div>
           </div>
@@ -218,7 +223,10 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
               htmlFor="medTime"
               className="block text-lg font-medium text-foreground mb-2"
             >
-              Exact time <span className="text-muted-foreground font-normal">(optional)</span>
+              Exact time{" "}
+              <span className="text-muted-foreground font-normal">
+                (optional)
+              </span>
             </label>
             <input
               id="medTime"
@@ -240,7 +248,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
               htmlFor="medNotes"
               className="block text-lg font-medium text-foreground mb-2"
             >
-              Notes{' '}
+              Notes{" "}
               <span className="text-muted-foreground font-normal">
                 (optional)
               </span>
@@ -266,7 +274,7 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
                 htmlFor="medRefill"
                 className="text-lg font-medium text-foreground"
               >
-                Refill awareness{' '}
+                Refill awareness{" "}
                 <span className="text-muted-foreground font-normal">
                   (optional)
                 </span>
@@ -282,10 +290,10 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
                 type="number"
                 min={0}
                 max={90}
-                value={refillDaysLeft ?? ''}
+                value={refillDaysLeft ?? ""}
                 onChange={(e) =>
                   setRefillDaysLeft(
-                    e.target.value ? Number(e.target.value) : undefined
+                    e.target.value ? Number(e.target.value) : undefined,
                   )
                 }
                 placeholder="Days left"
@@ -362,10 +370,10 @@ export function MedicationForm({ medication, onClose }: MedicationFormProps) {
                      touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage focus:ring-offset-2"
           >
             <Check className="w-5 h-5" />
-            {isEditing ? 'Save changes' : 'Add medication'}
+            {isEditing ? "Save changes" : "Add medication"}
           </button>
         </div>
       </footer>
     </main>
-  )
+  );
 }
