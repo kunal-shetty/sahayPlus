@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file care-confidence.tsx
@@ -9,9 +9,9 @@
  * from perfection to long-term stability.
  */
 
-import { useSahay } from '@/lib/sahay-context'
-import { calculateConfidence, getConfidenceMessage } from '@/lib/types'
-import { Leaf, Sparkles, Sprout } from 'lucide-react'
+import { useSahay } from "@/lib/sahay-context";
+import { calculateConfidence, getConfidenceMessage } from "@/lib/types";
+import { Leaf, Sparkles, Sprout } from "lucide-react";
 
 /**
  * CareConfidence component.
@@ -21,11 +21,11 @@ import { Leaf, Sparkles, Sprout } from 'lucide-react'
  * @returns {JSX.Element} A visually distinct confidence indicator.
  */
 export function CareConfidence() {
-  const { data } = useSahay()
+  const { data } = useSahay();
 
   /** Calculated confidence state: 'stable', 'adjusting', or 'new'. */
-  const confidence = calculateConfidence(data.timeline, data.dayClosures)
-  const message = getConfidenceMessage(confidence)
+  const confidence = calculateConfidence(data.timeline, data.dayClosures);
+  const message = getConfidenceMessage(confidence);
 
   /**
    * Maps the confidence state to a corresponding nature-themed icon.
@@ -37,14 +37,14 @@ export function CareConfidence() {
    */
   const getIcon = () => {
     switch (confidence) {
-      case 'stable':
-        return Leaf
-      case 'adjusting':
-        return Sparkles
-      case 'new':
-        return Sprout
+      case "stable":
+        return Leaf;
+      case "adjusting":
+        return Sparkles;
+      case "new":
+        return Sprout;
     }
-  }
+  };
 
   /**
    * Maps the confidence state to a specific color palette.
@@ -53,29 +53,29 @@ export function CareConfidence() {
    */
   const getColors = () => {
     switch (confidence) {
-      case 'stable':
+      case "stable":
         return {
-          bg: 'bg-sahay-sage-light',
-          icon: 'text-sahay-sage',
-          border: 'border-sahay-sage/30',
-        }
-      case 'adjusting':
+          bg: "bg-sahay-sage-light",
+          icon: "text-sahay-sage",
+          border: "border-sahay-sage/30",
+        };
+      case "adjusting":
         return {
-          bg: 'bg-sahay-pending/10',
-          icon: 'text-sahay-pending',
-          border: 'border-sahay-pending/30',
-        }
-      case 'new':
+          bg: "bg-sahay-pending/10",
+          icon: "text-sahay-pending",
+          border: "border-sahay-pending/30",
+        };
+      case "new":
         return {
-          bg: 'bg-sahay-blue-light',
-          icon: 'text-sahay-blue',
-          border: 'border-sahay-blue/30',
-        }
+          bg: "bg-sahay-blue-light",
+          icon: "text-sahay-blue",
+          border: "border-sahay-blue/30",
+        };
     }
-  }
+  };
 
-  const Icon = getIcon()
-  const colors = getColors()
+  const Icon = getIcon();
+  const colors = getColors();
 
   return (
     <div
@@ -89,10 +89,10 @@ export function CareConfidence() {
       <div>
         <p className="text-lg font-medium text-foreground">{message}</p>
         <p className="text-sm text-muted-foreground">
-          {data.dayClosures.length} day{data.dayClosures.length !== 1 ? 's' : ''}{' '}
-          of care recorded
+          {data.dayClosures.length} day
+          {data.dayClosures.length !== 1 ? "s" : ""} of care recorded
         </p>
       </div>
     </div>
-  )
+  );
 }
