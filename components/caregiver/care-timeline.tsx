@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file care-timeline.tsx
@@ -9,8 +9,8 @@
  * emphasizing the current state of care over past failures.
  */
 
-import { useSahay } from '@/lib/sahay-context'
-import { type TimelineEvent } from '@/lib/types'
+import { useSahay } from "@/lib/sahay-context";
+import { type TimelineEvent } from "@/lib/types";
 import {
   Check,
   AlertCircle,
@@ -22,7 +22,7 @@ import {
   Moon,
   ArrowLeft,
   ShieldAlert,
-} from 'lucide-react'
+} from "lucide-react";
 
 /**
  * CareTimeline component.
@@ -33,23 +33,23 @@ import {
  * @returns {JSX.Element} The chronological care story interface.
  */
 export function CareTimeline({ onClose }: { onClose: () => void }) {
-  const { data } = useSahay()
+  const { data } = useSahay();
 
   /** Grouping events by date (YYYY-MM-DD) for structural rendering. */
-  const groupedEvents: Record<string, TimelineEvent[]> = {}
+  const groupedEvents: Record<string, TimelineEvent[]> = {};
 
   for (const event of data.timeline) {
-    const date = new Date(event.timestamp).toISOString().split('T')[0]
+    const date = new Date(event.timestamp).toISOString().split("T")[0];
     if (!groupedEvents[date]) {
-      groupedEvents[date] = []
+      groupedEvents[date] = [];
     }
-    groupedEvents[date].push(event)
+    groupedEvents[date].push(event);
   }
 
   /** Sort dates in descending order (most recent first). */
   const sortedDays = Object.keys(groupedEvents).sort(
-    (a, b) => new Date(b).getTime() - new Date(a).getTime()
-  )
+    (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+  );
 
   /**
    * Calculates opacity for a given date to create a "fading past" effect.
@@ -59,17 +59,17 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
    * @returns {number} Opacity value between 0.4 and 1.0.
    */
   const getOpacity = (date: string) => {
-    const now = new Date()
-    const eventDate = new Date(date)
+    const now = new Date();
+    const eventDate = new Date(date);
     const diffDays = Math.floor(
-      (now.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24)
-    )
-    if (diffDays === 0) return 1
-    if (diffDays <= 2) return 0.9
-    if (diffDays <= 5) return 0.7
-    if (diffDays <= 10) return 0.5
-    return 0.4
-  }
+      (now.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    if (diffDays === 0) return 1;
+    if (diffDays <= 2) return 0.9;
+    if (diffDays <= 5) return 0.7;
+    if (diffDays <= 10) return 0.5;
+    return 0.4;
+  };
 
   /**
    * Maps an event type to its corresponding visual icon.
@@ -77,34 +77,34 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
    * @param {TimelineEvent['type']} type - The event type slug.
    * @returns {typeof Check | typeof AlertCircle | ...} The Lucide icon component.
    */
-  const getEventIcon = (type: TimelineEvent['type']) => {
+  const getEventIcon = (type: TimelineEvent["type"]) => {
     switch (type) {
-      case 'medication_taken':
-        return Check
-      case 'medication_skipped':
-        return AlertCircle
-      case 'dose_changed':
-        return RefreshCw
-      case 'medication_added':
-        return Plus
-      case 'medication_removed':
-        return Minus
-      case 'refill_noted':
-        return RefreshCw
-      case 'note_added':
-        return FileText
-      case 'check_in':
-        return Phone
-      case 'day_closed':
-        return Moon
-      case 'safety_check_triggered':
-      case 'safety_check_dismissed':
-      case 'safety_check_escalated':
-        return ShieldAlert
+      case "medication_taken":
+        return Check;
+      case "medication_skipped":
+        return AlertCircle;
+      case "dose_changed":
+        return RefreshCw;
+      case "medication_added":
+        return Plus;
+      case "medication_removed":
+        return Minus;
+      case "refill_noted":
+        return RefreshCw;
+      case "note_added":
+        return FileText;
+      case "check_in":
+        return Phone;
+      case "day_closed":
+        return Moon;
+      case "safety_check_triggered":
+      case "safety_check_dismissed":
+      case "safety_check_escalated":
+        return ShieldAlert;
       default:
-        return Check
+        return Check;
     }
-  }
+  };
 
   /**
    * Generates a human-readable summary for a specific timeline event.
@@ -114,34 +114,34 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
    */
   const getEventMessage = (event: TimelineEvent): string => {
     switch (event.type) {
-      case 'medication_taken':
-        return `${event.medicationName || 'Medication'} taken`
-      case 'medication_skipped':
-        return `${event.medicationName || 'Medication'} noted as skipped`
-      case 'dose_changed':
-        return `${event.medicationName || 'Medication'} dosage adjusted`
-      case 'medication_added':
-        return `${event.medicationName || 'Medication'} added to routine`
-      case 'medication_removed':
-        return `${event.medicationName || 'Medication'} removed from routine`
-      case 'refill_noted':
-        return `Refill noted for ${event.medicationName || 'medication'}`
-      case 'note_added':
-        return event.note || 'Note added'
-      case 'check_in':
-        return 'Check-in completed'
-      case 'day_closed':
-        return event.note || "Day's routine completed"
-      case 'safety_check_triggered':
-        return 'Safety check started'
-      case 'safety_check_dismissed':
-        return 'Confirmed they are okay'
-      case 'safety_check_escalated':
-        return 'Safety check escalated - no response'
+      case "medication_taken":
+        return `${event.medicationName || "Medication"} taken`;
+      case "medication_skipped":
+        return `${event.medicationName || "Medication"} noted as skipped`;
+      case "dose_changed":
+        return `${event.medicationName || "Medication"} dosage adjusted`;
+      case "medication_added":
+        return `${event.medicationName || "Medication"} added to routine`;
+      case "medication_removed":
+        return `${event.medicationName || "Medication"} removed from routine`;
+      case "refill_noted":
+        return `Refill noted for ${event.medicationName || "medication"}`;
+      case "note_added":
+        return event.note || "Note added";
+      case "check_in":
+        return "Check-in completed";
+      case "day_closed":
+        return event.note || "Day's routine completed";
+      case "safety_check_triggered":
+        return "Safety check started";
+      case "safety_check_dismissed":
+        return "Confirmed they are okay";
+      case "safety_check_escalated":
+        return "Safety check escalated - no response";
       default:
-        return 'Activity recorded'
+        return "Activity recorded";
     }
-  }
+  };
 
   /**
    * Formats a date string into a friendly relative label (Today, Yesterday, etc.).
@@ -150,23 +150,23 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
    * @returns {string} The formatted date label.
    */
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Today'
+      return "Today";
     }
     if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday'
+      return "Yesterday";
     }
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   /**
    * Formats a timestamp into a concise time string (e.g., "10:30 AM").
@@ -175,11 +175,11 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
    * @returns {string} The formatted time.
    */
   const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-    })
-  }
+    return new Date(timestamp).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
@@ -220,8 +220,8 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
         ) : (
           <div className="space-y-8">
             {sortedDays.map((day) => {
-              const events = groupedEvents[day]
-              const opacity = getOpacity(day)
+              const events = groupedEvents[day];
+              const opacity = getOpacity(day);
 
               return (
                 <section
@@ -240,15 +240,15 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
                       .sort(
                         (a, b) =>
                           new Date(b.timestamp).getTime() -
-                          new Date(a.timestamp).getTime()
+                          new Date(a.timestamp).getTime(),
                       )
                       .map((event) => {
-                        const Icon = getEventIcon(event.type)
+                        const Icon = getEventIcon(event.type);
                         const isPositive = [
-                          'medication_taken',
-                          'day_closed',
-                          'check_in',
-                        ].includes(event.type)
+                          "medication_taken",
+                          "day_closed",
+                          "check_in",
+                        ].includes(event.type);
 
                         return (
                           <div
@@ -258,10 +258,10 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
                             {/* Event dot/icon */}
                             <div
                               className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-                                        ${isPositive ? 'bg-sahay-success/20' : 'bg-sahay-pending/20'}`}
+                                        ${isPositive ? "bg-sahay-success/20" : "bg-sahay-pending/20"}`}
                             >
                               <Icon
-                                className={`w-4 h-4 ${isPositive ? 'text-sahay-success' : 'text-sahay-pending'}`}
+                                className={`w-4 h-4 ${isPositive ? "text-sahay-success" : "text-sahay-pending"}`}
                               />
                             </div>
 
@@ -274,30 +274,31 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
                                 <span className="text-sm text-muted-foreground">
                                   {formatTime(event.timestamp)}
                                 </span>
-                                {event.actor && event.actor !== 'careReceiver' && (
-                                  <span className="text-xs px-2 py-0.5 bg-secondary rounded-full text-muted-foreground">
-                                    {event.actor === 'pharmacist'
-                                      ? 'Pharmacist'
-                                      : 'Caregiver'}
-                                  </span>
-                                )}
+                                {event.actor &&
+                                  event.actor !== "careReceiver" && (
+                                    <span className="text-xs px-2 py-0.5 bg-secondary rounded-full text-muted-foreground">
+                                      {event.actor === "pharmacist"
+                                        ? "Pharmacist"
+                                        : "Caregiver"}
+                                    </span>
+                                  )}
                               </div>
-                              {event.note && event.type !== 'day_closed' && (
+                              {event.note && event.type !== "day_closed" && (
                                 <p className="text-sm text-muted-foreground mt-2 p-2 bg-secondary/50 rounded-lg">
                                   {event.note}
                                 </p>
                               )}
                             </div>
                           </div>
-                        )
+                        );
                       })}
                   </div>
                 </section>
-              )
+              );
             })}
           </div>
         )}
       </div>
     </main>
-  )
+  );
 }
