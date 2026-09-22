@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * @file emergency-contacts.tsx
@@ -8,8 +8,8 @@
  * emergency calling and a streamlined form for adding new contacts.
  */
 
-import { useState } from 'react'
-import { useSahay } from '@/lib/sahay-context'
+import { useState } from "react";
+import { useSahay } from "@/lib/sahay-context";
 import {
   ArrowLeft,
   Phone,
@@ -19,7 +19,7 @@ import {
   User,
   Building2,
   Stethoscope,
-} from 'lucide-react'
+} from "lucide-react";
 
 /**
  * Props for the EmergencyContacts component.
@@ -27,7 +27,7 @@ import {
  * @property {() => void} onClose - Callback to close the contacts screen and return to the main view.
  */
 interface EmergencyContactsProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 /**
@@ -39,14 +39,18 @@ interface EmergencyContactsProps {
  * @returns {JSX.Element} The emergency contacts management interface.
  */
 export function EmergencyContacts({ onClose }: EmergencyContactsProps) {
-  const { data, addEmergencyContact, removeEmergencyContact, setPrimaryContact } =
-    useSahay()
+  const {
+    data,
+    addEmergencyContact,
+    removeEmergencyContact,
+    setPrimaryContact,
+  } = useSahay();
 
   // Form state for adding a new contact
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newPhone, setNewPhone] = useState('')
-  const [newRelationship, setNewRelationship] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newRelationship, setNewRelationship] = useState("");
 
   /**
    * Validates and adds a new emergency contact to the receiver's profile.
@@ -57,15 +61,15 @@ export function EmergencyContacts({ onClose }: EmergencyContactsProps) {
       addEmergencyContact({
         name: newName.trim(),
         phone: newPhone.trim(),
-        relationship: newRelationship.trim() || 'Contact',
+        relationship: newRelationship.trim() || "Contact",
         isPrimary: (data.emergencyContacts || []).length === 0,
-      })
-      setNewName('')
-      setNewPhone('')
-      setNewRelationship('')
-      setShowAddForm(false)
+      });
+      setNewName("");
+      setNewPhone("");
+      setNewRelationship("");
+      setShowAddForm(false);
     }
-  }
+  };
 
   /**
    * Determines the most appropriate icon based on the contact's relationship.
@@ -74,17 +78,17 @@ export function EmergencyContacts({ onClose }: EmergencyContactsProps) {
    * @returns {JSX.Element} The corresponding Lucide icon.
    */
   const getRelationshipIcon = (relationship: string) => {
-    const lower = relationship.toLowerCase()
-    if (lower.includes('doctor') || lower.includes('dr.')) {
-      return <Stethoscope className="w-5 h-5" />
+    const lower = relationship.toLowerCase();
+    if (lower.includes("doctor") || lower.includes("dr.")) {
+      return <Stethoscope className="w-5 h-5" />;
     }
-    if (lower.includes('hospital') || lower.includes('clinic')) {
-      return <Building2 className="w-5 h-5" />
+    if (lower.includes("hospital") || lower.includes("clinic")) {
+      return <Building2 className="w-5 h-5" />;
     }
-    return <User className="w-5 h-5" />
-  }
+    return <User className="w-5 h-5" />;
+  };
 
-  const contacts = data.emergencyContacts || []
+  const contacts = data.emergencyContacts || [];
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
@@ -103,9 +107,7 @@ export function EmergencyContacts({ onClose }: EmergencyContactsProps) {
             <h1 className="text-2xl font-semibold text-foreground">
               Emergency Contacts
             </h1>
-            <p className="text-muted-foreground">
-              Quick access when needed
-            </p>
+            <p className="text-muted-foreground">Quick access when needed</p>
           </div>
         </div>
       </header>
@@ -302,5 +304,5 @@ export function EmergencyContacts({ onClose }: EmergencyContactsProps) {
         )}
       </div>
     </main>
-  )
+  );
 }
