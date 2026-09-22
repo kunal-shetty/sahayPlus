@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         if (!userId) {
             return NextResponse.json(
                 { error: "Missing required query param: user_id" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -44,12 +44,12 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(
             { notifications: data, limit, offset, total: count },
-            { status: 200 }
+            { status: 200 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to fetch notifications" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
@@ -68,8 +68,10 @@ export async function POST(req: NextRequest) {
 
         if (!user_id || !type || !title || !notifBody) {
             return NextResponse.json(
-                { error: "Missing required fields: user_id, type, title, body" },
-                { status: 400 }
+                {
+                    error: "Missing required fields: user_id, type, title, body",
+                },
+                { status: 400 },
             );
         }
 
@@ -80,12 +82,14 @@ export async function POST(req: NextRequest) {
             "wellness_reminder",
             "message",
             "check_in_suggestion",
-            "medication_taken"
+            "medication_taken",
         ];
         if (!validTypes.includes(type)) {
             return NextResponse.json(
-                { error: `Invalid type. Must be one of: ${validTypes.join(", ")}` },
-                { status: 400 }
+                {
+                    error: `Invalid type. Must be one of: ${validTypes.join(", ")}`,
+                },
+                { status: 400 },
             );
         }
 
@@ -107,12 +111,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Notification created", notification: data },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to create notification" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
