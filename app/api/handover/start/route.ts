@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
                 {
                     error: "Missing required fields: care_relationship_id, from_caregiver_id, to_person_name",
                 },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -50,12 +50,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { message: "Handover started", handover: data },
-            { status: 201 }
+            { status: 201 },
         );
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to start handover" },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }
