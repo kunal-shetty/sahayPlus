@@ -269,7 +269,7 @@ export function CaregiverHome() {
     isDataLoading,
     getUnreadCount,
     getHumanInsights,
-    getDoctorPrepSummary,
+    getDoctorPrepData,
     endHandover,
     startHandover,
   } = useSahay();
@@ -458,8 +458,20 @@ export function CaregiverHome() {
           </button>
           <h1 className="text-2xl font-bold">Doctor Visit Prep</h1>
         </header>
-        <div className="bg-card border-2 border-border rounded-2xl p-6 whitespace-pre-wrap leading-relaxed">
-          {getDoctorPrepSummary()}
+        <div className="bg-card border-2 border-border rounded-2xl p-6 whitespace-pre-wrap leading-relaxed space-y-4">
+          <p className="font-semibold text-lg text-primary">Care Overview & Adherence: {getDoctorPrepData().adherenceRate}%</p>
+          <div>
+            <p className="font-bold text-sm text-muted-foreground uppercase tracking-wider mb-2">Recent Observations</p>
+            {getDoctorPrepData().observations.length > 0 ? (
+              <ul className="list-disc pl-5 space-y-1">
+                {getDoctorPrepData().observations.map((obs, idx) => (
+                  <li key={idx}>{obs}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground text-sm">No recent clinical notes recorded.</p>
+            )}
+          </div>
         </div>
         <button
           onClick={() => window.print()}
@@ -1169,13 +1181,7 @@ export function CaregiverHome() {
         )}
       </div>
 
-      <CaregiverBottomNav
-        activeTab={activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-        }}
-        unreadMessages={unreadMessages}
-      />
+      <CaregiverBottomNav unreadMessages={unreadMessages} />
     </main>
   );
 }

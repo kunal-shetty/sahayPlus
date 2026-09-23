@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "motion/react";
 import { useSahay } from "@/lib/sahay-context";
 import {
@@ -32,6 +32,7 @@ import {
   Calendar,
   User,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getOverdueMeds, type OverdueMedInfo } from "@/lib/overdue-utils";
@@ -59,31 +60,46 @@ export default function DashboardPage() {
   const [acknowledgedOverdueMeds, setAcknowledgedOverdueMeds] = useState<Record<string, string>>({});
   const [sentReminders, setSentReminders] = useState<Record<string, boolean>>({});
   const [simulateOverdue, setSimulateOverdue] = useState(false);
+  const [isAlertDismissed, setIsAlertDismissed] = useState(false);
 
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  // Hydrate acknowledged overdue meds from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("sahay_acknowledged_overdue");
+      if (stored) {
+        setAcknowledgedOverdueMeds(JSON.parse(stored));
+      }
+    } catch {
+      // Local storage unavailable or failed
+    }
+  }, []);
 
   const overdueMeds: OverdueMedInfo[] = useMemo(() => {
     const detected = getOverdueMeds(data.medications).filter(
       (item) => acknowledgedOverdueMeds[item.medication.id] !== todayStr
     );
     if (detected.length === 0 && simulateOverdue) {
-      return [
-        {
-          medication: {
-            id: "simulated_overdue_pill",
-            name: "Metformin",
-            dosage: "500 mg",
-            timeOfDay: "morning",
-            time: "08:00",
-            taken: false,
-            lastUpdated: new Date().toISOString(),
+      if (acknowledgedOverdueMeds["simulated_overdue_pill"] !== todayStr) {
+        return [
+          {
+            medication: {
+              id: "simulated_overdue_pill",
+              name: "Metformin",
+              dosage: "500 mg",
+              timeOfDay: "morning",
+              time: "08:00",
+              taken: false,
+              lastUpdated: new Date().toISOString(),
+            },
+            scheduledMinutes: 8 * 60,
+            scheduledTimeFormatted: "8:00 AM",
+            delayMinutes: 45,
+            delayFormatted: "45m late",
           },
-          scheduledMinutes: 8 * 60,
-          scheduledTimeFormatted: "8:00 AM",
-          delayMinutes: 45,
-          delayFormatted: "45m late",
-        },
-      ];
+        ];
+      }
     }
     return detected;
   }, [data.medications, acknowledgedOverdueMeds, todayStr, simulateOverdue]);
@@ -96,8 +112,22 @@ export default function DashboardPage() {
     setSentReminders((prev) => ({ ...prev, [item.medication.id]: true }));
   };
 
-  const handleAcknowledgeOverdue = (medId: string) => {
-    setAcknowledgedOverdueMeds((prev) => ({ ...prev, [medId]: todayStr }));
+  const handleDismissOverdueAlert = () => {
+    setIsAlertDismissed(true);
+    setSimulateOverdue(false);
+    setAcknowledgedOverdueMeds((prev) => {
+      const updated = { ...prev };
+      overdueMeds.forEach((item) => {
+        updated[item.medication.id] = todayStr;
+      });
+      updated["simulated_overdue_pill"] = todayStr;
+      try {
+        localStorage.setItem("sahay_acknowledged_overdue", JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
   };
 
   const groupedMeds: Record<TimeOfDay, Medication[]> = useMemo(() => {
@@ -171,7 +201,20 @@ export default function DashboardPage() {
               <span>System Status: Nominal</span>
             </div>
             <button
-              onClick={() => setSimulateOverdue((prev) => !prev)}
+              onClick={() => {
+                setIsAlertDismissed(false);
+                setSimulateOverdue((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    setAcknowledgedOverdueMeds((curr) => {
+                      const copy = { ...curr };
+                      delete copy["simulated_overdue_pill"];
+                      return copy;
+                    });
+                  }
+                  return next;
+                });
+              }}
               className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 active:scale-95 ${
                 simulateOverdue
                   ? "bg-amber-500 text-slate-950 border-amber-600 shadow-sm"
@@ -244,53 +287,68 @@ export default function DashboardPage() {
             {/* Urgent Alerts Area */}
             <div className="space-y-4">
               {/* Overdue Medicine Alert Banner */}
-              {overdueMeds.length > 0 && (
+              {!isAlertDismissed && overdueMeds.length > 0 && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-amber-500 text-slate-900 rounded-3xl p-6 shadow-xl shadow-amber-500/20 flex flex-col md:flex-row items-center justify-between gap-6 border-l-8 border-amber-700"
+                  className="bg-amber-500 text-slate-950 rounded-3xl p-5 md:p-6 shadow-xl shadow-amber-500/20 border-l-8 border-amber-800 overflow-hidden flex flex-col gap-4"
                 >
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 rounded-full bg-black/10 flex items-center justify-center shrink-0">
-                      <AlertTriangle className="w-8 h-8 text-amber-950" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-xl md:text-2xl font-extrabold text-slate-950">
-                          Overdue Medicine Alert
-                        </h3>
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-950 text-white">
-                          {overdueMeds.length} pending
-                        </span>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-black/10 flex items-center justify-center shrink-0">
+                        <AlertTriangle className="w-7 h-7 text-amber-950" />
                       </div>
-                      <div className="mt-1 space-y-0.5 text-sm font-medium text-slate-900">
-                        {overdueMeds.map((item) => (
-                          <p key={item.medication.id}>
-                            <strong>{item.medication.name}</strong> ({item.medication.dosage}) was scheduled for {item.scheduledTimeFormatted} —{" "}
-                            <span className="font-bold underline">{item.delayFormatted}</span>
-                          </p>
-                        ))}
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-xl font-extrabold text-slate-950">
+                            Overdue Medicine Alert
+                          </h3>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-950 text-white">
+                            {overdueMeds.length} pending
+                          </span>
+                        </div>
+                        <p className="text-xs font-medium text-slate-900/80 mt-0.5">
+                          Action required to ensure consistent adherence
+                        </p>
                       </div>
                     </div>
+                    <button
+                      onClick={handleDismissOverdueAlert}
+                      className="w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 text-slate-950 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                      title="Dismiss alert"
+                      aria-label="Dismiss alert"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="flex flex-wrap items-center justify-center md:justify-end gap-2.5 shrink-0">
+
+                  <div className="space-y-1 text-sm text-slate-950 bg-black/5 rounded-2xl p-3 border border-black/5">
+                    {overdueMeds.map((item) => (
+                      <p key={item.medication.id} className="leading-snug">
+                        <strong>{item.medication.name}</strong> ({item.medication.dosage}) was scheduled for {item.scheduledTimeFormatted} —{" "}
+                        <span className="font-bold underline text-amber-950">{item.delayFormatted}</span>
+                      </p>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2 border-t border-black/10">
                     <button
                       onClick={() => router.push("/caregiver/emergency")}
-                      className="px-4 py-2.5 bg-slate-950 text-white font-bold rounded-xl hover:bg-slate-900 transition-all flex items-center gap-2 text-sm shadow-md"
+                      className="px-4 py-2 bg-slate-950 text-white font-bold rounded-xl hover:bg-slate-900 transition-all flex items-center gap-2 text-sm shadow-md active:scale-95"
                     >
                       <Phone className="w-4 h-4" /> Call
                     </button>
                     <button
                       onClick={() => handleSendReminder(overdueMeds[0])}
                       disabled={sentReminders[overdueMeds[0]?.medication.id]}
-                      className="px-4 py-2.5 bg-white text-slate-950 font-bold rounded-xl hover:bg-slate-100 transition-all flex items-center gap-2 text-sm shadow-md"
+                      className="px-4 py-2 bg-white text-slate-950 font-bold rounded-xl hover:bg-slate-100 transition-all flex items-center gap-2 text-sm shadow-md active:scale-95 disabled:opacity-60"
                     >
                       <MessageCircle className="w-4 h-4" />
                       {sentReminders[overdueMeds[0]?.medication.id] ? "Sent ✓" : "Send Reminder"}
                     </button>
                     <button
-                      onClick={() => overdueMeds.forEach((item) => handleAcknowledgeOverdue(item.medication.id))}
-                      className="px-3 py-2 bg-amber-600/30 hover:bg-amber-600/40 text-slate-950 font-semibold rounded-xl text-xs transition-all"
+                      onClick={handleDismissOverdueAlert}
+                      className="px-4 py-2 bg-black/10 hover:bg-black/20 text-slate-950 font-bold rounded-xl text-sm transition-all border border-black/10 active:scale-95 cursor-pointer"
                     >
                       Dismiss
                     </button>

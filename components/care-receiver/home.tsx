@@ -77,13 +77,13 @@ export function CareReceiverHome() {
    */
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.triggerMotionSafetyCheck = () => {
+      (window as any).triggerMotionSafetyCheck = () => {
         triggerSafetyCheck("motion");
       };
     }
 
     return () => {
-      window.triggerMotionSafetyCheck = null;
+      (window as any).triggerMotionSafetyCheck = null;
     };
   }, [triggerSafetyCheck]);
 

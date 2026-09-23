@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useSahay } from "@/lib/sahay-context";
 import {
@@ -35,6 +35,7 @@ import {
   Smile,
   Pill,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { getOverdueMeds, type OverdueMedInfo } from "@/lib/overdue-utils";
@@ -93,31 +94,46 @@ export default function CaregiverPage() {
   const [acknowledgedOverdueMeds, setAcknowledgedOverdueMeds] = useState<Record<string, string>>({});
   const [sentReminders, setSentReminders] = useState<Record<string, boolean>>({});
   const [simulateOverdue, setSimulateOverdue] = useState(false);
+  const [isAlertDismissed, setIsAlertDismissed] = useState(false);
 
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  // Hydrate acknowledged overdue meds from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("sahay_acknowledged_overdue");
+      if (stored) {
+        setAcknowledgedOverdueMeds(JSON.parse(stored));
+      }
+    } catch {
+      // Local storage unavailable or failed
+    }
+  }, []);
 
   const overdueMeds: OverdueMedInfo[] = useMemo(() => {
     const detected = getOverdueMeds(data.medications).filter(
       (item) => acknowledgedOverdueMeds[item.medication.id] !== todayStr
     );
     if (detected.length === 0 && simulateOverdue) {
-      return [
-        {
-          medication: {
-            id: "simulated_overdue_pill",
-            name: "Metformin",
-            dosage: "500 mg",
-            timeOfDay: "morning",
-            time: "08:00",
-            taken: false,
-            lastUpdated: new Date().toISOString(),
+      if (acknowledgedOverdueMeds["simulated_overdue_pill"] !== todayStr) {
+        return [
+          {
+            medication: {
+              id: "simulated_overdue_pill",
+              name: "Metformin",
+              dosage: "500 mg",
+              timeOfDay: "morning",
+              time: "08:00",
+              taken: false,
+              lastUpdated: new Date().toISOString(),
+            },
+            scheduledMinutes: 8 * 60,
+            scheduledTimeFormatted: "8:00 AM",
+            delayMinutes: 45,
+            delayFormatted: "45m late",
           },
-          scheduledMinutes: 8 * 60,
-          scheduledTimeFormatted: "8:00 AM",
-          delayMinutes: 45,
-          delayFormatted: "45m late",
-        },
-      ];
+        ];
+      }
     }
     return detected;
   }, [data.medications, acknowledgedOverdueMeds, todayStr, simulateOverdue]);
@@ -130,13 +146,35 @@ export default function CaregiverPage() {
     setSentReminders((prev) => ({ ...prev, [item.medication.id]: true }));
   };
 
-  const handleAcknowledgeOverdue = (medId: string) => {
-    setAcknowledgedOverdueMeds((prev) => ({ ...prev, [medId]: todayStr }));
+  const handleDismissOverdueAlert = () => {
+    setIsAlertDismissed(true);
+    setSimulateOverdue(false);
+    setAcknowledgedOverdueMeds((prev) => {
+      const updated = { ...prev };
+      overdueMeds.forEach((item) => {
+        updated[item.medication.id] = todayStr;
+      });
+      updated["simulated_overdue_pill"] = todayStr;
+      try {
+        localStorage.setItem("sahay_acknowledged_overdue", JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
   };
 
   const groupedMeds: Record<TimeOfDay, Medication[]> = useMemo(() => {
-    const grouped = { morning: [], afternoon: [], evening: [] };
-    data.medications.forEach((med) => grouped[med.timeOfDay].push(med));
+    const grouped: Record<TimeOfDay, Medication[]> = {
+      morning: [],
+      afternoon: [],
+      evening: [],
+    };
+    data.medications.forEach((med) => {
+      if (grouped[med.timeOfDay]) {
+        grouped[med.timeOfDay].push(med);
+      }
+    });
     return grouped;
   }, [data.medications]);
 
@@ -204,7 +242,20 @@ export default function CaregiverPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setSimulateOverdue((prev) => !prev)}
+            onClick={() => {
+              setIsAlertDismissed(false);
+              setSimulateOverdue((prev) => {
+                const next = !prev;
+                if (next) {
+                  setAcknowledgedOverdueMeds((curr) => {
+                    const copy = { ...curr };
+                    delete copy["simulated_overdue_pill"];
+                    return copy;
+                  });
+                }
+                return next;
+              });
+            }}
             className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 active:scale-95 ${
               simulateOverdue
                 ? "bg-amber-500 text-slate-950 border-amber-600 shadow-sm"
@@ -249,7 +300,7 @@ export default function CaregiverPage() {
         </motion.button>
 
         {/* Proactive Overdue Medicine Alert Banner */}
-        {overdueMeds.length > 0 && (
+        {!isAlertDismissed && overdueMeds.length > 0 && (
           <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-5 mb-6 shadow-lg shadow-amber-500/10">
             <div className="flex items-start gap-3.5 mb-4">
               <div className="w-11 h-11 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
@@ -257,12 +308,22 @@ export default function CaregiverPage() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-amber-600 dark:text-amber-400">
-                    Overdue Medicine Alert
-                  </h3>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
-                    {overdueMeds.length} pending
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                      Overdue Medicine Alert
+                    </h3>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                      {overdueMeds.length} pending
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleDismissOverdueAlert}
+                    className="p-1 rounded-lg hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 transition-colors"
+                    title="Dismiss alert"
+                    aria-label="Dismiss alert"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
                 <div className="mt-1 space-y-1">
                   {overdueMeds.map((item) => (
@@ -292,7 +353,7 @@ export default function CaregiverPage() {
             </div>
 
             <button
-              onClick={() => overdueMeds.forEach((item) => handleAcknowledgeOverdue(item.medication.id))}
+              onClick={handleDismissOverdueAlert}
               className="w-full py-2 px-3 bg-background/80 hover:bg-background border border-amber-500/30 text-amber-700 dark:text-amber-300 font-medium rounded-xl text-xs transition-all text-center"
             >
               ✓ Acknowledge & Dismiss Alert for Today
@@ -499,16 +560,7 @@ export default function CaregiverPage() {
         </div>
       </div>
 
-      <CaregiverBottomNav
-        activeTab={pathname.includes("analytics") ? "activity" : "home"}
-        onTabChange={(tab) => {
-          if (tab === "home") router.push("/caregiver");
-          if (tab === "activity") router.push("/caregiver/analytics");
-          if (tab === "care") router.push("/caregiver/notes"); // Default to notes
-          if (tab === "messages") router.push("/caregiver/messages");
-        }}
-        unreadMessages={unreadMessages}
-      />
+      <CaregiverBottomNav unreadMessages={unreadMessages} />
     </main>
   );
 }

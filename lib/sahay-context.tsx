@@ -79,6 +79,9 @@ interface SahayContextValue {
   /** Links a care receiver to a caregiver using a shared care code. */
   linkCareCode: (code: string) => Promise<void>
 
+  /** Sets the active role for the current user in state. */
+  setUserRole: (role: UserRole) => void
+
   // Profile management
   /** Updates the caregiver's profile information. */
   setCaregiver: (profile: CaregiverProfile) => void
@@ -720,6 +723,13 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
     loadData()
   }, [user?.care_relationship_id, user?.id, user?.role])
+
+  /**
+   * Sets the user role in application state.
+   */
+  const setUserRole = useCallback((role: UserRole) => {
+    setData((prev) => ({ ...prev, userRole: role }))
+  }, [])
 
   /**
    * Updates the caregiver's profile in local state.
@@ -2175,6 +2185,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     linkCareCode,
+    setUserRole,
     setCaregiver,
     setCareReceiver,
     updateCaregiverStatus,

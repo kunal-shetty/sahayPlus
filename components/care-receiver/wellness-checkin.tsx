@@ -61,6 +61,10 @@ const wellnessOptions: {
  * @param {WellnessCheckinProps} props - Component props.
  * @returns {JSX.Element} The wellness check-in interface.
  */
+interface WellnessCheckinProps {
+  onClose: () => void;
+}
+
 export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
   const { logWellness, getTodayWellness, data } = useSahay();
   const [selectedLevel, setSelectedLevel] = useState<WellnessLevel | null>(
