@@ -161,8 +161,13 @@ interface SahayContextValue {
   getUnreadCount: () => number
 
   // Analytics helpers
-  /** Gets adherence stats (streak, total) for a specific medication. */
-  getMedicationStats: (medId: string) => { streak: number; total: number }
+  /** Gets adherence stats (streak, total, adherenceRate, lastTaken) for a specific medication. */
+  getMedicationStats: (medId: string) => {
+    streak: number
+    total: number
+    adherenceRate?: number
+    lastTaken?: string
+  }
   /** Calculates adherence rates for the last 7 days. */
   getWeeklyAdherence: () => { day: string; taken: number; total: number }[]
 
@@ -179,6 +184,8 @@ interface SahayContextValue {
   completeDailyCheckIn: () => void
   /** Sends an urgent help request to the caregiver. */
   requestHelp: () => void
+  /** Resolves an active help request across devices. */
+  resolveHelpRequest: (eventId?: string) => Promise<void>
   /** Initiates a care handover to another person. */
   startHandover: (targetName: string, endDate: string) => void
   /** Ends an active care handover. */
@@ -229,7 +236,7 @@ async function safeApiCall<T>(fn: () => Promise<T>): Promise<T | null> {
   try {
     return await fn()
   } catch (err) {
-    console.error('[Sahay API]', err)
+    console.warn('[Sahay API]', err)
     return null
   }
 }
@@ -452,48 +459,174 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         }
 
         const today = new Date().toISOString().split('T')[0]
+        const yesterdayDate = new Date()
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+        const yesterday = yesterdayDate.toISOString().split('T')[0]
+
         let takenMedIds = new Set<string>()
+        let allLogs: any[] = []
         try {
+          // Fetch all medication logs for this care relationship
           const logsRes = await fetch(
-            `/api/medication-logs?care_relationship_id=${crId}&date=${today}`
+            `/api/medication-logs?care_relationship_id=${crId}`
           )
           if (logsRes.ok) {
             const logsPayload = await logsRes.json()
-            const logs: any[] = logsPayload?.logs || []
+            allLogs = logsPayload?.logs || []
             takenMedIds = new Set(
-              logs.filter((l) => l.taken).map((l) => String(l.medication_id))
+              allLogs
+                .filter((l: any) => l.date === today && l.taken)
+                .map((l: any) => String(l.medication_id))
             )
           }
         } catch {
           // best-effort
         }
 
+        // Group logs by date and by medication for analytics calculations
+        const logsByDate = new Map<string, Set<string>>()
+        const logsByMed = new Map<string, any[]>()
+        for (const log of allLogs) {
+          if (log.taken) {
+            const d = log.date || (log.created_at ? log.created_at.split('T')[0] : '')
+            const mId = String(log.medication_id)
+            if (d) {
+              if (!logsByDate.has(d)) logsByDate.set(d, new Set())
+              logsByDate.get(d)!.add(mId)
+            }
+            if (!logsByMed.has(mId)) logsByMed.set(mId, [])
+            logsByMed.get(mId)!.push(log)
+          }
+        }
+
+        // Calculate current adherence streak
+        let currentStreak = 0
+        let checkDate = logsByDate.has(today) ? new Date() : (logsByDate.has(yesterday) ? new Date(yesterdayDate) : null)
+        if (checkDate) {
+          while (true) {
+            const checkStr = checkDate.toISOString().split('T')[0]
+            if (logsByDate.has(checkStr)) {
+              currentStreak++
+              checkDate.setDate(checkDate.getDate() - 1)
+            } else {
+              break
+            }
+          }
+        }
+
+        // Calculate longest adherence streak
+        let longestStreak = currentStreak
+        let tempStreak = 0
+        let prevD: Date | null = null
+        for (const dateStr of Array.from(logsByDate.keys()).sort()) {
+          const curD = new Date(dateStr)
+          if (!prevD) {
+            tempStreak = 1
+          } else {
+            const diffDays = Math.round((curD.getTime() - prevD.getTime()) / (1000 * 60 * 60 * 24))
+            if (diffDays === 1) {
+              tempStreak++
+            } else if (diffDays > 1) {
+              tempStreak = 1
+            }
+          }
+          prevD = curD
+          if (tempStreak > longestStreak) longestStreak = tempStreak
+        }
+
         setData((prev) => {
+          const rawMeds = medsRes.status === 'fulfilled' ? medsRes.value.medications : []
+          const totalMedsCount = rawMeds.length || prev.medications.length || 1
+
           const medsWithTaken = (medsRes.status === 'fulfilled'
-            ? medsRes.value.medications.map((m: any) => ({
-              id: String(m.id),
-              name: m.name,
-              dosage: m.dosage,
-              timeOfDay: m.time_of_day as TimeOfDay,
-              time: m.time || undefined,
-              notes: m.notes || undefined,
-              taken: takenMedIds.has(String(m.id)),
-              lastUpdated: m.updated_at || m.created_at,
-              refillDaysLeft: m.refill_days_left || undefined,
-              pharmacistNote: m.pharmacist_note || undefined,
-              simpleExplanation: m.simple_explanation || undefined,
-              streak: 0,
-              totalTaken: 0,
-            }))
+            ? medsRes.value.medications.map((m: any) => {
+              const mId = String(m.id)
+              const medLogs = logsByMed.get(mId) || []
+              const totalTaken = medLogs.length
+
+              // Calculate per-medication streak
+              let medStreak = 0
+              let checkMedD = medLogs.some((l: any) => l.date === today)
+                ? new Date()
+                : (medLogs.some((l: any) => l.date === yesterday) ? new Date(yesterdayDate) : null)
+              if (checkMedD) {
+                while (true) {
+                  const s = checkMedD.toISOString().split('T')[0]
+                  if (medLogs.some((l: any) => l.date === s)) {
+                    medStreak++
+                    checkMedD.setDate(checkMedD.getDate() - 1)
+                  } else {
+                    break
+                  }
+                }
+              }
+
+              const latestLog = medLogs
+                .filter((l: any) => l.taken && (l.taken_at || l.date))
+                .sort((a: any, b: any) => {
+                  const tA = new Date(a.taken_at || a.date).getTime()
+                  const tB = new Date(b.taken_at || b.date).getTime()
+                  return tB - tA
+                })[0]
+
+              return {
+                id: mId,
+                name: m.name,
+                dosage: m.dosage,
+                timeOfDay: m.time_of_day as TimeOfDay,
+                time: m.time || undefined,
+                notes: m.notes || undefined,
+                taken: takenMedIds.has(mId),
+                lastUpdated: m.updated_at || m.created_at,
+                refillDaysLeft: m.refill_days_left || undefined,
+                pharmacistNote: m.pharmacist_note || undefined,
+                simpleExplanation: m.simple_explanation || undefined,
+                streak: medStreak,
+                totalTaken: totalTaken,
+                lastTaken: latestLog?.taken_at || latestLog?.date || (takenMedIds.has(mId) ? today : undefined),
+              }
+            })
             : prev.medications.map((m) => ({
               ...m,
               taken: takenMedIds.has(m.id) || m.taken,
+              lastTaken: takenMedIds.has(m.id) ? today : m.lastTaken,
             }))
           )
+
+          // Merge day closures from API with any active dates recorded in medication_logs
+          const existingClosures = dayRes.status === 'fulfilled'
+            ? dayRes.value.closures.map((d: any) => ({
+              date: d.date,
+              closedAt: d.closed_at,
+              allTaken: d.all_taken,
+              totalMeds: d.total_meds,
+              takenCount: d.taken_count,
+            }))
+            : prev.dayClosures
+
+          const closureDateMap = new Map<string, DayClosure>()
+          for (const c of existingClosures) {
+            closureDateMap.set(c.date, c)
+          }
+          for (const [dateStr, takenMedsSet] of logsByDate.entries()) {
+            if (!closureDateMap.has(dateStr)) {
+              closureDateMap.set(dateStr, {
+                date: dateStr,
+                closedAt: dateStr,
+                allTaken: takenMedsSet.size >= totalMedsCount,
+                totalMeds: totalMedsCount,
+                takenCount: takenMedsSet.size,
+              })
+            }
+          }
+          const mergedClosures = Array.from(closureDateMap.values()).sort((a, b) => b.date.localeCompare(a.date))
 
           return {
             ...prev,
             medications: medsWithTaken,
+            currentStreak: currentStreak || prev.currentStreak,
+            longestStreak: longestStreak || prev.longestStreak,
+            totalDaysTracked: logsByDate.size || mergedClosures.length || prev.totalDaysTracked,
             timeline: timelineRes.status === 'fulfilled'
               ? timelineRes.value.events.map((e: any) => ({
                 id: String(e.id),
@@ -516,24 +649,16 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               }))
               : prev.contextualNotes,
             wellnessEntries: wellnessRes.status === 'fulfilled'
-              ? wellnessRes.value.entries.map((w: any) => ({
+              ? (wellnessRes.value.entries || []).map((w: any) => ({
                 id: String(w.id),
                 date: w.date,
-                level: w.level as WellnessLevel,
+                level: (w.level === 'not_great' ? 'notGreat' : w.level) as WellnessLevel,
                 note: w.note || undefined,
-                timestamp: w.created_at,
+                timestamp: w.created_at || w.date,
                 isRead: false,
               }))
               : prev.wellnessEntries,
-            dayClosures: dayRes.status === 'fulfilled'
-              ? dayRes.value.closures.map((d: any) => ({
-                date: d.date,
-                closedAt: d.closed_at,
-                allTaken: d.all_taken,
-                totalMeds: d.total_meds,
-                takenCount: d.taken_count,
-              }))
-              : prev.dayClosures,
+            dayClosures: mergedClosures,
             messages: msgsRes.status === 'fulfilled'
               ? msgsRes.value.messages.map((m: any) => ({
                 id: String(m.id),
@@ -553,6 +678,17 @@ export function SahayProvider({ children }: { children: ReactNode }) {
                 isPrimary: c.is_primary,
               }))
               : prev.emergencyContacts,
+            lastFineCheckIn: (() => {
+              const todayFineEvent = timelineRes.status === 'fulfilled'
+                ? (timelineRes.value.events || []).find(
+                    (e: any) => (e.type === 'fine_check_in' || e.type === 'wellness_logged') && e.created_at?.startsWith(today)
+                  )
+                : undefined
+              const todayWellnessEntry = wellnessRes.status === 'fulfilled'
+                ? (wellnessRes.value.entries || []).find((w: any) => w.date === today)
+                : undefined
+              return todayFineEvent?.created_at || (todayWellnessEntry ? (todayWellnessEntry.created_at || todayWellnessEntry.date) : prev.lastFineCheckIn)
+            })(),
             ...(user!.role === 'caregiver'
               ? { careReceiver: { name: otherPartyName || 'Care Receiver', preferVoiceConfirm: false } }
               : { caregiver: prev.caregiver || (otherPartyName ? { name: otherPartyName, setupComplete: true, roleStatus: 'active' as CareRoleStatus } : null) }
@@ -1047,17 +1183,23 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    */
   const logWellness = useCallback((level: WellnessLevel, note?: string) => {
     const today = new Date().toISOString().split('T')[0]
+    const now = new Date().toISOString()
     const tempId = generateId()
+    const normalizedLevel: WellnessLevel = level === ('not_great' as any) ? 'notGreat' : level
     const newEntry: WellnessEntry = {
       id: tempId,
       date: today,
-      level,
+      level: normalizedLevel,
       note,
-      timestamp: new Date().toISOString(),
+      timestamp: now,
     }
     setData((prev) => {
       const filtered = (prev.wellnessEntries || []).filter((e) => e.date !== today)
-      return { ...prev, wellnessEntries: [...filtered, newEntry] }
+      return {
+        ...prev,
+        lastFineCheckIn: now,
+        wellnessEntries: [newEntry, ...filtered],
+      }
     })
 
     const crId = getCareRelId()
@@ -1067,7 +1209,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         const res = await api.wellness.log({
           care_relationship_id: crId,
           user_id: userId,
-          level,
+          level: normalizedLevel === 'notGreat' ? 'not_great' : normalizedLevel,
           note,
         })
         setData((prev) => ({
@@ -1085,17 +1227,63 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    */
   const getTodayWellness = useCallback(() => {
     const today = new Date().toISOString().split('T')[0]
-    return (data.wellnessEntries || []).find((e) => e.date === today) || null
-  }, [data.wellnessEntries])
+    const directEntry = (data.wellnessEntries || []).find((e) => e.date === today)
+    if (directEntry) {
+      return {
+        ...directEntry,
+        level: (directEntry.level === ('not_great' as any) ? 'notGreat' : directEntry.level) as WellnessLevel,
+      }
+    }
+
+    if (data.lastFineCheckIn?.startsWith(today)) {
+      return {
+        id: 'today-fine-checkin',
+        date: today,
+        level: 'great' as WellnessLevel,
+        note: 'Checked in as doing fine',
+        timestamp: data.lastFineCheckIn,
+      }
+    }
+
+    const fineEvent = (data.timeline || []).find(
+      (e) => (e.type === 'fine_check_in' || e.type === 'wellness_logged') && e.timestamp?.startsWith(today)
+    )
+    if (fineEvent) {
+      return {
+        id: fineEvent.id,
+        date: today,
+        level: 'great' as WellnessLevel,
+        note: fineEvent.note || 'Checked in as doing fine',
+        timestamp: fineEvent.timestamp,
+      }
+    }
+
+    return null
+  }, [data.wellnessEntries, data.lastFineCheckIn, data.timeline])
 
   /**
-   * Retrieves a trend of the last 7 wellness entries.
+   * Retrieves a trend of recent wellness entries.
    */
   const getWellnessTrend = useCallback(() => {
-    return (data.wellnessEntries || [])
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 7)
-  }, [data.wellnessEntries])
+    const entries = [...(data.wellnessEntries || [])]
+    const today = new Date().toISOString().split('T')[0]
+    const hasToday = entries.some((e) => e.date === today)
+    if (!hasToday && data.lastFineCheckIn?.startsWith(today)) {
+      entries.push({
+        id: 'today-fine-checkin',
+        date: today,
+        level: 'great',
+        note: 'Checked in as doing fine',
+        timestamp: data.lastFineCheckIn,
+      })
+    }
+    return entries
+      .map((e) => ({
+        ...e,
+        level: (e.level === ('not_great' as any) ? 'notGreat' : e.level) as WellnessLevel,
+      }))
+      .sort((a, b) => new Date(b.timestamp || b.date).getTime() - new Date(a.timestamp || a.date).getTime())
+  }, [data.wellnessEntries, data.lastFineCheckIn])
 
   /**
    * Sends a message to the other party in the care relationship.
@@ -1164,20 +1352,45 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Pure getter that calculates adherence rates for the last 7 days.
    */
   const getWeeklyAdherence = useCallback(() => {
+    const today = new Date().toISOString().split('T')[0]
     const days: { day: string; taken: number; total: number }[] = []
+    const totalMeds = data.medications.length || 1
+
     for (let i = 6; i >= 0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
       const dateStr = d.toISOString().split('T')[0]
       const closure = (data.dayClosures || []).find((c) => c.date === dateStr)
+
+      let taken = closure?.takenCount ?? 0
+
+      // If it's today and not closed, check currently taken medications
+      if (dateStr === today) {
+        const todayTaken = (data.medications || []).filter((m) => m.taken).length
+        taken = Math.max(taken, todayTaken)
+      }
+
+      // If taken is still 0, check timeline events for that date
+      if (taken === 0) {
+        const timelineMeds = new Set<string>()
+        for (const e of data.timeline || []) {
+          if (e.type === 'medication_taken' && e.timestamp?.startsWith(dateStr)) {
+            if (e.medicationId) timelineMeds.add(e.medicationId)
+          }
+        }
+        if (timelineMeds.size > 0) {
+          taken = timelineMeds.size
+        }
+      }
+
       days.push({
         day: d.toLocaleDateString('en', { weekday: 'short' }),
-        taken: closure?.takenCount || 0,
-        total: closure?.totalMeds || data.medications.length,
+        taken,
+        total: closure?.totalMeds || totalMeds,
       })
     }
     return days
-  }, [data.dayClosures, data.medications.length])
+  }, [data.dayClosures, data.medications, data.timeline])
 
   /**
    * Pure getter that retrieves stats for a specific medication.
@@ -1185,12 +1398,21 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   const getMedicationStats = useCallback(
     (medId: string) => {
       const med = data.medications.find((m) => m.id === medId)
+      const timelineCount = (data.timeline || []).filter(
+        (e) => e.type === 'medication_taken' && String(e.medicationId) === String(medId)
+      ).length
+      const total = med?.totalTaken || timelineCount || (med?.taken ? 1 : 0)
+      const totalDays = data.dayClosures.length || data.totalDaysTracked || 1
+      const adherenceRate = Math.min(100, Math.round((total / totalDays) * 100))
+
       return {
-        streak: med?.streak || 0,
-        total: med?.totalTaken || 0,
+        streak: med?.streak || (med?.taken ? 1 : 0),
+        total,
+        adherenceRate,
+        lastTaken: med?.lastTaken,
       }
     },
-    [data.medications]
+    [data.medications, data.timeline, data.dayClosures, data.totalDaysTracked]
   )
 
   /**
@@ -1283,7 +1505,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     if (caregiverId) {
       safeApiCall(() => api.notifications.create({
         user_id: caregiverId,
-        type: 'safety_escalation',
+        type: 'safety_alert',
         title: 'Emergency Alert',
         body: `Safety check escalated! ${data.careReceiver?.name || 'Care Receiver'} needs attention.`
       }))
@@ -1295,16 +1517,19 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Marks the daily wellness check-in as complete and notifies the caregiver.
    */
   const completeDailyCheckIn = useCallback(() => {
+    const now = new Date().toISOString()
+    logWellness('great', 'Checked in as doing fine')
+
     setData((prev) => {
       const newEvent: TimelineEvent = {
         id: generateId(),
         type: 'fine_check_in',
-        timestamp: new Date().toISOString(),
+        timestamp: now,
         actor: 'careReceiver',
       }
       return {
         ...prev,
-        lastFineCheckIn: new Date().toISOString(),
+        lastFineCheckIn: now,
         timeline: [...prev.timeline, newEvent],
       }
     })
@@ -1312,38 +1537,96 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     if (caregiverId) {
       safeApiCall(() => api.notifications.create({
         user_id: caregiverId,
-        type: 'check_in',
+        type: 'wellness_reminder',
         title: 'Check-in Complete',
         body: `${data.careReceiver?.name || 'Care Receiver'} checked in as fine.`
       }))
       showNotification('Check-in Complete', 'Thanks for checking in! Caregiver updated.')
     }
-  }, [caregiverId, data.careReceiver?.name])
+  }, [caregiverId, data.careReceiver?.name, logWellness, showNotification])
 
   /**
-   * Sends an urgent help request to the caregiver.
+   * Sends an urgent help request to the caregiver and persists it in the database.
    */
   const requestHelp = useCallback(() => {
-    setData((prev) => {
-      const newEvent: TimelineEvent = {
-        id: generateId(),
-        type: 'help_requested',
-        timestamp: new Date().toISOString(),
-        actor: 'careReceiver',
-      }
-      return { ...prev, timeline: [...prev.timeline, newEvent] }
-    })
+    const tempId = generateId()
+    const now = new Date().toISOString()
+    const eventNote = `${data.careReceiver?.name || 'Care Receiver'} requested help`
+
+    const newEvent: TimelineEvent = {
+      id: tempId,
+      type: 'help_requested',
+      timestamp: now,
+      actor: 'careReceiver',
+      note: eventNote,
+    }
+
+    setData((prev) => ({ ...prev, timeline: [newEvent, ...prev.timeline] }))
+
+    const crId = user?.care_relationship_id
+    if (crId) {
+      safeApiCall(async () => {
+        const res = await api.timeline.create({
+          care_relationship_id: crId,
+          type: 'help_requested',
+          note: eventNote,
+          actor_type: 'care_receiver',
+          actor_id: user?.id,
+        })
+        if (res?.event?.id) {
+          setData((prev) => ({
+            ...prev,
+            timeline: prev.timeline.map((e) =>
+              e.id === tempId ? { ...e, id: String(res.event.id) } : e
+            ),
+          }))
+        }
+        return res
+      })
+    }
 
     if (caregiverId) {
       safeApiCall(() => api.notifications.create({
         user_id: caregiverId,
-        type: 'help_request',
+        type: 'safety_alert',
         title: 'Help Requested',
         body: `${data.careReceiver?.name || 'Care Receiver'} requested help.`
       }))
       showNotification('Help Requested', 'Caregiver has been alerted. Help is on the way.')
     }
-  }, [caregiverId, data.careReceiver?.name])
+  }, [caregiverId, data.careReceiver?.name, user?.care_relationship_id, user?.id])
+
+  /**
+   * Resolves an active help request across devices by updating the database.
+   */
+  const resolveHelpRequest = useCallback(async (eventId?: string) => {
+    const crId = user?.care_relationship_id
+
+    const target = eventId
+      ? data.timeline.find((e) => e.id === eventId)
+      : data.timeline.find((e) => e.type === 'help_requested' && !e.note?.includes('resolved'))
+
+    const targetId = target?.id
+    const resolvedNote = target?.note
+      ? (target.note.includes('resolved') ? target.note : `${target.note} (resolved)`)
+      : 'resolved'
+
+    // Optimistically update all matching unresolved help_requested events in local state
+    setData((prev) => ({
+      ...prev,
+      timeline: prev.timeline.map((e) => {
+        if (eventId ? e.id === eventId : (e.type === 'help_requested' && !e.note?.includes('resolved'))) {
+          return {
+            ...e,
+            note: e.note ? (e.note.includes('resolved') ? e.note : `${e.note} (resolved)`) : 'resolved',
+          }
+        }
+        return e
+      }),
+    }))
+
+    safeApiCall(() => api.timeline.resolve(targetId, resolvedNote, crId))
+  }, [data.timeline, user?.care_relationship_id])
 
   /**
    * Initiates a care handover to another designated person.
@@ -1534,6 +1817,57 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   }, [user?.id, user?.role])
 
   /**
+   * Effect that sets up a Supabase realtime channel for timeline events
+   * so all devices in the care relationship stay synchronized in real time.
+   */
+  useEffect(() => {
+    const crId = user?.care_relationship_id
+    if (!crId) return
+
+    const channel = supabase
+      .channel(`timeline-events-${crId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'timeline_events',
+          filter: `care_relationship_id=eq.${crId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const raw = payload.new as any
+            const newEvent: TimelineEvent = {
+              id: String(raw.id),
+              type: raw.type,
+              timestamp: raw.created_at,
+              note: raw.note || undefined,
+              actor: raw.actor_type,
+              medicationId: raw.medication_id ? String(raw.medication_id) : undefined,
+            }
+            setData((prev) => {
+              if (prev.timeline.some((e) => e.id === newEvent.id)) return prev
+              return { ...prev, timeline: [newEvent, ...prev.timeline] }
+            })
+          } else if (payload.eventType === 'UPDATE' && payload.new) {
+            const raw = payload.new as any
+            setData((prev) => ({
+              ...prev,
+              timeline: prev.timeline.map((e) =>
+                e.id === String(raw.id) ? { ...e, note: raw.note || undefined } : e
+              ),
+            }))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.care_relationship_id])
+
+  /**
    * Effect that polls the server for relationship link updates for the care receiver.
    */
   useEffect(() => {
@@ -1661,6 +1995,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     escalateSafetyCheck,
     completeDailyCheckIn,
     requestHelp,
+    resolveHelpRequest,
     startHandover,
     endHandover,
     getHumanInsights,

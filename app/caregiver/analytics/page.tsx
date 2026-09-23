@@ -9,9 +9,12 @@ import {
   BarChart3,
   Info,
   AlertCircle,
+  CheckCircle2,
+  Clock,
+  Sun,
+  Sunset,
 } from "lucide-react";
 import { calculateConfidence, getConfidenceMessage } from "@/lib/types";
-import { CaregiverLayout } from "@/components/caregiver/caregiver-layout";
 import { motion } from "motion/react";
 
 /**
@@ -200,72 +203,124 @@ export default function AnalyticsPage() {
 
         {/* Medication Detailed Breakdown */}
         <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm">
-          <div className="flex items-center gap-3 mb-8">
-            <Pill className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold">Medication Detail Analysis</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <Pill className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Medication Detail Analysis</h2>
+                <p className="text-xs text-muted-foreground">Comprehensive performance and adherence by medication</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-full text-xs font-medium text-muted-foreground w-fit">
+              <span>{data.medications.filter(m => m.taken).length} of {data.medications.length} taken today</span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.medications.map((med) => {
               const stats = getMedicationStats(med.id);
+              const timeColorClass =
+                med.timeOfDay === "morning"
+                  ? "bg-amber-500/10 text-amber-600 border-amber-200"
+                  : med.timeOfDay === "afternoon"
+                    ? "bg-blue-500/10 text-blue-600 border-blue-200"
+                    : "bg-indigo-500/10 text-indigo-600 border-indigo-200";
+
               return (
                 <motion.div
                   key={med.id}
-                  whileHover={{ y: -5 }}
-                  className="bg-background border-2 border-border rounded-2xl p-6 hover:border-primary/30 transition-all"
+                  whileHover={{ y: -4 }}
+                  className="bg-background border-2 border-border rounded-2xl p-6 hover:border-primary/40 transition-all flex flex-col justify-between"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-3 h-3 rounded-full ${
-                          med.color === "white"
-                            ? "bg-white border border-border"
-                            : med.color === "blue"
-                              ? "bg-blue-400"
-                              : med.color === "pink"
-                                ? "bg-pink-400"
-                                : med.color === "yellow"
-                                  ? "bg-yellow-400"
-                                  : med.color === "orange"
-                                    ? "bg-orange-400"
-                                    : med.color === "green"
-                                      ? "bg-green-400"
-                                      : "bg-red-400"
-                        }`}
-                      />
-                      <p className="font-bold text-foreground">{med.name}</p>
-                    </div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {med.dosage}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-secondary/50 rounded-xl">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">
-                        Streak
-                      </p>
-                      <p className="text-lg font-bold text-sahay-sage">
-                        {stats.streak}d
-                      </p>
-                    </div>
-                    <div className="p-3 bg-secondary/50 rounded-xl">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">
-                        Total
-                      </p>
-                      <p className="text-lg font-bold text-foreground">
-                        {stats.total}
-                      </p>
-                    </div>
-                  </div>
-                  {med.refillDaysLeft !== undefined &&
-                    med.refillDaysLeft <= 7 && (
-                      <div className="mt-4 p-2 bg-sahay-pending/10 border border-sahay-pending/20 rounded-lg text-center">
-                        <p className="text-xs font-bold text-sahay-pending flex items-center justify-center gap-1">
-                          <AlertCircle className="w-3 h-3" />
-                          Refill needed in {med.refillDaysLeft} days
+                  <div>
+                    {/* Header: Name, Dosage, Timing and Today's Status */}
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${timeColorClass}`}>
+                            {med.timeOfDay} {med.time ? `• ${med.time}` : ""}
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-lg text-foreground leading-tight">
+                          {med.name}
+                        </h3>
+                        <p className="text-xs font-medium text-muted-foreground mt-0.5">
+                          {med.dosage}
                         </p>
                       </div>
+
+                      {med.taken ? (
+                        <span className="px-2.5 py-1 bg-sahay-success/15 text-sahay-success text-xs font-bold rounded-full flex items-center gap-1 shrink-0">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Taken
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 bg-secondary text-muted-foreground text-xs font-medium rounded-full flex items-center gap-1 shrink-0">
+                          <Clock className="w-3.5 h-3.5" /> Pending
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Adherence Rate Bar */}
+                    <div className="mb-4 bg-secondary/30 p-3 rounded-xl border border-border/50">
+                      <div className="flex justify-between items-center text-xs mb-1.5">
+                        <span className="text-muted-foreground font-medium">Adherence Rate</span>
+                        <span className="font-bold text-foreground">{stats.adherenceRate ?? 0}%</span>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${stats.adherenceRate ?? 0}%` }}
+                          transition={{ duration: 0.8 }}
+                          className="bg-sahay-sage h-full rounded-full"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="p-3 bg-secondary/50 rounded-xl">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">
+                          Current Streak
+                        </p>
+                        <p className="text-base font-bold text-sahay-sage">
+                          🔥 {stats.streak}d
+                        </p>
+                      </div>
+                      <div className="p-3 bg-secondary/50 rounded-xl">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">
+                          Total Doses
+                        </p>
+                        <p className="text-base font-bold text-foreground">
+                          {stats.total} taken
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Instructions / Explanation if available */}
+                    {(med.simpleExplanation || med.notes) && (
+                      <p className="text-xs text-muted-foreground bg-secondary/20 p-2.5 rounded-lg border border-border/40 mb-3">
+                        💡 {med.simpleExplanation || med.notes}
+                      </p>
                     )}
+                  </div>
+
+                  {/* Refill status */}
+                  {med.refillDaysLeft !== undefined && (
+                    <div
+                      className={`p-2 rounded-lg text-center text-xs font-semibold flex items-center justify-center gap-1.5 ${
+                        med.refillDaysLeft <= 7
+                          ? "bg-sahay-pending/10 text-sahay-pending border border-sahay-pending/20"
+                          : "bg-secondary/40 text-muted-foreground"
+                      }`}
+                    >
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {med.refillDaysLeft <= 7
+                        ? `Refill needed in ${med.refillDaysLeft} days`
+                        : `${med.refillDaysLeft} days supply remaining`}
+                    </div>
+                  )}
                 </motion.div>
               );
             })}

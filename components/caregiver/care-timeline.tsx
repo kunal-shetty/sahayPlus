@@ -22,6 +22,7 @@ import {
   Moon,
   ArrowLeft,
   ShieldAlert,
+  Heart,
 } from "lucide-react";
 
 /**
@@ -101,6 +102,8 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
       case "safety_check_dismissed":
       case "safety_check_escalated":
         return ShieldAlert;
+      case "help_requested":
+        return Heart;
       default:
         return Check;
     }
@@ -138,6 +141,8 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
         return "Confirmed they are okay";
       case "safety_check_escalated":
         return "Safety check escalated - no response";
+      case "help_requested":
+        return event.note || "Care receiver requested help";
       default:
         return "Activity recorded";
     }

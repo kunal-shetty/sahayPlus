@@ -9,7 +9,7 @@ interface WellnessOverviewProps {
 }
 
 const wellnessConfig: Record<
-  WellnessLevel,
+  string,
   { icon: typeof Smile; label: string; color: string; bgColor: string }
 > = {
   great: {
@@ -30,7 +30,17 @@ const wellnessConfig: Record<
     color: "text-destructive",
     bgColor: "bg-destructive/10",
   },
+  not_great: {
+    icon: Frown,
+    label: "Not feeling great",
+    color: "text-destructive",
+    bgColor: "bg-destructive/10",
+  },
 };
+
+function getWellnessCfg(level?: string) {
+  return wellnessConfig[level || "okay"] || wellnessConfig.okay;
+}
 
 export function WellnessOverview({ onClose }: WellnessOverviewProps) {
   const { data, getWellnessTrend, getTodayWellness } = useSahay();

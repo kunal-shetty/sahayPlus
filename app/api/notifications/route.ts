@@ -75,6 +75,15 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        const typeAliases: Record<string, string> = {
+            check_in: "wellness_reminder",
+            safety_escalation: "safety_alert",
+            help_request: "safety_alert",
+            wellness_check_in: "wellness_reminder",
+        };
+
+        const normalizedType = typeAliases[type] || type;
+
         const validTypes = [
             "medication_reminder",
             "refill_warning",
@@ -84,7 +93,7 @@ export async function POST(req: NextRequest) {
             "check_in_suggestion",
             "medication_taken",
         ];
-        if (!validTypes.includes(type)) {
+        if (!validTypes.includes(normalizedType)) {
             return NextResponse.json(
                 {
                     error: `Invalid type. Must be one of: ${validTypes.join(", ")}`,
@@ -93,17 +102,38 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
             .from("notifications")
             .insert({
                 user_id,
-                type,
+                type: normalizedType,
                 title,
                 body: notifBody,
                 sent_at: new Date().toISOString(),
             })
             .select()
             .single();
+
+        // If the live database schema cache lacks the 'type' column, retry without it
+        if (
+            error &&
+            (error.message?.includes("'type'") ||
+                error.message?.includes("schema cache") ||
+                error.code === "PGRST204")
+        ) {
+            const fallback = await supabase
+                .from("notifications")
+                .insert({
+                    user_id,
+                    title,
+                    body: notifBody,
+                    sent_at: new Date().toISOString(),
+                })
+                .select()
+                .single();
+            data = fallback.data;
+            error = fallback.error;
+        }
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });

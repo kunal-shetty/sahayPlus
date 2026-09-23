@@ -74,6 +74,34 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(true);
+  const mainRef = React.useRef<HTMLElement>(null);
+
+  // Monitor breakpoint (lg = 1024px) for desktop vs mobile drawer behavior
+  React.useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsDesktop(e.matches);
+      if (e.matches) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    setIsDesktop(mql.matches);
+    try {
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    } catch {
+      mql.addListener(onChange);
+      return () => mql.removeListener(onChange);
+    }
+  }, []);
+
+  // Scroll content to top whenever navigating to a new route
+  React.useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [pathname]);
 
   const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -92,11 +120,12 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground font-sans">
+    <div className="flex h-screen w-full bg-background text-foreground font-sans overflow-hidden">
       {/* Mobile Menu Toggle */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg"
+        className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+        aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
       >
         {isMobileMenuOpen ? (
           <X className="w-5 h-5" />
@@ -105,33 +134,31 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
         )}
       </button>
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed on desktop / Off-canvas drawer on mobile */}
       <motion.aside
         initial={false}
         animate={{
-          width: isCollapsed ? "80px" : "260px",
-          translateX: isMobileMenuOpen
-            ? 0
-            : typeof window !== "undefined" && window.innerWidth < 1024
-              ? -260
-              : 0,
+          width: isDesktop ? (isCollapsed ? 80 : 260) : 260,
+          x: isDesktop ? 0 : isMobileMenuOpen ? 0 : -280,
         }}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
         className={cn(
-          "relative z-40 h-screen bg-card border-r border-border flex flex-col transition-all duration-300 ease-in-out",
-          "fixed lg:static",
+          "z-40 h-full bg-card border-r border-border flex flex-col shrink-0 select-none",
+          "fixed inset-y-0 left-0 lg:static lg:h-full",
+          !isDesktop && !isMobileMenuOpen && "pointer-events-none",
         )}
       >
         {/* Logo / Header */}
         <div
           className={cn(
-            "p-6 flex items-center gap-3 mb-6",
+            "p-6 flex items-center gap-3 shrink-0",
             isCollapsed && "justify-center px-0",
           )}
         >
           <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 shrink-0">
             <LayoutDashboard className="w-6 h-6" />
           </div>
-          {!isCollapsed && (
+          {(!isCollapsed || !isDesktop) && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -143,26 +170,27 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto scrollbar-hide">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto scrollbar-hide py-2">
           {navItems.map((item) => (
             <NavItem
               key={item.path}
               {...item}
               active={pathname === item.path}
               onClick={() => handleNavClick(item.path)}
-              isCollapsed={isCollapsed}
+              isCollapsed={isDesktop && isCollapsed}
             />
           ))}
         </nav>
 
-        {/* Footer / Collapse Toggle */}
-        <div className="p-4 border-t border-border space-y-4">
+        {/* Footer / Collapse Toggle (desktop only) */}
+        <div className="p-4 border-t border-border shrink-0 hidden lg:block">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all group"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? (
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-5 h-5 mx-auto" />
             ) : (
               <div className="flex items-center gap-3">
                 <ChevronLeft className="w-5 h-5" />
@@ -181,13 +209,13 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsMobileMenuOpen(false)}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 lg:hidden"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 lg:hidden"
           />
         )}
       </AnimatePresence>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
+      {/* Main Content Area - Independently scrollable */}
+      <main ref={mainRef} className="flex-1 h-full min-w-0 overflow-y-auto">
         {children}
       </main>
     </div>

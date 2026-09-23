@@ -13,7 +13,6 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
-import { CaregiverLayout } from "@/components/caregiver/caregiver-layout";
 
 /**
  * Emergency Contacts Page
@@ -61,8 +60,7 @@ export default function EmergencyPage() {
   const contacts = data.emergencyContacts || [];
 
   return (
-    <CaregiverLayout>
-      <main className="min-h-screen bg-background p-6">
+    <main className="min-h-screen bg-background p-6">
         <header className="flex items-center justify-between mb-8 max-w-6xl mx-auto">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-destructive text-destructive-foreground flex items-center justify-center shadow-lg shadow-destructive/20">
@@ -330,6 +328,5 @@ export default function EmergencyPage() {
           </div>
         </div>
       </main>
-    </CaregiverLayout>
   );
 }

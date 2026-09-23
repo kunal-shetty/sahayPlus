@@ -58,7 +58,7 @@ import { CaregiverBottomNav } from "@/components/caregiver/bottom-nav";
  * Mobile-first App View. Desktop users are encouraged to use /dashboard
  */
 export default function CaregiverPage() {
-  const { data, isLoading, isDataLoading, getUnreadCount, endHandover } =
+  const { data, isLoading, isDataLoading, getUnreadCount, endHandover, resolveHelpRequest } =
     useSahay();
 
   const router = useRouter();
@@ -196,7 +196,7 @@ export default function CaregiverPage() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 mb-3">
               <button
                 onClick={() => setShowEmergency(true)}
                 className="flex items-center justify-center gap-2 py-3 px-4 bg-sahay-blue text-white font-bold rounded-xl"
@@ -210,6 +210,12 @@ export default function CaregiverPage() {
                 <MessageCircle className="w-5 h-5" /> Message
               </button>
             </div>
+            <button
+              onClick={() => resolveHelpRequest()}
+              className="w-full py-2.5 px-4 bg-background border border-sahay-blue/40 text-sahay-blue hover:bg-sahay-blue/10 font-semibold rounded-xl text-sm transition-all"
+            >
+              ✓ Mark as Handled & Dismiss
+            </button>
           </div>
         )}
 

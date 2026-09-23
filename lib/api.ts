@@ -212,6 +212,28 @@ export const api = {
          */
         list: (careRelationshipId: string, limit = 50, offset = 0) =>
             request<{ events: any[]; total: number }>(`/timeline?care_relationship_id=${careRelationshipId}&limit=${limit}&offset=${offset}`),
+
+        /**
+         * Creates a new timeline event persisted directly in the database.
+         */
+        create: (data: {
+            care_relationship_id: string;
+            type: string;
+            note?: string;
+            actor_type?: string;
+            actor_id?: string;
+            medication_id?: string;
+        }) =>
+            request<{ event: any }>("/timeline", { method: "POST", body: JSON.stringify(data) }),
+
+        /**
+         * Updates a timeline event (e.g. resolving a help request).
+         */
+        resolve: (id?: string, note?: string, careRelationshipId?: string) =>
+            request<{ event: any }>("/timeline", {
+                method: "PATCH",
+                body: JSON.stringify({ id, note: note || "resolved", care_relationship_id: careRelationshipId }),
+            }),
     },
 
     /**

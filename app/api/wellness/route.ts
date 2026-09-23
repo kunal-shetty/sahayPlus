@@ -31,7 +31,9 @@ export async function GET(req: NextRequest) {
             query = query.eq("user_id", userId);
         }
 
-        const { data, error } = await query.order("date", { ascending: false });
+        const { data, error } = await query
+            .order("date", { ascending: false })
+            .order("created_at", { ascending: false });
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
@@ -67,11 +69,12 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        const normalizedLevel = level === "notGreat" ? "not_great" : level;
         const validLevels = ["great", "okay", "not_great"];
-        if (!validLevels.includes(level)) {
+        if (!validLevels.includes(normalizedLevel)) {
             return NextResponse.json(
                 {
-                    error: `Invalid level. Must be one of: ${validLevels.join(", ")}`,
+                    error: `Invalid level. Must be one of: ${validLevels.join(", ")} or notGreat`,
                 },
                 { status: 400 },
             );
@@ -83,7 +86,7 @@ export async function POST(req: NextRequest) {
                 care_relationship_id,
                 user_id,
                 date: new Date().toISOString().split("T")[0],
-                level,
+                level: normalizedLevel,
                 note: note || null,
             })
             .select()

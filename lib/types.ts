@@ -192,6 +192,8 @@ export interface Medication {
   streak?: number
   /** Total number of times the medication has been taken. */
   totalTaken?: number
+  /** ISO timestamp or date string of when the medication was last taken. */
+  lastTaken?: string
   /** A simplified explanation of the medicine's purpose for the receiver. */
   simpleExplanation?: string
 }

@@ -52,24 +52,66 @@ export function MedicationHistory({ onClose }: MedicationHistoryProps) {
    * }} The calculated statistics for the medication.
    */
   const getMedicationStats = (med: Medication) => {
+    const now = new Date();
+    const todayMidnight = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).getTime();
+
     const events = data.timeline.filter(
-      (e) => e.medicationId === med.id && e.type === "medication_taken",
+      (e) => String(e.medicationId) === String(med.id) && e.type === "medication_taken",
     );
-    const lastTaken = events[events.length - 1]?.timestamp;
-    const daysAgo = lastTaken
-      ? Math.floor(
-          (Date.now() - new Date(lastTaken).getTime()) / (1000 * 60 * 60 * 24),
-        )
-      : null;
+
+    let latestTakenTime: number | null = null;
+    for (const e of events) {
+      if (e.timestamp) {
+        const t = new Date(e.timestamp).getTime();
+        if (!isNaN(t) && (!latestTakenTime || t > latestTakenTime)) {
+          latestTakenTime = t;
+        }
+      }
+    }
+
+    if (med.lastTaken) {
+      const t = new Date(med.lastTaken).getTime();
+      if (!isNaN(t) && (!latestTakenTime || t > latestTakenTime)) {
+        latestTakenTime = t;
+      }
+    }
+
+    if (med.taken) {
+      latestTakenTime = Math.max(latestTakenTime || 0, Date.now());
+    }
+
+    let daysAgo: number | null = null;
+    if (med.taken) {
+      daysAgo = 0;
+    } else if (latestTakenTime) {
+      const target = new Date(latestTakenTime);
+      const targetMidnight = new Date(
+        target.getFullYear(),
+        target.getMonth(),
+        target.getDate(),
+      ).getTime();
+      daysAgo = Math.max(
+        0,
+        Math.round((todayMidnight - targetMidnight) / (1000 * 60 * 60 * 24)),
+      );
+    }
 
     return {
-      totalTaken: med.totalTaken || 0,
-      streak: med.streak || 0,
-      lastTaken: lastTaken ? new Date(lastTaken) : null,
+      totalTaken: med.totalTaken || (latestTakenTime ? 1 : 0),
+      streak: med.streak || (med.taken ? 1 : 0),
+      lastTaken: latestTakenTime ? new Date(latestTakenTime) : null,
       daysAgo,
       adherenceRate:
         data.dayClosures.length > 0
-          ? Math.round(((med.totalTaken || 0) / data.dayClosures.length) * 100)
+          ? Math.round(
+              ((med.totalTaken || (latestTakenTime ? 1 : 0)) /
+                data.dayClosures.length) *
+                100,
+            )
           : 0,
     };
   };

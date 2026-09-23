@@ -42,6 +42,7 @@ import { EmergencyCall } from "@/components/care-receiver/emergency-call";
 import { SafetyCheckPrompt } from "@/components/care-receiver/safety-check-prompt";
 import { CareReceiverHomeSkeleton } from "@/components/skeletons";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 /**
  * CareReceiverPage component.
@@ -58,6 +59,7 @@ export default function CareReceiverPage() {
     triggerSafetyCheck,
     completeDailyCheckIn,
     requestHelp,
+    resolveHelpRequest,
     dismissChangeIndicator,
   } = useSahay();
   const router = useRouter();
@@ -86,7 +88,38 @@ export default function CareReceiverPage() {
   const [showMessages, setShowMessages] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [showHelpConfirmed, setShowHelpConfirmed] = useState(false);
+  const [helpRequestedAt, setHelpRequestedAt] = useState<string | null>(null);
+
+  /** Check if an active unresolved help request was triggered today */
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    const activeHelp = (data.timeline || []).find(
+      (e) =>
+        e.type === "help_requested" &&
+        !e.note?.includes("resolved") &&
+        e.timestamp.startsWith(today),
+    );
+    if (activeHelp) {
+      if (helpRequestedAt !== activeHelp.timestamp) {
+        setHelpRequestedAt(activeHelp.timestamp);
+      }
+    } else {
+      if (helpRequestedAt !== null) {
+        setHelpRequestedAt(null);
+      }
+    }
+  }, [data.timeline, helpRequestedAt]);
+
+  const handleRequestHelp = () => {
+    requestHelp();
+    const nowIso = new Date().toISOString();
+    setHelpRequestedAt(nowIso);
+  };
+
+  const handleDismissHelp = () => {
+    setHelpRequestedAt(null);
+    resolveHelpRequest();
+  };
 
   /** Theme state: 'light', 'dark', or 'auto' (automatic night mode). */
   const [theme, setTheme] = useState<"light" | "dark" | "auto">("light");
@@ -202,7 +235,7 @@ export default function CareReceiverPage() {
   /** Render settings overlay for appearance and account management. */
   if (showSettings) {
     return (
-      <main className="min-h-screen flex flex-col bg-background p-6">
+      <main className={cn("min-h-screen flex flex-col bg-background text-foreground p-6", isNight && "dark")}>
         <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full">
           <div className="w-20 h-20 rounded-full bg-sahay-sage-light flex items-center justify-center mb-6">
             <Heart className="w-10 h-10 text-sahay-sage" strokeWidth={1.5} />
@@ -299,7 +332,7 @@ export default function CareReceiverPage() {
   /** Confirmation screen shown immediately after marking a med as taken. */
   if (showUndo && confirmedMed) {
     return (
-      <main className="min-h-screen flex flex-col bg-sahay-sage-light p-6">
+      <main className={cn("min-h-screen flex flex-col bg-background text-foreground p-6", isNight && "dark")}>
         <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full">
           <div className="w-24 h-24 rounded-full bg-sahay-success/20 flex items-center justify-center mb-8 animate-in zoom-in duration-300">
             <Check className="w-12 h-12 text-sahay-success" strokeWidth={2} />
@@ -346,10 +379,12 @@ export default function CareReceiverPage() {
   const isFineCheckedIn = data.lastFineCheckIn?.startsWith(
     new Date().toISOString().split("T")[0],
   );
-
   return (
     <main
-      className={`min-h-screen flex flex-col transition-colors duration-1000 ${isNight ? "bg-[#0f172a] text-slate-300" : "bg-background"}`}
+      className={cn(
+        "min-h-screen flex flex-col transition-colors duration-500 bg-background text-foreground",
+        isNight && "dark",
+      )}
     >
       <AnimatePresence>
         {data.lastChangeNotifiedAt && (
@@ -357,18 +392,18 @@ export default function CareReceiverPage() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-sahay-blue/10 border-b border-sahay-blue/20 overflow-hidden"
+            className="bg-primary/10 border-b border-primary/20 overflow-hidden"
           >
             <div className="p-4 flex items-center justify-between max-w-md mx-auto">
               <div className="flex items-center gap-3">
-                <Info className="w-5 h-5 text-sahay-blue" />
-                <span className="text-sm font-medium text-sahay-blue">
+                <Info className="w-5 h-5 text-primary" />
+                <span className="text-sm font-medium text-foreground">
                   Something is a little different today.
                 </span>
               </div>
               <button
                 onClick={dismissChangeIndicator}
-                className="text-xs font-bold text-sahay-blue uppercase tracking-wider px-2 py-1"
+                className="text-xs font-bold text-primary uppercase tracking-wider px-2 py-1 hover:underline"
               >
                 Dismiss
               </button>
@@ -380,19 +415,16 @@ export default function CareReceiverPage() {
       <header className="p-6 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <p
-              className={`text-lg ${isNight ? "text-slate-400" : "text-muted-foreground"}`}
-            >
+            <p className="text-lg text-muted-foreground">
               {getGreeting()}
             </p>
-            <h1 className="text-2xl font-semibold">
+            <h1 className="text-2xl font-bold text-foreground">
               {data.careReceiver?.name || "Your care"}
             </h1>
           </div>
           <button
             onClick={() => setShowSettings(true)}
-            className={`w-12 h-12 rounded-xl flex items-center justify-center touch-manipulation focus:outline-none focus:ring-2 focus:ring-sahay-sage
-                      ${isNight ? "bg-slate-800/50 text-slate-400" : "bg-secondary/50 text-muted-foreground"}`}
+            className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
             aria-label="Settings"
           >
             <Settings className="w-5 h-5" />
@@ -402,25 +434,59 @@ export default function CareReceiverPage() {
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 -mt-10">
         <div className="w-full max-w-md">
+          {/* Persistent Help Request Status Banner */}
+          <AnimatePresence>
+            {helpRequestedAt && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="w-full p-4 mb-6 rounded-2xl bg-destructive/10 border-2 border-destructive/30 flex flex-col gap-2.5 shadow-sm"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-destructive flex items-center justify-center text-white shrink-0 animate-pulse">
+                      <ShieldAlert className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-base text-destructive">Help Alert Active</p>
+                      <p className="text-xs text-muted-foreground">
+                        {data.caregiver?.name || "Caregiver"} was alerted at{" "}
+                        {new Date(helpRequestedAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleDismissHelp}
+                    className="px-3 py-1.5 rounded-xl bg-card border border-border text-foreground font-semibold text-xs hover:bg-secondary transition-all active:scale-95 shadow-xs"
+                  >
+                    I&apos;m okay now
+                  </button>
+                </div>
+                <p className="text-xs text-foreground/80 bg-background/50 p-2.5 rounded-xl border border-border/40">
+                  Help is on the way. If this is an urgent emergency, tap <strong>Call help</strong> below.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {!isFineCheckedIn && (
             <motion.button
               onClick={completeDailyCheckIn}
-              className={`w-full p-6 rounded-2xl border-2 mb-8 flex items-center gap-4 touch-manipulation transition-all
-                        ${isNight ? "bg-slate-800/40 border-slate-700/50" : "bg-sahay-sage-light/30 border-sahay-sage/20"}`}
+              className="w-full p-6 rounded-2xl border-2 mb-8 flex items-center gap-4 touch-manipulation transition-all bg-card border-border hover:border-primary/50 text-card-foreground shadow-sm"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               whileTap={{ scale: 0.98 }}
             >
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center ${isNight ? "bg-slate-700" : "bg-white shadow-sm"}`}
-              >
-                <Smile className="w-6 h-6 text-sahay-sage" />
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-primary/10 text-primary">
+                <Smile className="w-6 h-6" />
               </div>
               <div className="text-left">
-                <p className="text-xl font-bold">I&apos;m fine today</p>
-                <p
-                  className={`text-sm ${isNight ? "text-slate-400" : "text-muted-foreground"}`}
-                >
+                <p className="text-xl font-bold text-foreground">I&apos;m fine today</p>
+                <p className="text-sm text-muted-foreground">
                   Tap to let {data.caregiver?.name} know
                 </p>
               </div>
@@ -431,69 +497,56 @@ export default function CareReceiverPage() {
             <>
               <div className="flex items-center justify-center gap-2 mb-6">
                 <TimeIcon
-                  className="w-6 h-6 text-sahay-sage"
+                  className="w-6 h-6 text-primary"
                   strokeWidth={1.5}
                 />
-                <span
-                  className={`text-lg font-medium ${isNight ? "text-slate-400" : "text-muted-foreground"}`}
-                >
+                <span className="text-lg font-semibold text-muted-foreground">
                   {timeOfDayLabels[nextMed!.timeOfDay]}
                   {nextMed?.time && ` at ${formatTime12h(nextMed.time)}`}
                 </span>
               </div>
 
               <motion.div
-                className={`rounded-3xl p-8 border-2 mb-8 text-center glass-card
-                      ${isNight ? "bg-slate-800/60 border-slate-700/80 shadow-2xl" : "bg-card border-border"}`}
+                className="rounded-3xl p-8 border-2 mb-8 text-center bg-card border-border shadow-md"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <h2 className="text-3xl font-semibold mb-2 text-balance">
+                <h2 className="text-3xl font-bold mb-2 text-balance text-foreground">
                   {nextMed!.name}
                 </h2>
                 {nextMed?.time && (
-                  <div className="flex items-center justify-center gap-2 mb-2 text-sahay-blue">
+                  <div className="flex items-center justify-center gap-2 mb-2 text-primary font-bold">
                     <Clock className="w-5 h-5" strokeWidth={2.5} />
-                    <span className="text-2xl font-bold">
+                    <span className="text-2xl">
                       {formatTime12h(nextMed.time)}
                     </span>
                   </div>
                 )}
-                <p
-                  className={`text-2xl ${isNight ? "text-slate-300" : "text-muted-foreground"}`}
-                >
+                <p className="text-2xl font-medium text-muted-foreground">
                   {nextMed!.dosage}
                 </p>
 
                 {nextMed!.simpleExplanation && (
-                  <p
-                    className={`text-lg font-medium mt-4 py-3 border-t ${isNight ? "border-slate-700 text-sahay-sage" : "border-border text-sahay-sage"}`}
-                  >
+                  <p className="text-lg font-medium mt-4 py-3 border-t border-border text-primary">
                     {nextMed!.simpleExplanation}
                   </p>
                 )}
 
                 {nextMed!.notes && (
-                  <p
-                    className={`text-lg mt-3 pt-3 border-t ${isNight ? "border-slate-700 text-slate-400" : "border-border text-muted-foreground/80"}`}
-                  >
+                  <p className="text-lg mt-3 pt-3 border-t border-border text-foreground/80">
                     {nextMed!.notes}
                   </p>
                 )}
                 {nextMed!.pharmacistNote && (
-                  <div
-                    className={`mt-4 pt-4 border-t ${isNight ? "border-slate-700" : "border-border"}`}
-                  >
+                  <div className="mt-4 pt-4 border-t border-border">
                     <div className="flex items-center justify-center gap-2 mb-1">
-                      <Pill className="w-4 h-4 text-sahay-blue" />
-                      <span className="text-sm text-sahay-blue font-medium">
+                      <Pill className="w-4 h-4 text-primary" />
+                      <span className="text-sm text-primary font-semibold">
                         From pharmacist
                       </span>
                     </div>
-                    <p
-                      className={`${isNight ? "text-slate-400" : "text-muted-foreground"}`}
-                    >
+                    <p className="text-sm text-muted-foreground">
                       {nextMed!.pharmacistNote}
                     </p>
                   </div>
@@ -503,14 +556,14 @@ export default function CareReceiverPage() {
               <div className="flex gap-3 mb-8">
                 <motion.button
                   onClick={handleTookIt}
-                  className="flex-1 py-6 px-8 bg-primary text-primary-foreground text-2xl font-semibold
+                  className="flex-1 py-6 px-8 bg-primary text-primary-foreground text-2xl font-bold
                        rounded-2xl flex items-center justify-center gap-3 shadow-lg touch-manipulation button-interactive
                        focus:outline-none focus:ring-4 focus:ring-primary/50"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <Check className="w-7 h-7" strokeWidth={2.5} />I took it
                 </motion.button>
@@ -523,67 +576,58 @@ export default function CareReceiverPage() {
                       handleTookIt();
                     }, 2000);
                   }}
-                  className={`w-20 rounded-2xl flex items-center justify-center border-2 transition-all
-                        ${
-                          isListening
-                            ? "bg-sahay-blue text-white border-sahay-blue animate-pulse"
-                            : isNight
-                              ? "bg-slate-800 border-slate-700 text-slate-400"
-                              : "bg-card border-border text-muted-foreground hover:border-sahay-blue/50"
-                        }`}
+                  className={cn(
+                    "w-20 rounded-2xl flex items-center justify-center border-2 transition-all",
+                    isListening
+                      ? "bg-primary text-primary-foreground border-primary animate-pulse"
+                      : "bg-card border-border text-muted-foreground hover:border-primary/50",
+                  )}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.25 }}
+                  aria-label="Voice confirmation"
                 >
                   <Mic
-                    className={`w-8 h-8 ${isListening ? "scale-125" : ""}`}
+                    className={cn("w-8 h-8", isListening && "scale-125")}
                   />
                 </motion.button>
               </div>
             </>
           ) : (
             <>
-              <div
-                className={`rounded-3xl p-8 border-2 mb-8 text-center glass-card
-                        ${isNight ? "bg-slate-800/60 border-slate-700/80 shadow-2xl" : "bg-card border-border"}`}
-              >
+              <div className="rounded-3xl p-8 border-2 mb-8 text-center bg-card border-border shadow-md">
                 <div
-                  className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 ${isNight ? "bg-slate-700/60" : allDone ? "bg-sahay-sage-light" : "bg-sahay-blue-light"}`}
+                  className={cn(
+                    "w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6",
+                    allDone ? "bg-sahay-success/15 text-sahay-success" : "bg-primary/10 text-primary",
+                  )}
                 >
                   {allDone ? (
                     <Check
-                      className="w-10 h-10 text-sahay-success"
+                      className="w-10 h-10"
                       strokeWidth={2}
                     />
                   ) : (
                     <Heart
-                      className="w-10 h-10 text-sahay-blue"
+                      className="w-10 h-10"
                       strokeWidth={1.5}
                     />
                   )}
                 </div>
 
-                <h2 className="text-3xl font-semibold mb-3 text-balance">
+                <h2 className="text-3xl font-bold mb-3 text-balance text-foreground">
                   {allDone ? finishedTitle : getGreeting()}
                 </h2>
-                <p
-                  className={`text-xl ${isNight ? "text-slate-400" : "text-muted-foreground"}`}
-                >
+                <p className="text-xl text-muted-foreground">
                   {allDone
                     ? finishedMessage
                     : "Your caregiver will set up your medications"}
                 </p>
               </div>
 
-              {/* Today's doses stay visible, and an accidental tap can be undone,
-                  even after the transient confirmation banner has closed. */}
               {allDone && (
-                <div
-                  className={`rounded-3xl p-6 border-2 mb-8 text-left ${isNight ? "bg-slate-800/60 border-slate-700/80" : "bg-card border-border"}`}
-                >
-                  <p
-                    className={`text-sm font-medium uppercase tracking-wider mb-2 ${isNight ? "text-slate-400" : "text-muted-foreground"}`}
-                  >
+                <div className="rounded-3xl p-6 border-2 mb-8 text-left bg-card border-border shadow-md">
+                  <p className="text-sm font-bold uppercase tracking-wider mb-2 text-muted-foreground">
                     Today&apos;s medicines ({doneCount} of{" "}
                     {data.medications.length} taken)
                   </p>
@@ -591,30 +635,29 @@ export default function CareReceiverPage() {
                     {data.medications.map((med) => (
                       <li
                         key={med.id}
-                        className={`flex items-center justify-between gap-3 py-3 border-t ${isNight ? "border-slate-700" : "border-border"}`}
+                        className="flex items-center justify-between gap-3 py-3 border-t border-border"
                       >
                         <span className="flex items-center gap-3 min-w-0">
                           <span
-                            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${med.taken ? "bg-sahay-success/20" : isNight ? "bg-slate-700" : "bg-secondary"}`}
+                            className={cn(
+                              "w-9 h-9 rounded-full flex items-center justify-center shrink-0",
+                              med.taken ? "bg-sahay-success/20 text-sahay-success" : "bg-secondary text-muted-foreground",
+                            )}
                           >
                             {med.taken ? (
                               <Check
-                                className="w-5 h-5 text-sahay-success"
+                                className="w-5 h-5"
                                 strokeWidth={2.5}
                               />
                             ) : (
-                              <Clock
-                                className={`w-5 h-5 ${isNight ? "text-slate-400" : "text-muted-foreground"}`}
-                              />
+                              <Clock className="w-5 h-5" />
                             )}
                           </span>
                           <span className="min-w-0">
-                            <span className="block text-lg font-medium truncate">
+                            <span className="block text-lg font-bold text-foreground truncate">
                               {med.name}
                             </span>
-                            <span
-                              className={`block text-sm ${isNight ? "text-slate-400" : "text-muted-foreground"}`}
-                            >
+                            <span className="block text-sm text-muted-foreground">
                               {med.dosage} •{" "}
                               {med.time
                                 ? formatTime12h(med.time)
@@ -626,9 +669,7 @@ export default function CareReceiverPage() {
                           <button
                             onClick={() => markMedicationTaken(med.id, false)}
                             aria-label={`Undo ${med.name}`}
-                            className={`shrink-0 py-3 px-5 text-lg font-medium rounded-xl border-2 touch-manipulation
-                                       focus:outline-none focus:ring-2 focus:ring-sahay-sage
-                                       ${isNight ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-card border-border text-foreground"}`}
+                            className="shrink-0 py-2 px-4 text-sm font-semibold rounded-xl border border-border bg-secondary hover:bg-secondary/80 text-foreground transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring"
                           >
                             Undo
                           </button>
@@ -644,51 +685,43 @@ export default function CareReceiverPage() {
           <div className="grid grid-cols-3 gap-3">
             <motion.button
               onClick={() => setShowWellness(true)}
-              className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive
-                        ${isNight ? "bg-slate-800/40 border-slate-700 hover:border-sahay-success/50" : "bg-card border-border hover:border-sahay-success/50"}`}
+              className="p-4 border-2 rounded-2xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive bg-card border-border hover:border-sahay-success/50 text-foreground shadow-xs"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <Smile className="w-7 h-7 text-sahay-success" />
-              <span className="text-sm font-medium">How I feel</span>
+              <span className="text-sm font-semibold">How I feel</span>
             </motion.button>
 
             <motion.button
-              onClick={() => {
-                requestHelp();
-                setShowHelpConfirmed(true);
-                setTimeout(() => setShowHelpConfirmed(false), 3000);
-              }}
-              className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive
-                        ${
-                          showHelpConfirmed
-                            ? "bg-sahay-blue/20 border-sahay-blue"
-                            : isNight
-                              ? "bg-slate-800/40 border-slate-700 hover:border-sahay-blue/50"
-                              : "bg-card border-border hover:border-sahay-blue/50"
-                        }`}
+              onClick={helpRequestedAt ? handleDismissHelp : handleRequestHelp}
+              className={cn(
+                "p-4 border-2 rounded-2xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive shadow-xs",
+                helpRequestedAt
+                  ? "bg-destructive/15 border-destructive text-destructive font-bold ring-2 ring-destructive/30"
+                  : "bg-card border-border hover:border-primary/50 text-foreground",
+              )}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              {showHelpConfirmed ? (
-                <Check className="w-7 h-7 text-sahay-blue" />
+              {helpRequestedAt ? (
+                <ShieldAlert className="w-7 h-7 text-destructive animate-pulse" />
               ) : (
-                <Heart className="w-7 h-7 text-sahay-blue" />
+                <Heart className="w-7 h-7 text-primary" />
               )}
-              <span className="text-sm font-medium">
-                {showHelpConfirmed ? "Notified!" : "I need help"}
+              <span className="text-sm font-semibold">
+                {helpRequestedAt ? "Alert Active" : "I need help"}
               </span>
             </motion.button>
 
             <motion.button
               onClick={() => setShowEmergency(true)}
-              className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive
-                        ${isNight ? "bg-slate-800/40 border-slate-700 hover:border-destructive/50" : "bg-card border-border hover:border-destructive/50"}`}
+              className="p-4 border-2 rounded-2xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive bg-card border-border hover:border-destructive/50 text-foreground shadow-xs"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <Phone className="w-7 h-7 text-destructive" />
-              <span className="text-sm font-medium">Call help</span>
+              <span className="text-sm font-semibold">Call help</span>
             </motion.button>
           </div>
         </div>
@@ -697,12 +730,12 @@ export default function CareReceiverPage() {
       <AnimatePresence>
         {isNight && (
           <motion.div
-            className="flex items-center justify-center gap-2 py-4 text-slate-500"
+            className="flex items-center justify-center gap-2 py-4 text-muted-foreground"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <Moon className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase tracking-widest">
+            <Moon className="w-4 h-4 text-primary" />
+            <span className="text-xs font-semibold uppercase tracking-widest">
               Quiet Night Mode Active
             </span>
           </motion.div>
