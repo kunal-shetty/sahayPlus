@@ -89,26 +89,26 @@ export function MorningWellnessCard({ isLateMorningReminder = false }: MorningWe
       : "Earlier today";
 
     return (
-      <div className="w-full mb-6 rounded-2xl bg-card border-2 border-border p-4 shadow-sm transition-all">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
-              <ActiveIcon className={`w-6 h-6 ${activeConfig.color}`} />
+      <div className="w-full mb-2 rounded-2xl bg-card border border-border p-2.5 sm:p-3 shadow-xs transition-all shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
+              <ActiveIcon className={`w-5 h-5 ${activeConfig.color}`} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Today's Wellness Check-In
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Today's Wellness
                 </span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                   Shared ✓
                 </span>
               </div>
-              <p className="text-base font-bold text-foreground">
+              <p className="text-sm font-bold text-foreground truncate">
                 {activeConfig.label} <span className="text-xs font-normal text-muted-foreground">({formattedTime})</span>
               </p>
               {todayWellness.note && (
-                <p className="text-xs italic text-muted-foreground mt-0.5">
+                <p className="text-[11px] italic text-muted-foreground truncate">
                   &ldquo;{todayWellness.note}&rdquo;
                 </p>
               )}
@@ -116,7 +116,7 @@ export function MorningWellnessCard({ isLateMorningReminder = false }: MorningWe
           </div>
           <button
             onClick={() => setIsUpdating(true)}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-primary hover:bg-secondary border border-border/80 transition-all active:scale-95"
+            className="px-2.5 py-1 rounded-xl text-xs font-semibold text-primary hover:bg-secondary border border-border/80 transition-all active:scale-95 shrink-0"
           >
             Update
           </button>
@@ -127,24 +127,24 @@ export function MorningWellnessCard({ isLateMorningReminder = false }: MorningWe
 
   return (
     <div
-      className={`w-full mb-6 rounded-3xl p-5 border-2 shadow-sm transition-all ${
+      className={`w-full mb-2 rounded-2xl p-2.5 sm:p-3 border shadow-xs transition-all shrink-0 ${
         isLateMorningReminder
           ? "bg-amber-500/10 border-amber-500/40"
           : "bg-card border-border"
       }`}
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-            <Sun className="w-4 h-4 text-amber-500" />
+          <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+            <Sun className="w-3.5 h-3.5 text-amber-500" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-foreground">
+            <h3 className="text-sm sm:text-base font-bold text-foreground leading-tight">
               {isLateMorningReminder ? "Morning Wellness Reminder" : "Good morning! How are you?"}
             </h3>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground leading-none">
               {isLateMorningReminder
-                ? `Please let ${caregiverName} know how you are feeling today`
+                ? `Let ${caregiverName} know how you feel`
                 : `1 tap to let ${caregiverName} know you're doing well`}
             </p>
           </div>
@@ -163,36 +163,33 @@ export function MorningWellnessCard({ isLateMorningReminder = false }: MorningWe
       <AnimatePresence>
         {justSubmitted && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="p-3 mb-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center gap-2.5 text-emerald-800 dark:text-emerald-200"
+            className="p-2 mb-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center gap-2 text-emerald-800 dark:text-emerald-200"
           >
-            <Check className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span className="text-sm font-semibold">
+            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="text-xs font-semibold">
               Thank you! {caregiverName} can see that you are feeling {justSubmitted === "notGreat" ? "not great" : justSubmitted}.
             </span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-2">
         {wellnessOptions.map((opt) => {
           const Icon = opt.icon;
           return (
             <button
               key={opt.level}
               onClick={() => handleSelectLevel(opt.level)}
-              className={`p-3 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all active:scale-[0.96] touch-manipulation focus:outline-none focus:ring-2 focus:ring-primary ${opt.borderActive} ${opt.bgHover}`}
+              className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-[0.96] touch-manipulation focus:outline-none focus:ring-2 focus:ring-primary ${opt.borderActive} ${opt.bgHover}`}
             >
-              <div className="w-12 h-12 rounded-full bg-background/80 flex items-center justify-center shadow-xs">
-                <Icon className={`w-7 h-7 ${opt.color}`} />
+              <div className="w-8 h-8 rounded-full bg-background/80 flex items-center justify-center shadow-2xs">
+                <Icon className={`w-5 h-5 ${opt.color}`} />
               </div>
-              <span className="text-sm font-bold text-foreground text-center leading-tight">
+              <span className="text-xs font-bold text-foreground text-center leading-tight">
                 {opt.label}
-              </span>
-              <span className="text-[10px] text-muted-foreground text-center leading-none hidden sm:inline">
-                {opt.sublabel}
               </span>
             </button>
           );

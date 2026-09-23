@@ -33,6 +33,13 @@ import {
 import { api } from './api'
 import { showNotification } from './notifications'
 import { supabase } from './supabase-client'
+import {
+  encodeMedicationNotes,
+  decodeMedicationNotes,
+  saveLocalMedMeta,
+  getLocalMedMeta,
+  stripAllMeta,
+} from './medication-meta'
 
 /**
  * @file sahay-context.tsx
@@ -190,18 +197,19 @@ interface SahayContextValue {
   requestHelp: () => void
   /** Resolves an active help request across devices. */
   resolveHelpRequest: (eventId?: string) => Promise<void>
-  /** Initiates a care handover to another person. */
-  startHandover: (targetName: string, endDate: string) => void
+  /** Initiates a care handover to another person with optional email and invite code. */
+  startHandover: (targetName: string, endDate: string, secondaryEmail?: string, inviteCode?: string) => void
   /** Ends an active care handover. */
   endHandover: () => void
   /** Generates human-readable insights based on timeline patterns. */
   getHumanInsights: () => string[]
   /** Generates structured data for a doctor's visit summary. */
-  getDoctorPrepData: () => {
+  getDoctorPrepData: (daysCount?: number) => {
     observations: string[]
     changes: { medicationName: string; date: string; note: string }[]
     wellnessTrend: WellnessLevel[]
     adherenceRate: number
+    daysCount?: number
   }
   /** Dismisses the notification that data has changed. */
   dismissChangeIndicator: () => void
@@ -589,18 +597,39 @@ export function SahayProvider({ children }: { children: ReactNode }) {
                   return tB - tA
                 })[0]
 
+              const { cleanNotes, meta } = decodeMedicationNotes(m.notes)
+              const localMeta = getLocalMedMeta(mId, m.name)
+              const prevMed = prev.medications.find(
+                (p) => p.id === mId || (p.name && m.name && p.name.toLowerCase() === m.name.toLowerCase())
+              )
+
+              const imageUrl = meta.imageUrl || prevMed?.imageUrl || localMeta?.imageUrl
+              const color = meta.color || prevMed?.color || localMeta?.color || 'white'
+              const shape = meta.shape || prevMed?.shape || localMeta?.shape || 'round'
+              const foodInstruction = meta.foodInstruction || prevMed?.foodInstruction || localMeta?.foodInstruction || 'after_meal'
+              const simpleExplanation = m.simple_explanation || meta.simpleExplanation || prevMed?.simpleExplanation || localMeta?.simpleExplanation
+              const finalNotes = stripAllMeta(cleanNotes !== undefined ? cleanNotes : (prevMed?.notes || undefined))
+
+              if (imageUrl || color || shape || foodInstruction || simpleExplanation) {
+                saveLocalMedMeta(mId, m.name, { imageUrl, color, shape, foodInstruction, simpleExplanation })
+              }
+
               return {
                 id: mId,
                 name: m.name,
                 dosage: m.dosage,
                 timeOfDay: m.time_of_day as TimeOfDay,
                 time: m.time || undefined,
-                notes: m.notes || undefined,
+                notes: finalNotes,
                 taken: takenMedIds.has(mId),
                 lastUpdated: m.updated_at || m.created_at,
                 refillDaysLeft: m.refill_days_left || undefined,
                 pharmacistNote: m.pharmacist_note || undefined,
-                simpleExplanation: m.simple_explanation || undefined,
+                simpleExplanation,
+                imageUrl,
+                color,
+                shape,
+                foodInstruction,
                 streak: medStreak,
                 totalTaken: totalTaken,
                 lastTaken: latestLog?.taken_at || latestLog?.date || (takenMedIds.has(mId) ? today : undefined),
@@ -801,6 +830,13 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         taken: false,
         lastUpdated: new Date().toISOString(),
       }
+      saveLocalMedMeta(tempId, med.name, {
+        imageUrl: med.imageUrl,
+        color: med.color,
+        shape: med.shape,
+        foodInstruction: med.foodInstruction,
+        simpleExplanation: med.simpleExplanation,
+      })
       setData((prev) => ({
         ...prev,
         medications: [...prev.medications, newMed],
@@ -809,22 +845,37 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       const crId = getCareRelId()
       if (crId) {
         safeApiCall(async () => {
+          const encodedNotes = encodeMedicationNotes(med.notes, {
+            imageUrl: med.imageUrl,
+            color: med.color,
+            shape: med.shape,
+            foodInstruction: med.foodInstruction,
+            simpleExplanation: med.simpleExplanation,
+          })
           const res = await api.medications.create({
             care_relationship_id: crId,
             name: med.name,
             dosage: med.dosage,
             time_of_day: med.timeOfDay,
             time: med.time,
-            notes: med.notes,
+            notes: encodedNotes,
             simple_explanation: med.simpleExplanation,
             refill_days_left: med.refillDaysLeft,
             pharmacist_note: med.pharmacistNote,
           })
           if (res?.medication?.id) {
+            const realId = String(res.medication.id)
+            saveLocalMedMeta(realId, med.name, {
+              imageUrl: med.imageUrl,
+              color: med.color,
+              shape: med.shape,
+              foodInstruction: med.foodInstruction,
+              simpleExplanation: med.simpleExplanation,
+            })
             setData((prev) => ({
               ...prev,
               medications: prev.medications.map((m) =>
-                m.id === tempId ? { ...m, id: String(res.medication.id) } : m
+                m.id === tempId ? { ...m, id: realId } : m
               ),
             }))
             broadcastCareSync('medication_change', { action: 'add', id: res.medication.id })
@@ -841,6 +892,15 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    */
   const updateMedication = useCallback(
     (id: string, updates: Partial<Omit<Medication, 'id'>>) => {
+      const existing = data.medications.find((m) => m.id === id)
+      const merged = { ...existing, ...updates }
+      saveLocalMedMeta(id, merged.name || '', {
+        imageUrl: merged.imageUrl,
+        color: merged.color,
+        shape: merged.shape,
+        foodInstruction: merged.foodInstruction,
+        simpleExplanation: merged.simpleExplanation,
+      })
       setData((prev) => ({
         ...prev,
         medications: prev.medications.map((med) =>
@@ -856,10 +916,18 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       if (updates.dosage !== undefined) dbUpdates.dosage = updates.dosage
       if (updates.timeOfDay !== undefined) dbUpdates.time_of_day = updates.timeOfDay
       if (updates.time !== undefined) dbUpdates.time = updates.time
-      if (updates.notes !== undefined) dbUpdates.notes = updates.notes
       if (updates.simpleExplanation !== undefined) dbUpdates.simple_explanation = updates.simpleExplanation
       if (updates.refillDaysLeft !== undefined) dbUpdates.refill_days_left = updates.refillDaysLeft
       if (updates.pharmacistNote !== undefined) dbUpdates.pharmacist_note = updates.pharmacistNote
+
+      const notesToEncode = updates.notes !== undefined ? updates.notes : existing?.notes
+      dbUpdates.notes = encodeMedicationNotes(notesToEncode, {
+        imageUrl: merged.imageUrl,
+        color: merged.color,
+        shape: merged.shape,
+        foodInstruction: merged.foodInstruction,
+        simpleExplanation: merged.simpleExplanation,
+      })
 
       if (Object.keys(dbUpdates).length > 0) {
         safeApiCall(async () => {
@@ -869,7 +937,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         })
       }
     },
-    [broadcastCareSync]
+    [broadcastCareSync, data.medications]
   )
 
   /**
@@ -1679,20 +1747,20 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   /**
    * Initiates a care handover to another designated person.
    */
-  const startHandover = useCallback((targetName: string, endDate: string) => {
+  const startHandover = useCallback((targetName: string, endDate: string, secondaryEmail?: string, inviteCode?: string) => {
     setData((prev) => {
       const newEvent: TimelineEvent = {
         id: generateId(),
         type: 'handover_started',
         timestamp: new Date().toISOString(),
-        note: `Handed over care to ${targetName} until ${new Date(endDate).toLocaleDateString()}`,
+        note: `Handed over care to ${targetName}${secondaryEmail ? ` (${secondaryEmail})` : ''} until ${new Date(endDate).toLocaleDateString()}`,
         actor: 'caregiver',
       }
       return {
         ...prev,
         caregiver: prev.caregiver ? {
           ...prev.caregiver,
-          handover: { isActive: true, targetName, endDate }
+          handover: { isActive: true, targetName, endDate, secondaryEmail, inviteCode }
         } : null,
         timeline: [...prev.timeline, newEvent],
       }
@@ -1745,44 +1813,83 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   }, [getCareRelId, getUserId])
 
   /**
-   * Pure getter that generates human-readable insights based on timeline patterns.
+   * Pure getter that generates human-readable insights based on timeline patterns, adherence, and streaks.
    */
   const getHumanInsights = useCallback(() => {
     const insights: string[] = []
-    const timeline = data.timeline
-    const meds = data.medications
+    const timeline = data.timeline || []
+    const meds = data.medications || []
+    const receiverName = data.careReceiver?.name || "The care receiver"
 
-    const eveningMeds = meds.filter(m => m.timeOfDay === 'evening')
-    if (eveningMeds.length > 0 && timeline.length > 5) {
-      insights.push("Evenings seem a bit harder lately.")
+    // 1. Calculate 7-day adherence
+    const weeklyData = getWeeklyAdherence()
+    const totalTaken = weeklyData.reduce((sum, d) => sum + d.taken, 0)
+    const totalPossible = weeklyData.reduce((sum, d) => sum + d.total, 0)
+    const adherenceRate = totalPossible > 0 ? Math.round((totalTaken / totalPossible) * 100) : 0
+
+    if (totalPossible > 0) {
+      if (adherenceRate >= 85) {
+        insights.push(`${receiverName} has maintained strong consistency (${adherenceRate}% adherence) over the past 7 days.`)
+      } else if (adherenceRate >= 60) {
+        insights.push(`Overall 7-day adherence is at ${adherenceRate}%. A gentle mid-day reminder check-in could help maintain consistency.`)
+      } else {
+        insights.push(`Adherence has dipped to ${adherenceRate}% over the past week. Reviewing medicine alarm schedules is recommended.`)
+      }
     }
 
+    // 2. Timing patterns & evening vs morning habits
+    const eveningMeds = meds.filter(m => m.timeOfDay === 'evening')
+    const morningMeds = meds.filter(m => m.timeOfDay === 'morning')
+
+    const eveningMisses = timeline.filter(e =>
+      e.type === 'medication_skipped' ||
+      (e.type === 'medication_taken' && new Date(e.timestamp).getHours() >= 21)
+    )
+    if (eveningMeds.length > 0 && eveningMisses.length >= 2) {
+      insights.push("Noticeable pattern: Evening doses are occasionally delayed or taken later than scheduled.")
+    } else if (morningMeds.length > 0 && morningMeds.every(m => m.taken)) {
+      insights.push("Morning routines are running reliably on schedule today.")
+    }
+
+    // 3. Positive streak momentum
+    if (data.currentStreak && data.currentStreak >= 2) {
+      insights.push(`Active momentum: On a ${data.currentStreak}-day streak of completed medication routines!`)
+    }
+
+    // 4. Prescription modifications
     const recentChanges = timeline.filter(e =>
       ['medication_added', 'medication_removed', 'dose_changed'].includes(e.type)
     )
     if (recentChanges.length > 0) {
-      insights.push("This routine has been changing recently.")
+      insights.push(`Prescription changes noted: ${recentChanges.length} routine modification(s) recorded recently.`)
+    }
+
+    // Fallback if no specific patterns triggered yet
+    if (insights.length === 0) {
+      insights.push("Medication routine is currently stable and running smoothly.")
     }
 
     return insights
-  }, [data.timeline, data.medications])
+  }, [data.timeline, data.medications, data.careReceiver?.name, data.currentStreak, getWeeklyAdherence])
 
   /**
-   * Generates structured data for a doctor's visit summary.
+   * Generates structured data for a doctor's visit summary for the specified day range (7, 14, or 30 days).
    */
-  const getDoctorPrepData = useCallback(() => {
-    const timeline = data.timeline
-    const notes = data.contextualNotes
-    const wellness = data.wellnessEntries
+  const getDoctorPrepData = useCallback((daysCount: number = 7) => {
+    const timeline = data.timeline || []
+    const notes = data.contextualNotes || []
+    const wellness = data.wellnessEntries || []
+    const cutoffTime = Date.now() - daysCount * 24 * 60 * 60 * 1000
 
     const recentNotes = notes
+      .filter(n => new Date(n.createdAt).getTime() >= cutoffTime)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5)
+      .slice(0, 10)
       .map(n => n.text)
 
     const changes = timeline
-      .filter(t => t.type === 'dose_changed')
-      .slice(-5)
+      .filter(t => t.type === 'dose_changed' && new Date(t.timestamp).getTime() >= cutoffTime)
+      .slice(-10)
       .map(c => ({
         medicationName: c.medicationName || 'Unknown',
         date: new Date(c.timestamp).toLocaleDateString(),
@@ -1790,23 +1897,36 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       }))
 
     const wellnessTrend = wellness
+      .filter(w => new Date(w.timestamp).getTime() >= cutoffTime)
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 7)
+      .slice(0, daysCount)
       .map(w => w.level)
 
-    const recentClosures = data.dayClosures.slice(-7)
-    const avgAdherence = recentClosures.length > 0
-      ? Math.round((recentClosures.reduce((acc, c) => acc + c.takenCount, 0) /
-         recentClosures.reduce((acc, c) => acc + c.totalMeds, 0)) * 100)
-      : 0
+    const closuresInRange = (data.dayClosures || []).filter(
+      c => new Date(c.date).getTime() >= cutoffTime
+    )
+    const avgAdherence = closuresInRange.length > 0
+      ? Math.round(
+          (closuresInRange.reduce((acc, c) => acc + c.takenCount, 0) /
+            closuresInRange.reduce((acc, c) => acc + (c.totalMeds || 1), 0)) * 100
+        )
+      : Math.round(
+          ((data.medications || []).filter(m => m.taken).length /
+            Math.max((data.medications || []).length, 1)) * 100
+        )
 
     return {
-      observations: recentNotes,
-      changes,
-      wellnessTrend,
-      adherenceRate: avgAdherence
+      observations: recentNotes.length > 0 ? recentNotes : notes.slice(0, 5).map(n => n.text),
+      changes: changes.length > 0 ? changes : timeline.filter(t => t.type === 'dose_changed').slice(-5).map(c => ({
+        medicationName: c.medicationName || 'Unknown',
+        date: new Date(c.timestamp).toLocaleDateString(),
+        note: c.note || 'Dose changed'
+      })),
+      wellnessTrend: wellnessTrend.length > 0 ? wellnessTrend : wellness.slice(0, 7).map(w => w.level),
+      adherenceRate: avgAdherence,
+      daysCount,
     }
-  }, [data.timeline, data.contextualNotes, data.wellnessEntries, data.dayClosures])
+  }, [data.timeline, data.contextualNotes, data.wellnessEntries, data.dayClosures, data.medications])
 
   /**
    * Dismisses the notification indicating that data has changed.

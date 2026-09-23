@@ -55,6 +55,9 @@ export type MedicationColor = 'white' | 'blue' | 'pink' | 'yellow' | 'orange' | 
 /** Visual identification shapes for medications. */
 export type MedicationShape = 'round' | 'oval' | 'capsule' | 'rectangle'
 
+/** Meal timing instructions for medications. */
+export type FoodInstruction = 'before_meal' | 'with_meal' | 'after_meal' | 'anytime'
+
 /**
  * Represents an emergency contact.
  */
@@ -99,6 +102,10 @@ export interface HandoverInfo {
   targetName?: string
   /** ISO date when the handover ends. */
   endDate?: string
+  /** Email address of secondary caregiver. */
+  secondaryEmail?: string
+  /** 6-character care code or invite code to link access. */
+  inviteCode?: string
 }
 
 /**
@@ -188,6 +195,8 @@ export interface Medication {
   color?: MedicationColor
   /** Visual shape for identification. */
   shape?: MedicationShape
+  /** Meal timing instruction (before, with, after meal, or anytime). */
+  foodInstruction?: FoodInstruction
   /** URL to a photo of the medication. */
   imageUrl?: string
   /** Number of consecutive days the medication was taken. */

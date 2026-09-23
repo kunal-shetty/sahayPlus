@@ -1,0 +1,114 @@
+3.1 Module 1: Role Selection & Onboarding
+This is the first screen users see when they open SahayPlus. The user can select either Care Receiver or Caregiver. Depending upon the user selection the system shows the appropriate features and user interface
+Key features:
+•	Choose between Care Receiver and Caregiver.
+•	Generate a unique code to connect both users.
+•	Show a simple interface based on the selected role.
+•	Secure login with user sessions.
+
+3.2 Module 2: Home Screen for the Care Receiver 	
+A simple easy to read home screen made just for elderly users. System only shows what they need to do today no complex interface for the elderly person so it is not confusing for them 
+Key features:
+•	Large and easy-to-read text.
+•	High-contrast colors for better visibility.
+•	A prominent card showing the next medicine and dosage.
+•	Large buttons that are easy to tap.
+
+3.3 Module 3: Medicine Reminder & Tracking
+This module handles all the alarms, reminder and keep track of whether medicine reminders and keeps track of whether medicine was taken or not. 
+Key features:
+•	Alarm sound can be changed to whatever the elderly person prefers.
+•	Full screen alert pops so its impossible to miss.
+•	Every actions is stored with the timestamp so we know exactly when and what medicine was taken .
+•	Shows a picture of the actual pills so the person knows exactly what medicine they are supposed to take.
+
+3.4 Module 4: Voice Confirmation
+This voice feature allows the elders to confirm they took the medicine just by speaking no need to touch the screen. Helpful for those who find tapping or touching difficult.
+Key features:
+•	Fully hands-free, no touching screen needed
+•	Understand multiple language  and all the user to select the language they prefers 
+•	Talks back to the person giving voice conformation
+•	It is smart enough to understand the words , even if the person doesnt say exact word .
+But the features need : 
+•	Microphone to pick up the Elderly person voice
+•	The spoken words or phrase from the elderly person
+
+3.5 Module 5: Morning Check-In
+Every morning the system send a simple check-in message to the elderly person to make sure that they are doing fine .its small daily habit that helps catch the problems in early stages .
+Key features:
+•	Daily morning notification asking the elderly person how they are feeling .
+•	Elderly person can confirm their wellness with simple response.
+•	If no response comes the system sends a gentle reminder after the some time.
+•	If even the reminder is ignored care giver is alerted immediately so they can check for the Care Reciver.
+
+3.6 Module 6: Help Request (SOS)
+This is the emergency button made for moments when the Elderly person need help right away. One tap and the alert goes straight to the caregiver .
+Key feature:
+•	A big red SOS button that always floats on the screen easy to find in emergency .
+•	Alert goes out through multiple channels at once just to make sure the caregiver receivers it.
+•	A loud and continuous alarm sound plays on the caregivers device until its noticed.
+
+3.7 Module 7: Caregiver Dashboard
+This is the main screen for the Caregiver where they can see everything happening with their senior in one place. It gives full visibility into the day without needing to call or check in physically.
+Key feature:
+•	Live activity feed showing what Elderly person is doing throughout the day.
+•	Simple meter showing how well medicine schedule is being followed
+•	Alerts shown clearly if any dose or medicine is missed
+•	Quick action button so caregiver can act fast directly from the dashboard 
+
+3.8 Module 8: Pattern Awareness & Insights
+This module is used to analyse the past weeks medicine records and turn that data into simple easy to understand insights . Instead of caregiver having to go through every single record manually the system allows the look directly at records and save manually efforts and time.
+Key feature:
+•	Looks at the last 7 days of medicine records automatically.
+•	Transform all that data into simple sentences anyone can understand .
+•	Easy readable insights about how well medicine schedule is being followed like patterns missed doses or improvements. 
+•	Insights get refreshed every single day so its always showing the latest picture so there is no outdated information 
+
+3.9 Module 9: Medication Management
+This is where caregiver can setup and manage all the medicine details for the care receiver without needing to be physically be present there . any changes made here updates automatically on the care receiver device too .
+Key feature:
+•	Caregiver can add , edit medicine schedule from anywhere .
+•	Full control over dodge amount and how often medicine is needed to be taken .
+•	Can add pill photo and color tag so the care receiver can identify and take the correct medicine only .
+•	It also have option to add instructions related to the food like medicine is to be taken before the meal or after the meal .
+
+3.10 Module 10: Wellness Reminder & Safety Confirmation
+This module makes sure that the Care Receiver does not miss their medicine . If the Care Receiver does not confirm the medicine on time  the system gives another reminder and then informs the Caregiver if there is still no response. This helps the Caregiver know when the medicine has not been confirmed without needing to constantly check.
+Key Feature:
+•	Gives a 15-minute period after the medicine time has passed. 
+•	Plays a second and louder reminder if there is no confirmation.
+•	Sends an alert to the Caregiver if the medicine is still not confirmed. 
+•	Shows clear notification and alert messages to the Caregiver. 
+
+3.11 Module 11: Temporary Care Handover
+This module is used when the main Caregiver is not available to take care of the elderly person for some time. It allows the main Caregiver to give temporary access to another trusted Caregiver so they can monitor the senior and manage the activities during that time. 
+Key features: 
+•	Caregiver can give access to another Caregiver for a fixed amount of time. 
+•	Can add a secondary Caregiver using their email or invitation code. 
+•	Secondary Caregiver can access the dashboard during the given time period. 
+•	Access gets removed automatically when the handover time is over. 
+
+3.12 Module 12: Shared Care Timeline
+This module is used to keep a complete record of everything happening with the senior throughout the day. It shows medicine confirmations missed medicines, SOS alerts, check ins, and notes in one place. This makes it easy for the Caregiver to look back and understand what has happened. 
+Key features:
+•	Shows all activities in the order they happened. 
+•	Clearly shows the status of different activities using simple status labels. 
+•	Allows Caregiver to filter records like Medicines, Alerts, and Notes. 
+•	Search option to quickly find a particular activity or record. 
+
+3.13 Module 13: Doctor Visit Prep
+This module is used to prepare a simple report that the Caregiver can take with them during the doctor visit. It collects the medicine records and other important information from the previous days and puts everything into one easy to read report. This saves the Caregiver from checking and explaining every record manually. 
+Key feature:
+•	Generates a summary of the last 7 to 30 days of medicine records. 
+•	Shows how regularly the senior has followed the medicine schedule. 
+•	Includes important notes related to medicine and side effects. 
+•	Allows the Caregiver to generate and share the report with the doctor. 
+
+3.14 Module 14: Night Mode
+This module is used to make the application easier and more comfortable to use during the night. It automatically changes the screen to a darker theme during night hours so the Care Receiver does not have to look at a bright screen. It also helps reduce eye strain and makes the application more comfortable to use in low light. 
+Key features:
+•	Automatically changes the application to dark mode during night time. 
+•	Uses a darker and low brightness screen to make it easier on the eyes. 
+•	Reduces bright light from the screen during night hours. 
+•	Helps save some device battery while using the dark theme. 
+•	Care Receiver can also manually turn night mode on or off when needed. 

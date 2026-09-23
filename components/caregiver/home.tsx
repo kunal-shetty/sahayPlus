@@ -46,6 +46,10 @@ import {
   Smile,
   ArrowLeft,
   Pill,
+  Copy,
+  CheckCircle2,
+  Share2,
+  Mail,
 } from "lucide-react";
 import { MedicationForm } from "./medication-form";
 import { SettingsPanel } from "./settings-panel";
@@ -265,6 +269,7 @@ function MedPharmacistNote({ med }: { med: Medication }) {
 export function CaregiverHome() {
   const {
     data,
+    user,
     isLoading,
     isDataLoading,
     getUnreadCount,
@@ -288,7 +293,9 @@ export function CaregiverHome() {
   const [showPharmacist, setShowPharmacist] = useState(false);
   const [showHandoverSetup, setShowHandoverSetup] = useState(false);
   const [handoverName, setHandoverName] = useState("");
+  const [handoverEmail, setHandoverEmail] = useState("");
   const [handoverDays, setHandoverDays] = useState("3");
+  const [copiedHandoverCode, setCopiedHandoverCode] = useState(false);
   const [activeTab, setActiveTab] = useState<CaregiverTab>("home");
 
   const unreadMessages = getUnreadCount();
@@ -1095,81 +1102,184 @@ export function CaregiverHome() {
             ))}
 
             <div className="mt-4">
-              <motion.button
-                onClick={() => setShowHandoverSetup(!showHandoverSetup)}
-                className="w-full p-4 bg-sahay-blue/5 border-2 border-sahay-blue/20 rounded-2xl flex items-center justify-between group"
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-sahay-blue/10 flex items-center justify-center">
-                    <ArrowLeftRight className="w-5 h-5 text-sahay-blue" />
+              {data.caregiver?.handover?.isActive ? (
+                <div className="p-5 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                        <ArrowLeftRight className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <span className="font-bold text-amber-700 dark:text-amber-300 text-sm uppercase tracking-wider">
+                        Care Handover Active
+                      </span>
+                    </div>
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-semibold">
+                      Until {new Date(data.caregiver.handover.endDate).toLocaleDateString()}
+                    </span>
                   </div>
-                  <div className="text-left">
-                    <p className="text-base font-semibold text-foreground">
-                      Temporary Handover
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Let someone else handle care
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight
-                  className={`w-5 h-5 text-muted-foreground transition-transform ${showHandoverSetup ? "rotate-90" : "group-hover:translate-x-1"}`}
-                />
-              </motion.button>
 
-              <AnimatePresence>
-                {showHandoverSetup && (
-                  <motion.div
-                    className="bg-card border-2 border-border rounded-2xl p-5 mt-3 overflow-hidden"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                  >
-                    <h4 className="text-lg font-bold mb-4">Handover Details</h4>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1">
-                          Trusted Person&apos;s Name
-                        </label>
-                        <input
-                          type="text"
-                          value={handoverName}
-                          onChange={(e) => setHandoverName(e.target.value)}
-                          placeholder="e.g., Sibling Name"
-                          className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1">
-                          For how many days?
-                        </label>
-                        <select
-                          value={handoverDays}
-                          onChange={(e) => setHandoverDays(e.target.value)}
-                          className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
-                        >
-                          <option value="3">3 days</option>
-                          <option value="5">5 days</option>
-                          <option value="7">1 week</option>
-                        </select>
-                      </div>
+                  <p className="text-base font-semibold text-foreground mb-1">
+                    Transferred to: {data.caregiver.handover.targetName}
+                  </p>
+                  {data.caregiver.handover.secondaryEmail && (
+                    <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5" />
+                      {data.caregiver.handover.secondaryEmail}
+                    </p>
+                  )}
+
+                  {/* Secondary Caregiver Access Claim Code */}
+                  <div className="p-3 bg-card border border-border rounded-xl flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">Caregiver Claim / Invite Code</p>
+                      <p className="font-mono text-lg font-bold tracking-widest text-primary">
+                        {data.caregiver.handover.inviteCode || user?.care_code || "SHY892"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => {
-                          const date = new Date();
-                          date.setDate(date.getDate() + parseInt(handoverDays));
-                          startHandover(handoverName, date.toISOString());
-                          setShowHandoverSetup(false);
+                          const code = data.caregiver?.handover?.inviteCode || user?.care_code || "SHY892";
+                          navigator.clipboard.writeText(code);
+                          setCopiedHandoverCode(true);
+                          setTimeout(() => setCopiedHandoverCode(false), 2000);
                         }}
-                        disabled={!handoverName}
-                        className="w-full py-4 bg-sahay-blue text-white font-bold rounded-xl disabled:opacity-50 active:scale-[0.97] transition-all"
+                        className="px-3 py-1.5 bg-secondary text-foreground text-xs font-semibold rounded-lg hover:bg-secondary/80 flex items-center gap-1 transition-all"
                       >
-                        Confirm Handover
+                        {copiedHandoverCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedHandoverCode ? "Copied" : "Copy"}
                       </button>
+                      <a
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                          `Hi ${data.caregiver.handover.targetName}! Here is your temporary Sahay+ caregiver access code: ${
+                            data.caregiver.handover.inviteCode || user?.care_code || "SHY892"
+                          } to monitor ${data.careReceiver?.name || "care"}. Enter it at /care-code`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 rounded-lg transition-colors"
+                        title="Share code via WhatsApp"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </a>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  </div>
+
+                  <button
+                    onClick={endHandover}
+                    className="w-full py-2.5 px-4 bg-background border border-border hover:bg-secondary text-foreground font-semibold text-sm rounded-xl transition-all"
+                  >
+                    Resume Full Care (End Handover)
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <motion.button
+                    onClick={() => setShowHandoverSetup(!showHandoverSetup)}
+                    className="w-full p-4 bg-sahay-blue/5 border-2 border-sahay-blue/20 rounded-2xl flex items-center justify-between group"
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-sahay-blue/10 flex items-center justify-center">
+                        <ArrowLeftRight className="w-5 h-5 text-sahay-blue" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-base font-semibold text-foreground">
+                          Temporary Handover
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Invite someone else to handle care with access code
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight
+                      className={`w-5 h-5 text-muted-foreground transition-transform ${
+                        showHandoverSetup ? "rotate-90" : "group-hover:translate-x-1"
+                      }`}
+                    />
+                  </motion.button>
+
+                  <AnimatePresence>
+                    {showHandoverSetup && (
+                      <motion.div
+                        className="bg-card border-2 border-border rounded-2xl p-5 mt-3 overflow-hidden"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                      >
+                        <h4 className="text-lg font-bold mb-4">Handover Details</h4>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-muted-foreground mb-1">
+                              Trusted Person&apos;s Name
+                            </label>
+                            <input
+                              type="text"
+                              value={handoverName}
+                              onChange={(e) => setHandoverName(e.target.value)}
+                              placeholder="e.g., Sister, Sibling, Friend"
+                              className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-muted-foreground mb-1">
+                              Secondary Caregiver Email <span className="text-xs font-normal opacity-70">(for invitation)</span>
+                            </label>
+                            <input
+                              type="email"
+                              value={handoverEmail}
+                              onChange={(e) => setHandoverEmail(e.target.value)}
+                              placeholder="e.g., sister@example.com"
+                              className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-muted-foreground mb-1">
+                              For how many days?
+                            </label>
+                            <select
+                              value={handoverDays}
+                              onChange={(e) => setHandoverDays(e.target.value)}
+                              className="w-full p-3 bg-secondary rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-sahay-blue"
+                            >
+                              <option value="3">3 days</option>
+                              <option value="5">5 days</option>
+                              <option value="7">1 week</option>
+                              <option value="14">2 weeks</option>
+                            </select>
+                          </div>
+
+                          {/* Invitation Care Code Preview */}
+                          <div className="p-3 bg-secondary/50 border border-border rounded-xl">
+                            <p className="text-xs text-muted-foreground mb-1">
+                              Temporary Care Code for them to enter on <code className="font-semibold text-primary">/care-code</code>:
+                            </p>
+                            <p className="font-mono text-lg font-bold tracking-widest text-primary">
+                              {user?.care_code || "SHY892"}
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              const date = new Date();
+                              date.setDate(date.getDate() + parseInt(handoverDays));
+                              const inviteCode = user?.care_code || "SHY892";
+                              startHandover(handoverName, date.toISOString(), handoverEmail || undefined, inviteCode);
+                              setShowHandoverSetup(false);
+                            }}
+                            disabled={!handoverName}
+                            className="w-full py-4 bg-sahay-blue text-white font-bold rounded-xl disabled:opacity-50 active:scale-[0.97] transition-all"
+                          >
+                            Confirm Handover &amp; Share Code
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              )}
             </div>
           </div>
         )}

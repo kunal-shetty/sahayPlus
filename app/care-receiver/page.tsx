@@ -44,8 +44,11 @@ import { EmergencyCall } from "@/components/care-receiver/emergency-call";
 import { SafetyCheckPrompt } from "@/components/care-receiver/safety-check-prompt";
 import { IntakeAlarmModal } from "@/components/care-receiver/intake-alarm-modal";
 import { VoiceIntakeModal } from "@/components/care-receiver/voice-intake-modal";
+import { PillVisualizer, PillBadge } from "@/components/pill-visualizer";
+import { getLocalMedMeta, stripAllMeta } from "@/lib/medication-meta";
 import {
   playMedicineChime,
+  playLouderMedicineChime,
   stopMedicineChime,
   playSuccessChime,
   unlockAudioContext,
@@ -103,6 +106,7 @@ export default function CareReceiverPage() {
 
   // Scheduled Medicine Alarm State
   const [alarmMedication, setAlarmMedication] = useState<Medication | null>(null);
+  const [isAlarmOverdue, setIsAlarmOverdue] = useState(false);
   const [snoozedMeds, setSnoozedMeds] = useState<Record<string, number>>({});
   const [dismissedMeds, setDismissedMeds] = useState<Record<string, string>>({});
   const [isAlarmSoundMuted, setIsAlarmSoundMuted] = useState(false);
@@ -174,9 +178,16 @@ export default function CareReceiverPage() {
           nowInMinutes >= scheduledMinutes &&
           nowInMinutes <= scheduledMinutes + 180
         ) {
+          // Check if 15-minute grace period has passed without confirmation
+          const overdue = nowInMinutes >= scheduledMinutes + 15;
+          setIsAlarmOverdue(overdue);
           setAlarmMedication(med);
           if (!isAlarmSoundMuted) {
-            playMedicineChime();
+            if (overdue) {
+              playLouderMedicineChime();
+            } else {
+              playMedicineChime();
+            }
           }
           break;
         }
@@ -192,6 +203,7 @@ export default function CareReceiverPage() {
   const handleAlarmTookIt = () => {
     stopMedicineChime();
     playSuccessChime();
+    setIsAlarmOverdue(false);
     if (alarmMedication) {
       markMedicationTaken(alarmMedication.id, true);
       setConfirmedMed(alarmMedication);
@@ -203,6 +215,7 @@ export default function CareReceiverPage() {
   /** User snoozes the dose for 10 minutes */
   const handleAlarmSnooze = () => {
     stopMedicineChime();
+    setIsAlarmOverdue(false);
     if (alarmMedication) {
       const tenMinutesLater = Date.now() + 10 * 60 * 1000;
       setSnoozedMeds((prev) => ({
@@ -216,6 +229,7 @@ export default function CareReceiverPage() {
   /** User dismisses the alarm for now */
   const handleAlarmDismiss = () => {
     stopMedicineChime();
+    setIsAlarmOverdue(false);
     if (alarmMedication) {
       const todayStr = new Date().toISOString().split("T")[0];
       setDismissedMeds((prev) => ({
@@ -234,6 +248,9 @@ export default function CareReceiverPage() {
       dosage: "500 mg",
       timeOfDay: "morning" as const,
       time: "08:00",
+      color: "yellow" as const,
+      shape: "oval" as const,
+      foodInstruction: "after_meal" as const,
       simpleExplanation: "Take 1 tablet with a glass of water after breakfast",
       taken: false,
       lastUpdated: new Date().toISOString(),
@@ -413,7 +430,7 @@ export default function CareReceiverPage() {
   /** Render settings overlay for appearance and account management. */
   if (showSettings) {
     return (
-      <main className={cn("min-h-screen flex flex-col bg-background text-foreground p-6", isNight && "dark")}>
+      <main className={cn("h-dvh max-h-screen overflow-hidden flex flex-col bg-background text-foreground p-4 sm:p-6", isNight && "dark")}>
         <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full">
           <div className="w-20 h-20 rounded-full bg-sahay-sage-light flex items-center justify-center mb-6">
             <Heart className="w-10 h-10 text-sahay-sage" strokeWidth={1.5} />
@@ -534,7 +551,7 @@ export default function CareReceiverPage() {
   /** Confirmation screen shown immediately after marking a med as taken. */
   if (showUndo && confirmedMed) {
     return (
-      <main className={cn("min-h-screen flex flex-col bg-background text-foreground p-6", isNight && "dark")}>
+      <main className={cn("h-dvh max-h-screen overflow-hidden flex flex-col bg-background text-foreground p-4 sm:p-6", isNight && "dark")}>
         <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full">
           <div className="w-24 h-24 rounded-full bg-sahay-success/20 flex items-center justify-center mb-8 animate-in zoom-in duration-300">
             <Check className="w-12 h-12 text-sahay-success" strokeWidth={2} />
@@ -588,7 +605,7 @@ export default function CareReceiverPage() {
   return (
     <main
       className={cn(
-        "min-h-screen flex flex-col transition-colors duration-500 bg-background text-foreground",
+        "h-dvh max-h-screen overflow-hidden flex flex-col transition-colors duration-500 bg-background text-foreground",
         isNight && "dark",
       )}
     >
@@ -598,18 +615,18 @@ export default function CareReceiverPage() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-primary/10 border-b border-primary/20 overflow-hidden"
+            className="bg-primary/10 border-b border-primary/20 overflow-hidden shrink-0"
           >
-            <div className="p-4 flex items-center justify-between max-w-md mx-auto">
-              <div className="flex items-center gap-3">
-                <Info className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium text-foreground">
+            <div className="px-4 py-1.5 flex items-center justify-between max-w-md mx-auto">
+              <div className="flex items-center gap-2">
+                <Info className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-xs font-medium text-foreground">
                   Something is a little different today.
                 </span>
               </div>
               <button
                 onClick={dismissChangeIndicator}
-                className="text-xs font-bold text-primary uppercase tracking-wider px-2 py-1 hover:underline"
+                className="text-[11px] font-bold text-primary uppercase tracking-wider px-2 py-0.5 hover:underline"
               >
                 Dismiss
               </button>
@@ -618,164 +635,200 @@ export default function CareReceiverPage() {
         )}
       </AnimatePresence>
 
-      <header className="p-6 pb-4">
-        <div className="flex items-center justify-between">
+      <header className="px-4 py-2 sm:px-6 sm:py-3 shrink-0">
+        <div className="flex items-center justify-between max-w-md mx-auto">
           <div>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-none">
               {getGreeting()}
             </p>
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-lg sm:text-xl font-bold text-foreground leading-tight">
               {data.careReceiver?.name || "Your care"}
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
                 unlockAudioContext();
                 setShowVoiceModal(true);
               }}
-              className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary text-primary hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+              className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary text-primary hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
               aria-label="Voice Medication Confirmation"
               title="Speak to record your dose"
             >
-              <Mic className="w-5 h-5 text-primary" />
+              <Mic className="w-4 h-4 text-primary" />
             </button>
             <button
               onClick={handleTestAlarm}
-              className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+              className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
               aria-label="Test Medicine Reminder"
               title="Test Medicine Reminder Alarm"
             >
-              <Bell className="w-5 h-5 text-amber-500" />
+              <Bell className="w-4 h-4 text-amber-500" />
             </button>
             <button
               onClick={() => setShowSettings(true)}
-              className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+              className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
               aria-label="Settings"
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-4 h-4" />
             </button>
           </div>
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6 -mt-10">
-        <div className="w-full max-w-md">
-          {/* Persistent Help Request Status Banner */}
-          <AnimatePresence>
-            {helpRequestedAt && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full p-4 mb-6 rounded-2xl bg-destructive/10 border-2 border-destructive/30 flex flex-col gap-2.5 shadow-sm"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-destructive flex items-center justify-center text-white shrink-0 animate-pulse">
-                      <ShieldAlert className="w-5 h-5" />
+      <div className="flex-1 flex flex-col items-center justify-between px-3 py-1 sm:px-6 sm:py-2 min-h-0 overflow-hidden">
+        <div className="w-full max-w-md flex flex-col h-full justify-between min-h-0">
+          {/* Top section: Alerts & Morning Wellness */}
+          <div className="shrink-0 w-full">
+            {/* Persistent Help Request Status Banner */}
+            <AnimatePresence>
+              {helpRequestedAt && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="w-full p-2.5 mb-2 rounded-xl bg-destructive/10 border-2 border-destructive/30 flex items-center justify-between gap-2 shadow-xs"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-full bg-destructive flex items-center justify-center text-white shrink-0 animate-pulse">
+                      <ShieldAlert className="w-4 h-4" />
                     </div>
-                    <div>
-                      <p className="font-bold text-base text-destructive">Help Alert Active</p>
-                      <p className="text-xs text-muted-foreground">
-                        {data.caregiver?.name || "Caregiver"} was alerted at{" "}
-                        {new Date(helpRequestedAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs text-destructive leading-tight">Help Alert Active</p>
+                      <p className="text-[10px] text-muted-foreground truncate">Caregiver alerted</p>
                     </div>
                   </div>
                   <button
                     onClick={handleDismissHelp}
-                    className="px-3 py-1.5 rounded-xl bg-card border border-border text-foreground font-semibold text-xs hover:bg-secondary transition-all active:scale-95 shadow-xs"
+                    className="px-2.5 py-1 rounded-lg bg-card border border-border text-foreground font-semibold text-[11px] hover:bg-secondary transition-all active:scale-95 shrink-0"
                   >
-                    I&apos;m okay now
+                    I&apos;m okay
                   </button>
-                </div>
-                <p className="text-xs text-foreground/80 bg-background/50 p-2.5 rounded-xl border border-border/40">
-                  Help is on the way. If this is an urgent emergency, tap <strong>Call help</strong> below.
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {/* Module 5: Morning Wellness Check-In Card & Gentle Reminder */}
-          <MorningWellnessCard isLateMorningReminder={isLateMorningReminder} />
+            {/* Module 5: Morning Wellness Check-In Card & Gentle Reminder */}
+            <MorningWellnessCard isLateMorningReminder={isLateMorningReminder} />
+          </div>
 
           {nextMed ? (
-            <>
-              <div className="flex items-center justify-center gap-2 mb-6">
+            <div className="flex-1 flex flex-col justify-between min-h-0 my-1">
+              {/* Scheduled slot tag */}
+              <div className="flex items-center justify-center gap-1.5 shrink-0 text-muted-foreground mb-1">
                 <TimeIcon
-                  className="w-6 h-6 text-primary"
+                  className="w-4 h-4 text-primary"
                   strokeWidth={1.5}
                 />
-                <span className="text-lg font-semibold text-muted-foreground">
+                <span className="text-xs sm:text-sm font-semibold">
                   {timeOfDayLabels[nextMed!.timeOfDay]}
                   {nextMed?.time && ` at ${formatTime12h(nextMed.time)}`}
                 </span>
               </div>
 
+              {/* Main Next Med Card */}
               <motion.div
-                className="rounded-3xl p-8 border-2 mb-8 text-center bg-card border-border shadow-md"
-                initial={{ opacity: 0, y: 20 }}
+                className="rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 text-center bg-card border-border shadow-md flex-1 flex flex-col items-center justify-center min-h-0 overflow-hidden"
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <h2 className="text-3xl font-bold mb-2 text-balance text-foreground">
-                  {nextMed!.name}
-                </h2>
-                {nextMed?.time && (
-                  <div className="flex items-center justify-center gap-2 mb-2 text-primary font-bold">
-                    <Clock className="w-5 h-5" strokeWidth={2.5} />
-                    <span className="text-2xl">
-                      {formatTime12h(nextMed.time)}
-                    </span>
-                  </div>
-                )}
-                <p className="text-2xl font-medium text-muted-foreground">
-                  {nextMed!.dosage}
-                </p>
+                {/* Pill Image or Visual Representation */}
+                {(() => {
+                  const localMeta = getLocalMedMeta(nextMed!.id, nextMed!.name);
+                  const displayImage = nextMed!.imageUrl || localMeta?.imageUrl;
+                  const pillColor = nextMed!.color || localMeta?.color || "yellow";
+                  const pillShape = nextMed!.shape || localMeta?.shape || "oval";
+                  const cleanNotes = stripAllMeta(nextMed!.notes);
+                  const displayExplanation =
+                    nextMed!.simpleExplanation ||
+                    localMeta?.simpleExplanation ||
+                    cleanNotes ||
+                    "Take 1 dose with a full glass of water as prescribed.";
 
-                {nextMed!.simpleExplanation && (
-                  <p className="text-lg font-medium mt-4 py-3 border-t border-border text-primary">
-                    {nextMed!.simpleExplanation}
-                  </p>
-                )}
+                  return (
+                    <div className="flex flex-col items-center justify-center w-full min-h-0">
+                      {displayImage ? (
+                        <div className="flex flex-col items-center shrink min-h-0 mb-1.5">
+                          <div className="h-28 w-28 sm:h-36 sm:w-36 max-h-[20vh] aspect-square rounded-2xl overflow-hidden border-3 border-amber-400/80 shadow-md bg-white shrink flex items-center justify-center">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={displayImage}
+                              alt={nextMed!.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="mt-1 shrink-0">
+                            <PillBadge color={pillColor} shape={pillShape} size="sm" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-1.5 shrink min-h-0 flex flex-col items-center justify-center">
+                          <PillVisualizer
+                            color={pillColor}
+                            shape={pillShape}
+                            size="md"
+                            showLabel={true}
+                          />
+                        </div>
+                      )}
 
-                {nextMed!.notes && (
-                  <p className="text-lg mt-3 pt-3 border-t border-border text-foreground/80">
-                    {nextMed!.notes}
-                  </p>
-                )}
-                {nextMed!.pharmacistNote && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                      <Pill className="w-4 h-4 text-primary" />
-                      <span className="text-sm text-primary font-semibold">
-                        From pharmacist
-                      </span>
+                      <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight leading-tight truncate max-w-full">
+                        {nextMed!.name}
+                      </h2>
+
+                      {/* Dosage + Meal timing badges grouped on a single row */}
+                      <div className="flex items-center justify-center gap-1.5 my-1 flex-wrap shrink-0">
+                        <div className="px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-xs sm:text-sm">
+                          {nextMed!.dosage}
+                        </div>
+                        <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-secondary text-foreground font-semibold text-xs border border-border">
+                          {nextMed?.foodInstruction === "before_meal" && "🍽️ Before Meal"}
+                          {nextMed?.foodInstruction === "with_meal" && "🍲 With Food"}
+                          {(!nextMed?.foodInstruction || nextMed?.foodInstruction === "after_meal") && "☕ After Meal"}
+                          {nextMed?.foodInstruction === "anytime" && "🕒 Anytime"}
+                        </div>
+                      </div>
+
+                      {/* Senior Instructions & Description Section */}
+                      <div className="w-full mt-1 p-2 rounded-xl bg-muted/60 border border-border text-left shrink-0">
+                        <div className="flex items-center gap-1 text-primary font-bold text-[10px] uppercase tracking-wider mb-0.5">
+                          <Info className="w-3 h-3" />
+                          <span>How to take</span>
+                        </div>
+                        <p className="text-xs sm:text-sm font-bold text-foreground leading-snug line-clamp-2">
+                          {displayExplanation}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                  );
+                })()}
+
+                {nextMed!.pharmacistNote && (
+                  <div className="mt-1 pt-1 border-t border-border w-full shrink-0">
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      <span className="font-semibold text-primary">Pharmacist: </span>
                       {nextMed!.pharmacistNote}
                     </p>
                   </div>
                 )}
               </motion.div>
 
-              <div className="flex gap-3 mb-8">
+              {/* Action Buttons: "I took it" + Voice */}
+              <div className="flex gap-2 my-1.5 shrink-0 w-full">
                 <motion.button
                   onClick={handleTookIt}
-                  className="flex-1 py-6 px-8 bg-primary text-primary-foreground text-2xl font-bold
-                       rounded-2xl flex items-center justify-center gap-3 shadow-lg touch-manipulation button-interactive
+                  className="flex-1 py-3.5 sm:py-4 px-6 bg-primary text-primary-foreground text-xl sm:text-2xl font-bold
+                       rounded-2xl flex items-center justify-center gap-2.5 shadow-md touch-manipulation button-interactive
                        focus:outline-none focus:ring-4 focus:ring-primary/50"
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Check className="w-7 h-7" strokeWidth={2.5} />I took it
+                  <Check className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={2.5} />
+                  <span>I took it</span>
                 </motion.button>
 
                 <motion.button
@@ -783,86 +836,82 @@ export default function CareReceiverPage() {
                     unlockAudioContext();
                     setShowVoiceModal(true);
                   }}
-                  className="w-20 rounded-2xl flex items-center justify-center border-2 border-border bg-card text-primary hover:border-primary/50 hover:bg-primary/5 transition-all shadow-xs active:scale-95"
+                  className="w-16 rounded-2xl flex items-center justify-center border-2 border-border bg-card text-primary hover:border-primary/50 hover:bg-primary/5 transition-all shadow-xs active:scale-95 shrink-0"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.25 }}
                   aria-label="Voice confirmation"
                   title="Speak to confirm taking your medication"
                 >
-                  <Mic className="w-8 h-8" />
+                  <Mic className="w-6 h-6 sm:w-7 sm:h-7" />
                 </motion.button>
               </div>
-            </>
+            </div>
           ) : (
-            <>
-              <div className="rounded-3xl p-8 border-2 mb-8 text-center bg-card border-border shadow-md">
+            <div className="flex-1 flex flex-col justify-center min-h-0 my-1 overflow-hidden">
+              <div className="rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 text-center bg-card border-border shadow-md">
                 <div
                   className={cn(
-                    "w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6",
+                    "w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3",
                     allDone ? "bg-sahay-success/15 text-sahay-success" : "bg-primary/10 text-primary",
                   )}
                 >
                   {allDone ? (
                     <Check
-                      className="w-10 h-10"
+                      className="w-8 h-8"
                       strokeWidth={2}
                     />
                   ) : (
                     <Heart
-                      className="w-10 h-10"
+                      className="w-8 h-8"
                       strokeWidth={1.5}
                     />
                   )}
                 </div>
 
-                <h2 className="text-3xl font-bold mb-3 text-balance text-foreground">
+                <h2 className="text-xl sm:text-2xl font-bold mb-1 text-balance text-foreground">
                   {allDone ? finishedTitle : getGreeting()}
                 </h2>
-                <p className="text-xl text-muted-foreground">
+                <p className="text-sm sm:text-base text-muted-foreground">
                   {allDone
                     ? finishedMessage
                     : "Your caregiver will set up your medications"}
                 </p>
               </div>
 
-              {allDone && (
-                <div className="rounded-3xl p-6 border-2 mb-8 text-left bg-card border-border shadow-md">
-                  <p className="text-sm font-bold uppercase tracking-wider mb-2 text-muted-foreground">
-                    Today&apos;s medicines ({doneCount} of{" "}
-                    {data.medications.length} taken)
+              {allDone && data.medications.length > 0 && (
+                <div className="rounded-2xl p-3 border-2 mt-2 text-left bg-card border-border shadow-xs max-h-[30vh] overflow-y-auto">
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-muted-foreground">
+                    Today&apos;s medicines ({doneCount} of {data.medications.length} taken)
                   </p>
-                  <ul>
+                  <ul className="divide-y divide-border">
                     {data.medications.map((med) => (
                       <li
                         key={med.id}
-                        className="flex items-center justify-between gap-3 py-3 border-t border-border"
+                        className="flex items-center justify-between gap-2 py-1.5"
                       >
-                        <span className="flex items-center gap-3 min-w-0">
+                        <span className="flex items-center gap-2 min-w-0">
                           <span
                             className={cn(
-                              "w-9 h-9 rounded-full flex items-center justify-center shrink-0",
+                              "w-6 h-6 rounded-full flex items-center justify-center shrink-0",
                               med.taken ? "bg-sahay-success/20 text-sahay-success" : "bg-secondary text-muted-foreground",
                             )}
                           >
                             {med.taken ? (
                               <Check
-                                className="w-5 h-5"
+                                className="w-3.5 h-3.5"
                                 strokeWidth={2.5}
                               />
                             ) : (
-                              <Clock className="w-5 h-5" />
+                              <Clock className="w-3.5 h-3.5" />
                             )}
                           </span>
                           <span className="min-w-0">
-                            <span className="block text-lg font-bold text-foreground truncate">
+                            <span className="block text-sm font-bold text-foreground truncate">
                               {med.name}
                             </span>
-                            <span className="block text-sm text-muted-foreground">
-                              {med.dosage} •{" "}
-                              {med.time
-                                ? formatTime12h(med.time)
-                                : timeOfDayLabels[med.timeOfDay]}
+                            <span className="block text-xs text-muted-foreground truncate">
+                              {med.dosage}
                             </span>
                           </span>
                         </span>
@@ -870,7 +919,7 @@ export default function CareReceiverPage() {
                           <button
                             onClick={() => markMedicationTaken(med.id, false)}
                             aria-label={`Undo ${med.name}`}
-                            className="shrink-0 py-2 px-4 text-sm font-semibold rounded-xl border border-border bg-secondary hover:bg-secondary/80 text-foreground transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="shrink-0 py-1 px-2.5 text-xs font-semibold rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-foreground transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring"
                           >
                             Undo
                           </button>
@@ -880,49 +929,50 @@ export default function CareReceiverPage() {
                   </ul>
                 </div>
               )}
-            </>
+            </div>
           )}
 
-          <div className="grid grid-cols-3 gap-3">
+          {/* Bottom 3 Quick Actions: "How I feel", "I need help", "Call help" */}
+          <div className="grid grid-cols-3 gap-2 shrink-0 w-full mb-1">
             <motion.button
               onClick={() => setShowWellness(true)}
-              className="p-4 border-2 rounded-2xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive bg-card border-border hover:border-sahay-success/50 text-foreground shadow-xs"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              className="py-2.5 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive bg-card border-border hover:border-sahay-success/50 text-foreground shadow-xs"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
-              <Smile className="w-7 h-7 text-sahay-success" />
-              <span className="text-sm font-semibold">How I feel</span>
+              <Smile className="w-5 h-5 text-sahay-success" />
+              <span className="text-xs font-semibold">How I feel</span>
             </motion.button>
 
             <motion.button
               onClick={helpRequestedAt ? handleDismissHelp : handleRequestHelp}
               className={cn(
-                "p-4 border-2 rounded-2xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive shadow-xs",
+                "py-2.5 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive shadow-xs",
                 helpRequestedAt
                   ? "bg-destructive/15 border-destructive text-destructive font-bold ring-2 ring-destructive/30"
                   : "bg-card border-border hover:border-primary/50 text-foreground",
               )}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
               {helpRequestedAt ? (
-                <ShieldAlert className="w-7 h-7 text-destructive animate-pulse" />
+                <ShieldAlert className="w-5 h-5 text-destructive animate-pulse" />
               ) : (
-                <Heart className="w-7 h-7 text-primary" />
+                <Heart className="w-5 h-5 text-primary" />
               )}
-              <span className="text-sm font-semibold">
+              <span className="text-xs font-semibold">
                 {helpRequestedAt ? "Alert Active" : "I need help"}
               </span>
             </motion.button>
 
             <motion.button
               onClick={() => setShowEmergency(true)}
-              className="p-4 border-2 rounded-2xl flex flex-col items-center gap-2 transition-all touch-manipulation button-interactive bg-card border-border hover:border-destructive/50 text-foreground shadow-xs"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              className="py-2.5 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive bg-card border-border hover:border-destructive/50 text-foreground shadow-xs"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
-              <Phone className="w-7 h-7 text-destructive" />
-              <span className="text-sm font-semibold">Call help</span>
+              <Phone className="w-5 h-5 text-destructive" />
+              <span className="text-xs font-semibold">Call help</span>
             </motion.button>
           </div>
         </div>
@@ -931,15 +981,29 @@ export default function CareReceiverPage() {
       <AnimatePresence>
         {isNight && (
           <motion.div
-            className="flex items-center justify-center gap-2 py-4 text-muted-foreground"
+            className="flex items-center justify-center gap-2 py-1 text-muted-foreground shrink-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <Moon className="w-4 h-4 text-primary" />
-            <span className="text-xs font-semibold uppercase tracking-widest">
+            <Moon className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[10px] font-semibold uppercase tracking-widest">
               Quiet Night Mode Active
             </span>
           </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {alarmMedication && (
+          <IntakeAlarmModal
+            medication={alarmMedication}
+            isNight={isNight}
+            isOverdue={isAlarmOverdue}
+            isMuted={isAlarmSoundMuted}
+            onToggleSound={(muted) => setIsAlarmSoundMuted(muted)}
+            onTookIt={handleAlarmTookIt}
+            onSnooze={handleAlarmSnooze}
+            onDismiss={handleAlarmDismiss}
+          />
         )}
       </AnimatePresence>
       <VoiceIntakeModal
@@ -957,6 +1021,28 @@ export default function CareReceiverPage() {
         }}
       />
       <SafetyCheckPrompt />
+
+      {/* Floating Red SOS Button (Module 6 Requirement) */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <motion.button
+          onClick={helpRequestedAt ? handleDismissHelp : handleRequestHelp}
+          className={cn(
+            "w-16 h-16 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all border-2 touch-manipulation focus:outline-none focus:ring-4",
+            helpRequestedAt
+              ? "bg-amber-600 text-white border-white ring-4 ring-amber-500/50 animate-pulse"
+              : "bg-destructive text-white border-white/40 ring-4 ring-destructive/30 hover:scale-105 active:scale-95"
+          )}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
+          title={helpRequestedAt ? "SOS Active - Tap to dismiss" : "Emergency SOS - Need help"}
+          aria-label="Emergency SOS"
+        >
+          <ShieldAlert className="w-7 h-7" />
+          <span className="text-[10px] font-black uppercase tracking-wider mt-0.5">
+            {helpRequestedAt ? "ACTIVE" : "SOS"}
+          </span>
+        </motion.button>
+      </div>
     </main>
   );
 }

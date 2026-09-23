@@ -36,6 +36,11 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getOverdueMeds, type OverdueMedInfo } from "@/lib/overdue-utils";
+import { cn } from "@/lib/utils";
+import {
+  playCaregiverEmergencySiren,
+  stopCaregiverEmergencySiren,
+} from "@/lib/audio-chime";
 
 import { MedicationForm } from "@/components/caregiver/medication-form";
 import { SettingsPanel } from "@/components/caregiver/settings-panel";
@@ -49,7 +54,15 @@ import { VoiceInput } from "@/components/caregiver/voice-input";
  * A high-level oversight view that works on both desktop and mobile.
  */
 export default function DashboardPage() {
-  const { data, isLoading, isDataLoading, sendMessage, getTodayWellness } = useSahay();
+  const {
+    data,
+    isLoading,
+    isDataLoading,
+    sendMessage,
+    getTodayWellness,
+    getHumanInsights,
+    resolveHelpRequest,
+  } = useSahay();
 
   const router = useRouter();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -93,6 +106,25 @@ export default function DashboardPage() {
     setAcknowledgedMissingWellness(true);
     setSimulateMissingWellness(false);
   };
+
+  // Emergency SOS Siren State & Auto-Play (Module 6 Requirement)
+  const [isSirenMuted, setIsSirenMuted] = useState(false);
+  const activeHelpEvent = useMemo(() => {
+    return data.timeline.find(
+      (e) => e.type === "help_requested" && !e.note?.includes("resolved")
+    );
+  }, [data.timeline]);
+
+  useEffect(() => {
+    if (activeHelpEvent && !isSirenMuted) {
+      playCaregiverEmergencySiren();
+    } else {
+      stopCaregiverEmergencySiren();
+    }
+    return () => {
+      stopCaregiverEmergencySiren();
+    };
+  }, [activeHelpEvent, isSirenMuted]);
 
   // Hydrate acknowledged overdue meds from localStorage
   useEffect(() => {
@@ -461,41 +493,51 @@ export default function DashboardPage() {
                   </div>
                 </motion.div>
               )}
-              {data.timeline.find(
-                (e) =>
-                  e.type === "help_requested" && !e.note?.includes("resolved"),
-              ) && (
+              {activeHelpEvent && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-sahay-blue text-white rounded-3xl p-6 shadow-xl shadow-sahay-blue/30 flex flex-col md:flex-row items-center justify-between gap-6 border-l-8 border-white/30"
+                  className="bg-destructive text-destructive-foreground rounded-3xl p-6 shadow-xl shadow-destructive/30 flex flex-col md:flex-row items-center justify-between gap-6 border-l-8 border-white/40 ring-4 ring-destructive/20"
                 >
                   <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-                      <Heart className="w-10 h-10 text-white" />
+                    <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-10 h-10 text-white animate-bounce" />
                     </div>
                     <div>
-                      <h3 className="text-xl md:text-2xl font-bold text-center md:text-left">
-                        Check-in Requested!
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold uppercase tracking-wider mb-1">
+                        <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                        🚨 Urgent SOS Active
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-bold text-center md:text-left text-white">
+                        {data.careReceiver?.name || "Care Receiver"} Pressed SOS!
                       </h3>
-                      <p className="text-white/80 text-center md:text-left">
-                        {data.careReceiver?.name} needs your attention
-                        immediately.
+                      <p className="text-white/90 text-center md:text-left text-sm mt-0.5">
+                        Emergency assistance requested. Audio alarm siren is ringing on your device.
                       </p>
                     </div>
                   </div>
                   <div className="flex flex-wrap justify-center md:justify-end gap-3">
                     <button
-                      onClick={() => router.push("/caregiver/emergency")}
-                      className="px-6 py-3 bg-white text-sahay-blue font-bold rounded-xl hover:bg-opacity-90 transition-all flex items-center gap-2"
+                      onClick={() => setIsSirenMuted((prev) => !prev)}
+                      className="px-4 py-3 bg-white/20 text-white text-sm font-bold rounded-xl hover:bg-white/30 transition-all flex items-center gap-2"
+                      title={isSirenMuted ? "Unmute alarm siren" : "Mute alarm siren"}
                     >
-                      <Phone className="w-5 h-5" /> Call
+                      {isSirenMuted ? "🔇 Unmute Siren" : "🔊 Silence Siren"}
                     </button>
                     <button
-                      onClick={() => router.push("/caregiver/messages")}
-                      className="px-6 py-3 bg-sahay-blue-dark text-white font-bold rounded-xl hover:bg-sahay-blue-dark/80 transition-all flex items-center gap-2"
+                      onClick={() => router.push("/caregiver/emergency")}
+                      className="px-5 py-3 bg-white text-destructive font-bold text-sm rounded-xl hover:bg-white/90 transition-all flex items-center gap-2 shadow-md"
                     >
-                      <MessageCircle className="w-5 h-5" /> Message
+                      <Phone className="w-4 h-4" /> Call Senior
+                    </button>
+                    <button
+                      onClick={() => {
+                        stopCaregiverEmergencySiren();
+                        resolveHelpRequest();
+                      }}
+                      className="px-5 py-3 bg-destructive-foreground/15 text-white border border-white/30 text-sm font-bold rounded-xl hover:bg-white/20 transition-all flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" /> Resolve SOS
                     </button>
                   </div>
                 </motion.div>
@@ -713,19 +755,23 @@ export default function DashboardPage() {
                 AI Human Insights
               </h3>
               <div className="space-y-4">
-                <div className="p-4 bg-secondary/50 rounded-2xl border-l-4 border-sahay-blue">
-                  <p className="text-sm leading-relaxed italic text-foreground">
-                    "{data.careReceiver?.name} has shown a 15% increase in
-                    medication adherence this week. Consider a positive
-                    reinforcement check-in today."
-                  </p>
-                </div>
-                <div className="p-4 bg-secondary/50 rounded-2xl border-l-4 border-sahay-pending">
-                  <p className="text-sm leading-relaxed italic text-foreground">
-                    "Noticeable trend: Evening medications are occasionally
-                    missed. Suggesting a revised alarm schedule."
-                  </p>
-                </div>
+                {getHumanInsights().map((insight, idx) => (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "p-4 bg-secondary/50 rounded-2xl border-l-4",
+                      idx % 3 === 0
+                        ? "border-sahay-blue"
+                        : idx % 3 === 1
+                        ? "border-sahay-pending"
+                        : "border-sahay-sage"
+                    )}
+                  >
+                    <p className="text-sm leading-relaxed text-foreground">
+                      &ldquo;{insight}&rdquo;
+                    </p>
+                  </div>
+                ))}
                 <button
                   onClick={() => router.push("/caregiver/analytics")}
                   className="w-full py-3 text-sm font-medium text-center text-primary hover:underline"
