@@ -35,11 +35,19 @@ import {
   Info,
   ShieldAlert,
   AlertTriangle,
+  Bell,
 } from "lucide-react";
 import { WellnessCheckin } from "@/components/care-receiver/wellness-checkin";
 import { QuickMessages } from "@/components/care-receiver/quick-messages";
 import { EmergencyCall } from "@/components/care-receiver/emergency-call";
 import { SafetyCheckPrompt } from "@/components/care-receiver/safety-check-prompt";
+import { IntakeAlarmModal } from "@/components/care-receiver/intake-alarm-modal";
+import {
+  playMedicineChime,
+  stopMedicineChime,
+  playSuccessChime,
+  unlockAudioContext,
+} from "@/lib/audio-chime";
 import { CareReceiverHomeSkeleton } from "@/components/skeletons";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -70,13 +78,13 @@ export default function CareReceiverPage() {
    */
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.triggerMotionSafetyCheck = () => {
+      (window as any).triggerMotionSafetyCheck = () => {
         triggerSafetyCheck("motion");
       };
     }
 
     return () => {
-      window.triggerMotionSafetyCheck = null;
+      (window as any).triggerMotionSafetyCheck = null;
     };
   }, [triggerSafetyCheck]);
 
@@ -89,6 +97,151 @@ export default function CareReceiverPage() {
   const [showEmergency, setShowEmergency] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [helpRequestedAt, setHelpRequestedAt] = useState<string | null>(null);
+
+  // Scheduled Medicine Alarm State
+  const [alarmMedication, setAlarmMedication] = useState<Medication | null>(null);
+  const [snoozedMeds, setSnoozedMeds] = useState<Record<string, number>>({});
+  const [dismissedMeds, setDismissedMeds] = useState<Record<string, string>>({});
+  const [isAlarmSoundMuted, setIsAlarmSoundMuted] = useState(false);
+
+  /** Unlock browser AudioContext on first touch/click */
+  useEffect(() => {
+    const handleUnlock = () => {
+      unlockAudioContext();
+    };
+    window.addEventListener("click", handleUnlock, { once: true });
+    window.addEventListener("touchstart", handleUnlock, { once: true });
+    return () => {
+      window.removeEventListener("click", handleUnlock);
+      window.removeEventListener("touchstart", handleUnlock);
+    };
+  }, []);
+
+  /**
+   * Active Background Scheduler:
+   * Checks every 10 seconds if any untaken medication has reached or passed
+   * its scheduled dose time.
+   */
+  useEffect(() => {
+    if (alarmMedication) return; // Alarm is already ringing
+
+    const checkSchedule = () => {
+      const now = new Date();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const nowInMinutes = currentHours * 60 + currentMinutes;
+      const todayStr = now.toISOString().split("T")[0];
+      const nowTs = Date.now();
+
+      const untaken = data.medications.filter((m) => !m.taken);
+
+      for (const med of untaken) {
+        // Skip if snoozed and snooze period has not yet expired
+        if (snoozedMeds[med.id] && snoozedMeds[med.id] > nowTs) {
+          continue;
+        }
+
+        // Skip if dismissed today and not actively snoozed
+        if (dismissedMeds[med.id] === todayStr && !snoozedMeds[med.id]) {
+          continue;
+        }
+
+        // Determine scheduled clock time in minutes
+        let scheduledMinutes: number | null = null;
+        if (med.time) {
+          const parts = med.time.split(":");
+          if (parts.length >= 2) {
+            const h = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            if (!isNaN(h) && !isNaN(m)) {
+              scheduledMinutes = h * 60 + m;
+            }
+          }
+        }
+
+        if (scheduledMinutes === null) {
+          if (med.timeOfDay === "morning") scheduledMinutes = 8 * 60; // 08:00 AM
+          else if (med.timeOfDay === "afternoon") scheduledMinutes = 13 * 60; // 01:00 PM
+          else if (med.timeOfDay === "evening") scheduledMinutes = 19 * 60; // 07:00 PM
+        }
+
+        // If clock time is at or past scheduled time (within a 3-hour alert window)
+        if (
+          scheduledMinutes !== null &&
+          nowInMinutes >= scheduledMinutes &&
+          nowInMinutes <= scheduledMinutes + 180
+        ) {
+          setAlarmMedication(med);
+          if (!isAlarmSoundMuted) {
+            playMedicineChime();
+          }
+          break;
+        }
+      }
+    };
+
+    checkSchedule();
+    const interval = setInterval(checkSchedule, 10000);
+    return () => clearInterval(interval);
+  }, [data.medications, alarmMedication, snoozedMeds, dismissedMeds, isAlarmSoundMuted]);
+
+  /** User confirms taking the alarm dose */
+  const handleAlarmTookIt = () => {
+    stopMedicineChime();
+    playSuccessChime();
+    if (alarmMedication) {
+      markMedicationTaken(alarmMedication.id, true);
+      setConfirmedMed(alarmMedication);
+      setShowUndo(true);
+      setAlarmMedication(null);
+    }
+  };
+
+  /** User snoozes the dose for 10 minutes */
+  const handleAlarmSnooze = () => {
+    stopMedicineChime();
+    if (alarmMedication) {
+      const tenMinutesLater = Date.now() + 10 * 60 * 1000;
+      setSnoozedMeds((prev) => ({
+        ...prev,
+        [alarmMedication.id]: tenMinutesLater,
+      }));
+      setAlarmMedication(null);
+    }
+  };
+
+  /** User dismisses the alarm for now */
+  const handleAlarmDismiss = () => {
+    stopMedicineChime();
+    if (alarmMedication) {
+      const todayStr = new Date().toISOString().split("T")[0];
+      setDismissedMeds((prev) => ({
+        ...prev,
+        [alarmMedication.id]: todayStr,
+      }));
+      setAlarmMedication(null);
+    }
+  };
+
+  /** Test button to preview the full-screen alarm and chime immediately */
+  const handleTestAlarm = () => {
+    const medToTest = nextMed || data.medications[0] || {
+      id: "demo_pill",
+      name: "Metformin",
+      dosage: "500 mg",
+      timeOfDay: "morning" as const,
+      time: "08:00",
+      simpleExplanation: "Take 1 tablet with a glass of water after breakfast",
+      taken: false,
+      lastUpdated: new Date().toISOString(),
+    };
+    setShowSettings(false);
+    setAlarmMedication(medToTest);
+    unlockAudioContext();
+    if (!isAlarmSoundMuted) {
+      playMedicineChime();
+    }
+  };
 
   /** Check if an active unresolved help request was triggered today */
   useEffect(() => {
@@ -220,6 +373,28 @@ export default function CareReceiverPage() {
     return <CareReceiverHomeSkeleton />;
   }
 
+  /** Full-Screen Medication Alarm View */
+  if (alarmMedication) {
+    return (
+      <IntakeAlarmModal
+        medication={alarmMedication}
+        isNight={isNight}
+        onTookIt={handleAlarmTookIt}
+        onSnooze={handleAlarmSnooze}
+        onDismiss={handleAlarmDismiss}
+        onToggleSound={(muted) => {
+          setIsAlarmSoundMuted(muted);
+          if (muted) {
+            stopMedicineChime();
+          } else {
+            playMedicineChime();
+          }
+        }}
+        isMuted={isAlarmSoundMuted}
+      />
+    );
+  }
+
   if (showWellness) {
     return <WellnessCheckin onClose={() => setShowWellness(false)} />;
   }
@@ -288,6 +463,16 @@ export default function CareReceiverPage() {
                 </p>
               )}
             </div>
+
+            <button
+              onClick={handleTestAlarm}
+              className="w-full py-4 px-6 bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xl font-semibold
+                       rounded-2xl transition-all active:scale-[0.97] touch-manipulation flex items-center justify-center gap-3
+                       focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <Bell className="w-6 h-6 text-amber-500" />
+              Test Medicine Alarm & Chime
+            </button>
 
             <button
               onClick={() => {
@@ -422,13 +607,23 @@ export default function CareReceiverPage() {
               {data.careReceiver?.name || "Your care"}
             </h1>
           </div>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-            aria-label="Settings"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleTestAlarm}
+              className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+              aria-label="Test Medicine Reminder"
+              title="Test Medicine Reminder Alarm"
+            >
+              <Bell className="w-5 h-5 text-amber-500" />
+            </button>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+              aria-label="Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 

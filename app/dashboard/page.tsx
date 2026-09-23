@@ -31,8 +31,10 @@ import {
   Activity,
   Calendar,
   User,
+  AlertTriangle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getOverdueMeds, type OverdueMedInfo } from "@/lib/overdue-utils";
 
 import { MedicationForm } from "@/components/caregiver/medication-form";
 import { SettingsPanel } from "@/components/caregiver/settings-panel";
@@ -46,12 +48,57 @@ import { VoiceInput } from "@/components/caregiver/voice-input";
  * A high-level oversight view that works on both desktop and mobile.
  */
 export default function DashboardPage() {
-  const { data, isLoading, isDataLoading } = useSahay();
+  const { data, isLoading, isDataLoading, sendMessage } = useSahay();
 
   const router = useRouter();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Overdue Medicine Escalation State
+  const [acknowledgedOverdueMeds, setAcknowledgedOverdueMeds] = useState<Record<string, string>>({});
+  const [sentReminders, setSentReminders] = useState<Record<string, boolean>>({});
+  const [simulateOverdue, setSimulateOverdue] = useState(false);
+
+  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  const overdueMeds: OverdueMedInfo[] = useMemo(() => {
+    const detected = getOverdueMeds(data.medications).filter(
+      (item) => acknowledgedOverdueMeds[item.medication.id] !== todayStr
+    );
+    if (detected.length === 0 && simulateOverdue) {
+      return [
+        {
+          medication: {
+            id: "simulated_overdue_pill",
+            name: "Metformin",
+            dosage: "500 mg",
+            timeOfDay: "morning",
+            time: "08:00",
+            taken: false,
+            lastUpdated: new Date().toISOString(),
+          },
+          scheduledMinutes: 8 * 60,
+          scheduledTimeFormatted: "8:00 AM",
+          delayMinutes: 45,
+          delayFormatted: "45m late",
+        },
+      ];
+    }
+    return detected;
+  }, [data.medications, acknowledgedOverdueMeds, todayStr, simulateOverdue]);
+
+  const handleSendReminder = async (item: OverdueMedInfo) => {
+    const medName = item.medication.name;
+    const careReceiverName = data.careReceiver?.name || "there";
+    const text = `Hi ${careReceiverName}, gentle reminder to take your ${medName} (${item.medication.dosage}) when you can! ❤️`;
+    await sendMessage(text, true);
+    setSentReminders((prev) => ({ ...prev, [item.medication.id]: true }));
+  };
+
+  const handleAcknowledgeOverdue = (medId: string) => {
+    setAcknowledgedOverdueMeds((prev) => ({ ...prev, [medId]: todayStr }));
+  };
 
   const groupedMeds: Record<TimeOfDay, Medication[]> = useMemo(() => {
     const grouped: Record<TimeOfDay, Medication[]> = {
@@ -118,11 +165,23 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between md:justify-end gap-4">
-            <div className="flex items-center gap-2 px-4 py-2 bg-secondary rounded-full text-xs md:text-sm font-medium">
+          <div className="flex items-center justify-between md:justify-end gap-3">
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-secondary rounded-full text-xs md:text-sm font-medium">
               <Activity className="w-4 h-4 text-sahay-success" />
               <span>System Status: Nominal</span>
             </div>
+            <button
+              onClick={() => setSimulateOverdue((prev) => !prev)}
+              className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 active:scale-95 ${
+                simulateOverdue
+                  ? "bg-amber-500 text-slate-950 border-amber-600 shadow-sm"
+                  : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+              }`}
+              title="Toggle simulated overdue dose alert to test it"
+            >
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <span>{simulateOverdue ? "Overdue Active" : "Simulate Overdue"}</span>
+            </button>
             <button
               onClick={() => setShowSettings(true)}
               className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-all active:scale-95"
@@ -184,6 +243,60 @@ export default function DashboardPage() {
           <div className="col-span-1 lg:col-span-6 space-y-8 order-1 lg:order-2">
             {/* Urgent Alerts Area */}
             <div className="space-y-4">
+              {/* Overdue Medicine Alert Banner */}
+              {overdueMeds.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-amber-500 text-slate-900 rounded-3xl p-6 shadow-xl shadow-amber-500/20 flex flex-col md:flex-row items-center justify-between gap-6 border-l-8 border-amber-700"
+                >
+                  <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 rounded-full bg-black/10 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-8 h-8 text-amber-950" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl md:text-2xl font-extrabold text-slate-950">
+                          Overdue Medicine Alert
+                        </h3>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-950 text-white">
+                          {overdueMeds.length} pending
+                        </span>
+                      </div>
+                      <div className="mt-1 space-y-0.5 text-sm font-medium text-slate-900">
+                        {overdueMeds.map((item) => (
+                          <p key={item.medication.id}>
+                            <strong>{item.medication.name}</strong> ({item.medication.dosage}) was scheduled for {item.scheduledTimeFormatted} —{" "}
+                            <span className="font-bold underline">{item.delayFormatted}</span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center md:justify-end gap-2.5 shrink-0">
+                    <button
+                      onClick={() => router.push("/caregiver/emergency")}
+                      className="px-4 py-2.5 bg-slate-950 text-white font-bold rounded-xl hover:bg-slate-900 transition-all flex items-center gap-2 text-sm shadow-md"
+                    >
+                      <Phone className="w-4 h-4" /> Call
+                    </button>
+                    <button
+                      onClick={() => handleSendReminder(overdueMeds[0])}
+                      disabled={sentReminders[overdueMeds[0]?.medication.id]}
+                      className="px-4 py-2.5 bg-white text-slate-950 font-bold rounded-xl hover:bg-slate-100 transition-all flex items-center gap-2 text-sm shadow-md"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      {sentReminders[overdueMeds[0]?.medication.id] ? "Sent ✓" : "Send Reminder"}
+                    </button>
+                    <button
+                      onClick={() => overdueMeds.forEach((item) => handleAcknowledgeOverdue(item.medication.id))}
+                      className="px-3 py-2 bg-amber-600/30 hover:bg-amber-600/40 text-slate-950 font-semibold rounded-xl text-xs transition-all"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </motion.div>
+              )}
               {data.timeline.find(
                 (e) =>
                   e.type === "help_requested" && !e.note?.includes("resolved"),
@@ -294,44 +407,72 @@ export default function DashboardPage() {
                         </h3>
                       </div>
                       <div className="grid grid-cols-1 gap-3">
-                        {meds.map((med) => (
-                          <motion.div
-                            key={med.id}
-                            className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${med.taken ? "bg-sahay-success/5 border-sahay-success/20" : "bg-card border-border hover:border-primary/30"}`}
-                            whileHover={{ x: 5 }}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div
-                                className={`w-10 h-10 rounded-full flex items-center justify-center ${med.taken ? "bg-sahay-success text-white" : "bg-secondary text-muted-foreground"}`}
-                              >
-                                {med.taken ? (
-                                  <Check className="w-6 h-6" />
-                                ) : (
-                                  <Clock className="w-6 h-6" />
-                                )}
-                              </div>
-                              <div>
-                                <p
-                                  className={`text-lg font-bold ${med.taken ? "text-muted-foreground line-through" : "text-foreground"}`}
-                                >
-                                  {med.name}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {med.dosage} •{" "}
-                                  {med.time
-                                    ? formatTime12h(med.time)
-                                    : "As needed"}
-                                </p>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => setEditingMed(med)}
-                              className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                        {meds.map((med) => {
+                          const overdueInfo = overdueMeds.find((o) => o.medication.id === med.id);
+                          return (
+                            <motion.div
+                              key={med.id}
+                              className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${
+                                med.taken
+                                  ? "bg-sahay-success/5 border-sahay-success/20"
+                                  : overdueInfo
+                                    ? "bg-amber-500/10 border-amber-500/40"
+                                    : "bg-card border-border hover:border-primary/30"
+                              }`}
+                              whileHover={{ x: 5 }}
                             >
-                              <Settings className="w-5 h-5" />
-                            </button>
-                          </motion.div>
-                        ))}
+                              <div className="flex items-center gap-4">
+                                <div
+                                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                    med.taken
+                                      ? "bg-sahay-success text-white"
+                                      : overdueInfo
+                                        ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 animate-pulse"
+                                        : "bg-secondary text-muted-foreground"
+                                  }`}
+                                >
+                                  {med.taken ? (
+                                    <Check className="w-6 h-6" />
+                                  ) : overdueInfo ? (
+                                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                  ) : (
+                                    <Clock className="w-6 h-6" />
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p
+                                      className={`text-lg font-bold ${
+                                        med.taken
+                                          ? "text-muted-foreground line-through"
+                                          : "text-foreground"
+                                      }`}
+                                    >
+                                      {med.name}
+                                    </p>
+                                    {overdueInfo && (
+                                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 animate-pulse">
+                                        {overdueInfo.delayFormatted}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {med.dosage} •{" "}
+                                    {med.time
+                                      ? formatTime12h(med.time)
+                                      : "As needed"}
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setEditingMed(med)}
+                                className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                              >
+                                <Settings className="w-5 h-5" />
+                              </button>
+                            </motion.div>
+                          );
+                        })}
                       </div>
                     </div>
                   );

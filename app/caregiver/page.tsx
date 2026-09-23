@@ -34,8 +34,10 @@ import {
   ShieldAlert,
   Smile,
   Pill,
+  AlertTriangle,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+import { getOverdueMeds, type OverdueMedInfo } from "@/lib/overdue-utils";
 
 import { MedicationForm } from "@/components/caregiver/medication-form";
 import { SettingsPanel } from "@/components/caregiver/settings-panel";
@@ -58,8 +60,15 @@ import { CaregiverBottomNav } from "@/components/caregiver/bottom-nav";
  * Mobile-first App View. Desktop users are encouraged to use /dashboard
  */
 export default function CaregiverPage() {
-  const { data, isLoading, isDataLoading, getUnreadCount, endHandover, resolveHelpRequest } =
-    useSahay();
+  const {
+    data,
+    isLoading,
+    isDataLoading,
+    getUnreadCount,
+    endHandover,
+    resolveHelpRequest,
+    sendMessage,
+  } = useSahay();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -79,6 +88,51 @@ export default function CaregiverPage() {
 
   const unreadMessages = getUnreadCount();
   const currentTimeOfDay = getCurrentTimeOfDay();
+
+  // Overdue Medicine Escalation State
+  const [acknowledgedOverdueMeds, setAcknowledgedOverdueMeds] = useState<Record<string, string>>({});
+  const [sentReminders, setSentReminders] = useState<Record<string, boolean>>({});
+  const [simulateOverdue, setSimulateOverdue] = useState(false);
+
+  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  const overdueMeds: OverdueMedInfo[] = useMemo(() => {
+    const detected = getOverdueMeds(data.medications).filter(
+      (item) => acknowledgedOverdueMeds[item.medication.id] !== todayStr
+    );
+    if (detected.length === 0 && simulateOverdue) {
+      return [
+        {
+          medication: {
+            id: "simulated_overdue_pill",
+            name: "Metformin",
+            dosage: "500 mg",
+            timeOfDay: "morning",
+            time: "08:00",
+            taken: false,
+            lastUpdated: new Date().toISOString(),
+          },
+          scheduledMinutes: 8 * 60,
+          scheduledTimeFormatted: "8:00 AM",
+          delayMinutes: 45,
+          delayFormatted: "45m late",
+        },
+      ];
+    }
+    return detected;
+  }, [data.medications, acknowledgedOverdueMeds, todayStr, simulateOverdue]);
+
+  const handleSendReminder = async (item: OverdueMedInfo) => {
+    const medName = item.medication.name;
+    const careReceiverName = data.careReceiver?.name || "there";
+    const text = `Hi ${careReceiverName}, gentle reminder to take your ${medName} (${item.medication.dosage}) when you can! ❤️`;
+    await sendMessage(text, true);
+    setSentReminders((prev) => ({ ...prev, [item.medication.id]: true }));
+  };
+
+  const handleAcknowledgeOverdue = (medId: string) => {
+    setAcknowledgedOverdueMeds((prev) => ({ ...prev, [medId]: todayStr }));
+  };
 
   const groupedMeds: Record<TimeOfDay, Medication[]> = useMemo(() => {
     const grouped = { morning: [], afternoon: [], evening: [] };
@@ -148,12 +202,27 @@ export default function CaregiverPage() {
             {data.careReceiver?.name}'s Care
           </h1>
         </div>
-        <button
-          onClick={() => setShowSettings(true)}
-          className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition-all"
-        >
-          <Settings className="w-6 h-6 text-foreground" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSimulateOverdue((prev) => !prev)}
+            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 active:scale-95 ${
+              simulateOverdue
+                ? "bg-amber-500 text-slate-950 border-amber-600 shadow-sm"
+                : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+            }`}
+            title="Toggle simulated overdue dose alert to test it"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+            <span>{simulateOverdue ? "Overdue Active" : "Simulate Overdue"}</span>
+          </button>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition-all"
+            aria-label="Settings"
+          >
+            <Settings className="w-6 h-6 text-foreground" />
+          </button>
+        </div>
       </header>
 
       {data.caregiver?.handover?.isActive && (
@@ -178,6 +247,58 @@ export default function CaregiverPage() {
         >
           <Plus className="w-5 h-5" /> Add medication
         </motion.button>
+
+        {/* Proactive Overdue Medicine Alert Banner */}
+        {overdueMeds.length > 0 && (
+          <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-5 mb-6 shadow-lg shadow-amber-500/10">
+            <div className="flex items-start gap-3.5 mb-4">
+              <div className="w-11 h-11 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                    Overdue Medicine Alert
+                  </h3>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                    {overdueMeds.length} pending
+                  </span>
+                </div>
+                <div className="mt-1 space-y-1">
+                  {overdueMeds.map((item) => (
+                    <p key={item.medication.id} className="text-sm text-foreground">
+                      <strong>{item.medication.name}</strong> ({item.medication.dosage}) was scheduled for {item.scheduledTimeFormatted} — <span className="font-bold text-amber-600 dark:text-amber-400">{item.delayFormatted}</span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 mb-2.5">
+              <button
+                onClick={() => setShowEmergency(true)}
+                className="flex items-center justify-center gap-2 py-2.5 px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl text-sm transition-all"
+              >
+                <Phone className="w-4 h-4" /> Call {data.careReceiver?.name || "Them"}
+              </button>
+              <button
+                onClick={() => handleSendReminder(overdueMeds[0])}
+                disabled={sentReminders[overdueMeds[0]?.medication.id]}
+                className="flex items-center justify-center gap-2 py-2.5 px-3 bg-secondary hover:bg-secondary/80 text-foreground font-semibold rounded-xl text-sm transition-all border border-border"
+              >
+                <MessageCircle className="w-4 h-4" />
+                {sentReminders[overdueMeds[0]?.medication.id] ? "Sent ✓" : "Send Reminder"}
+              </button>
+            </div>
+
+            <button
+              onClick={() => overdueMeds.forEach((item) => handleAcknowledgeOverdue(item.medication.id))}
+              className="w-full py-2 px-3 bg-background/80 hover:bg-background border border-amber-500/30 text-amber-700 dark:text-amber-300 font-medium rounded-xl text-xs transition-all text-center"
+            >
+              ✓ Acknowledge & Dismiss Alert for Today
+            </button>
+          </div>
+        )}
 
         {data.timeline.find(
           (e) => e.type === "help_requested" && !e.note?.includes("resolved"),
@@ -310,37 +431,63 @@ export default function CaregiverPage() {
                   </h2>
                 </div>
                 <div className="space-y-2">
-                  {meds.map((med, idx) => (
-                    <button
-                      key={med.id}
-                      onClick={() => setEditingMed(med)}
-                      className="w-full p-4 bg-card rounded-xl border-2 border-border text-left flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center ${med.taken ? "bg-sahay-success/20" : "bg-sahay-pending/20"}`}
-                        >
-                          {med.taken ? (
-                            <Check className="w-4 h-4 text-sahay-success" />
-                          ) : (
-                            <Clock className="w-4 h-4 text-sahay-pending" />
-                          )}
-                        </div>
-                        <div>
-                          <p
-                            className={`text-lg font-medium ${med.taken ? "text-muted-foreground line-through" : "text-foreground"}`}
+                  {meds.map((med) => {
+                    const overdueInfo = overdueMeds.find((o) => o.medication.id === med.id);
+                    return (
+                      <button
+                        key={med.id}
+                        onClick={() => setEditingMed(med)}
+                        className={`w-full p-4 rounded-xl border-2 text-left flex items-center justify-between transition-all ${
+                          overdueInfo
+                            ? "bg-amber-500/5 border-amber-500/40"
+                            : "bg-card border-border"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              med.taken
+                                ? "bg-sahay-success/20"
+                                : overdueInfo
+                                  ? "bg-amber-500/20 animate-pulse"
+                                  : "bg-sahay-pending/20"
+                            }`}
                           >
-                            {med.name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {med.dosage} •{" "}
-                            {med.time ? formatTime12h(med.time) : ""}
-                          </p>
+                            {med.taken ? (
+                              <Check className="w-4 h-4 text-sahay-success" />
+                            ) : overdueInfo ? (
+                              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                            ) : (
+                              <Clock className="w-4 h-4 text-sahay-pending" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p
+                                className={`text-lg font-medium ${
+                                  med.taken
+                                    ? "text-muted-foreground line-through"
+                                    : "text-foreground"
+                                }`}
+                              >
+                                {med.name}
+                              </p>
+                              {overdueInfo && (
+                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 animate-pulse">
+                                  {overdueInfo.delayFormatted}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {med.dosage} •{" "}
+                              {med.time ? formatTime12h(med.time) : ""}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                  ))}
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      </button>
+                    );
+                  })}
                 </div>
               </section>
             );
