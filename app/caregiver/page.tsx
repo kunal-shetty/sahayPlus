@@ -69,6 +69,7 @@ export default function CaregiverPage() {
     endHandover,
     resolveHelpRequest,
     sendMessage,
+    getTodayWellness,
   } = useSahay();
 
   const router = useRouter();
@@ -96,7 +97,37 @@ export default function CaregiverPage() {
   const [simulateOverdue, setSimulateOverdue] = useState(false);
   const [isAlertDismissed, setIsAlertDismissed] = useState(false);
 
+  // Morning Wellness Escalation State
+  const [simulateMissingWellness, setSimulateMissingWellness] = useState(false);
+  const [acknowledgedMissingWellness, setAcknowledgedMissingWellness] = useState(false);
+  const [sentWellnessReminder, setSentWellnessReminder] = useState(false);
+
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const todayWellness = getTodayWellness();
+
+  // Determine if morning wellness check-in is overdue (after 9:45 AM — 15 min grace after 9:30 AM reminder) and missing
+  const isWellnessOverdue = useMemo(() => {
+    if (acknowledgedMissingWellness) return false;
+    if (simulateMissingWellness) return true;
+    if (todayWellness) return false;
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const thresholdMinutes = 9 * 60 + 45; // 9:45 AM (9:30 AM + 15 min grace period)
+    return currentMinutes >= thresholdMinutes;
+  }, [acknowledgedMissingWellness, simulateMissingWellness, todayWellness]);
+
+  const handleSendWellnessReminder = async () => {
+    const careReceiverName = data.careReceiver?.name || "Dad";
+    const text = `Hi ${careReceiverName}, just checking in to see how you're feeling today! Hope you have a wonderful morning ❤️`;
+    await sendMessage(text, true);
+    setSentWellnessReminder(true);
+  };
+
+  const handleDismissWellnessAlert = () => {
+    setAcknowledgedMissingWellness(true);
+    setSimulateMissingWellness(false);
+  };
 
   // Hydrate acknowledged overdue meds from localStorage
   useEffect(() => {
@@ -267,6 +298,22 @@ export default function CaregiverPage() {
             <span>{simulateOverdue ? "Overdue Active" : "Simulate Overdue"}</span>
           </button>
           <button
+            onClick={() => {
+              setAcknowledgedMissingWellness(false);
+              setSentWellnessReminder(false);
+              setSimulateMissingWellness((prev) => !prev);
+            }}
+            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 active:scale-95 ${
+              simulateMissingWellness
+                ? "bg-orange-500 text-slate-950 border-orange-600 shadow-sm"
+                : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+            }`}
+            title="Toggle simulated missing morning wellness check-in alert"
+          >
+            <Smile className="w-3.5 h-3.5 text-orange-500" />
+            <span>{simulateMissingWellness ? "Missing Wellness Active" : "Simulate Missing Check-in"}</span>
+          </button>
+          <button
             onClick={() => setShowSettings(true)}
             className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition-all"
             aria-label="Settings"
@@ -354,6 +401,63 @@ export default function CaregiverPage() {
 
             <button
               onClick={handleDismissOverdueAlert}
+              className="w-full py-2 px-3 bg-background/80 hover:bg-background border border-amber-500/30 text-amber-700 dark:text-amber-300 font-medium rounded-xl text-xs transition-all text-center"
+            >
+              ✓ Acknowledge & Dismiss Alert for Today
+            </button>
+          </div>
+        )}
+
+        {/* Module 5: Morning Wellness Check-in Escalation Alert Banner */}
+        {isWellnessOverdue && (
+          <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 border-2 border-amber-500/40 rounded-2xl p-5 mb-6 shadow-lg shadow-amber-500/10">
+            <div className="flex items-start gap-3.5 mb-4">
+              <div className="w-11 h-11 rounded-full bg-amber-500/25 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-amber-600 dark:text-amber-400">
+                      Morning Check-In Overdue
+                    </h3>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                      Action Needed
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleDismissWellnessAlert}
+                    className="p-1 rounded-lg hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 transition-colors"
+                    title="Dismiss alert"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-xs text-foreground mt-1">
+                  <strong>{data.careReceiver?.name || "Care Receiver"}</strong> has not completed their morning wellness check-in today.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 mb-2.5">
+              <button
+                onClick={() => setShowEmergency(true)}
+                className="flex items-center justify-center gap-2 py-2.5 px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl text-sm transition-all"
+              >
+                <Phone className="w-4 h-4" /> Call {data.careReceiver?.name || "Them"}
+              </button>
+              <button
+                onClick={handleSendWellnessReminder}
+                disabled={sentWellnessReminder}
+                className="flex items-center justify-center gap-2 py-2.5 px-3 bg-secondary hover:bg-secondary/80 text-foreground font-semibold rounded-xl text-sm transition-all border border-border"
+              >
+                <MessageCircle className="w-4 h-4" />
+                {sentWellnessReminder ? "Sent ✓" : "Send Reminder"}
+              </button>
+            </div>
+
+            <button
+              onClick={handleDismissWellnessAlert}
               className="w-full py-2 px-3 bg-background/80 hover:bg-background border border-amber-500/30 text-amber-700 dark:text-amber-300 font-medium rounded-xl text-xs transition-all text-center"
             >
               ✓ Acknowledge & Dismiss Alert for Today
@@ -456,24 +560,42 @@ export default function CaregiverPage() {
 
         <QuickPillActions />
 
-        {data.lastFineCheckIn?.startsWith(
-          new Date().toISOString().split("T")[0],
-        ) && (
-          <div className="bg-sahay-success/10 border-2 border-sahay-success/20 rounded-2xl p-5 mb-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-sahay-success/20 flex items-center justify-center">
-              <Smile className="w-6 h-6 text-sahay-success" />
+        {todayWellness && (
+          <div
+            className={`border-2 rounded-2xl p-5 mb-6 flex items-start gap-4 ${
+              todayWellness.level === "great"
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200"
+                : todayWellness.level === "okay"
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200"
+                : "bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-200"
+            }`}
+          >
+            <div className="w-12 h-12 rounded-full bg-background/80 flex items-center justify-center shrink-0 shadow-xs">
+              <Smile className="w-6 h-6" />
             </div>
-            <div>
-              <p className="text-lg font-bold text-foreground">
-                {data.careReceiver?.name} checked in
+            <div className="flex-1">
+              <p className="text-base font-bold text-foreground">
+                {data.careReceiver?.name} checked in:{" "}
+                <span className="capitalize">
+                  {todayWellness.level === "great"
+                    ? "Feeling Great"
+                    : todayWellness.level === "okay"
+                    ? "Doing Okay"
+                    : "Not Feeling Great"}
+                </span>
               </p>
-              <p className="text-muted-foreground">
-                They tapped "I'm fine today" at{" "}
-                {new Date(data.lastFineCheckIn!).toLocaleTimeString([], {
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Recorded at{" "}
+                {new Date(todayWellness.timestamp).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
               </p>
+              {todayWellness.note && (
+                <p className="text-xs italic bg-background/50 p-2 rounded-xl border border-border/40 mt-2 text-foreground/90">
+                  &ldquo;{todayWellness.note}&rdquo;
+                </p>
+              )}
             </div>
           </div>
         )}

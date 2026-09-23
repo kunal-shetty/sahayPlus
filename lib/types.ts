@@ -85,6 +85,8 @@ export interface WellnessEntry {
   note?: string
   /** ISO timestamp of when the entry was created. */
   timestamp: string
+  /** Whether the entry has been viewed/read by the caregiver. */
+  isRead?: boolean
 }
 
 /**

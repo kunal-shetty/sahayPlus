@@ -38,6 +38,7 @@ import {
   Bell,
 } from "lucide-react";
 import { WellnessCheckin } from "@/components/care-receiver/wellness-checkin";
+import { MorningWellnessCard } from "@/components/care-receiver/morning-wellness-card";
 import { QuickMessages } from "@/components/care-receiver/quick-messages";
 import { EmergencyCall } from "@/components/care-receiver/emergency-call";
 import { SafetyCheckPrompt } from "@/components/care-receiver/safety-check-prompt";
@@ -580,6 +581,10 @@ export default function CareReceiverPage() {
   const isFineCheckedIn = data.lastFineCheckIn?.startsWith(
     new Date().toISOString().split("T")[0],
   );
+  const currentHour = new Date().getHours();
+  const currentMinute = new Date().getMinutes();
+  const isPastLateMorning = currentHour > 9 || (currentHour === 9 && currentMinute >= 30);
+  const isLateMorningReminder = !isFineCheckedIn && isPastLateMorning;
   return (
     <main
       className={cn(
@@ -695,25 +700,8 @@ export default function CareReceiverPage() {
             )}
           </AnimatePresence>
 
-          {!isFineCheckedIn && (
-            <motion.button
-              onClick={completeDailyCheckIn}
-              className="w-full p-6 rounded-2xl border-2 mb-8 flex items-center gap-4 touch-manipulation transition-all bg-card border-border hover:border-primary/50 text-card-foreground shadow-sm"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-primary/10 text-primary">
-                <Smile className="w-6 h-6" />
-              </div>
-              <div className="text-left">
-                <p className="text-xl font-bold text-foreground">I&apos;m fine today</p>
-                <p className="text-sm text-muted-foreground">
-                  Tap to let {data.caregiver?.name} know
-                </p>
-              </div>
-            </motion.button>
-          )}
+          {/* Module 5: Morning Wellness Check-In Card & Gentle Reminder */}
+          <MorningWellnessCard isLateMorningReminder={isLateMorningReminder} />
 
           {nextMed ? (
             <>

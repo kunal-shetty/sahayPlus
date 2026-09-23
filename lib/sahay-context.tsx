@@ -1265,9 +1265,10 @@ export function SahayProvider({ children }: { children: ReactNode }) {
             e.id === tempId ? { ...e, id: String(res.entry.id) } : e
           ),
         }))
+        broadcastCareSync('wellness_change', { date: today, level: normalizedLevel, note })
       })
     }
-  }, [getCareRelId, getUserId])
+  }, [getCareRelId, getUserId, broadcastCareSync])
 
   /**
    * Retrieves the wellness entry for today.
@@ -1872,10 +1873,11 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     const today = new Date().toISOString().split('T')[0]
 
     try {
-      const [medsRes, logsRes, timelineRes] = await Promise.allSettled([
+      const [medsRes, logsRes, timelineRes, wellnessRes] = await Promise.allSettled([
         api.medications.list(crId),
         fetch(`/api/medication-logs?care_relationship_id=${crId}&date=${today}`).then((r) => (r.ok ? r.json() : null)),
         api.timeline.list(crId),
+        api.wellness.list(crId),
       ])
 
       const takenMedIds = new Set<string>()
@@ -1931,10 +1933,25 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           }))
           : prev.timeline
 
+        const updatedWellness: WellnessEntry[] = wellnessRes.status === 'fulfilled'
+          ? (wellnessRes.value.entries || []).map((w: any) => ({
+            id: String(w.id),
+            date: w.date,
+            level: (w.level === 'not_great' ? 'notGreat' : w.level) as WellnessLevel,
+            note: w.note || undefined,
+            timestamp: w.created_at || w.date,
+            isRead: false,
+          }))
+          : prev.wellnessEntries
+
+        const todayWellness = updatedWellness.find((w) => w.date === today)
+
         return {
           ...prev,
           medications: updatedMeds,
           timeline: updatedTimeline,
+          wellnessEntries: updatedWellness,
+          lastFineCheckIn: todayWellness ? (todayWellness.timestamp || today) : prev.lastFineCheckIn,
           lastChangeNotifiedAt: countChanged ? new Date().toISOString() : prev.lastChangeNotifiedAt,
         }
       })
@@ -2113,10 +2130,45 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'wellness_entries',
+          filter: `care_relationship_id=eq.${crId}`,
+        },
+        (payload) => {
+          if ((payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') && payload.new) {
+            const raw = payload.new as any
+            const normalizedLevel: WellnessLevel = raw.level === 'not_great' ? 'notGreat' : raw.level
+            const newEntry: WellnessEntry = {
+              id: String(raw.id),
+              date: raw.date,
+              level: normalizedLevel,
+              note: raw.note || undefined,
+              timestamp: raw.created_at || raw.date,
+              isRead: false,
+            }
+            const today = new Date().toISOString().split('T')[0]
+            setData((prev) => {
+              const filtered = (prev.wellnessEntries || []).filter((e) => e.date !== raw.date && e.id !== String(raw.id))
+              return {
+                ...prev,
+                lastFineCheckIn: raw.date === today ? (raw.created_at || new Date().toISOString()) : prev.lastFineCheckIn,
+                wellnessEntries: [newEntry, ...filtered],
+              }
+            })
+          }
+        }
+      )
       .on('broadcast', { event: 'medication_change' }, () => {
         refreshRelationshipData()
       })
       .on('broadcast', { event: 'intake_change' }, () => {
+        refreshRelationshipData()
+      })
+      .on('broadcast', { event: 'wellness_change' }, () => {
         refreshRelationshipData()
       })
       .subscribe((status) => {
