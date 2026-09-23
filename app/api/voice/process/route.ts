@@ -21,7 +21,7 @@ const GROQ_MODEL = "openai/gpt-oss-120b";
  */
 export async function POST(req: Request) {
   try {
-    const { text, careRelationshipId } = await req.json();
+    const { text, careRelationshipId, medications: clientMeds } = await req.json();
 
     if (!text || typeof text !== "string" || !text.trim()) {
       return NextResponse.json(
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!careRelationshipId) {
+    if (!careRelationshipId && (!clientMeds || clientMeds.length === 0)) {
       return NextResponse.json(
         { error: "No care relationship is linked to this account yet." },
         { status: 400 },
@@ -113,24 +113,25 @@ export async function POST(req: Request) {
       });
     }
 
-    // 1. Find the medication by name, scoped to this care relationship.
-    const { data: meds, error } = await supabase
-      .from("medications")
-      .select("id, name")
-      .eq("care_relationship_id", careRelationshipId);
+    // 1. Find the medication by name, using candidate list or query
+    let candidateMeds: any[] = clientMeds || [];
+    if (candidateMeds.length === 0 && careRelationshipId) {
+      const { data: meds, error } = await supabase
+        .from("medications")
+        .select("id, name")
+        .eq("care_relationship_id", careRelationshipId);
 
-    if (error) {
-      console.error(
-        "[Voice Action Error] Failed to load medications:",
-        error.message,
-      );
-      return NextResponse.json(
-        { error: "Failed to load your medication list" },
-        { status: 500 },
-      );
+      if (error) {
+        console.error(
+          "[Voice Action Error] Failed to load medications:",
+          error.message,
+        );
+      } else {
+        candidateMeds = meds || [];
+      }
     }
 
-    const med = (meds || []).find((m) => {
+    const med = candidateMeds.find((m: any) => {
       const name = (m.name || "").trim().toLowerCase();
       return (
         name.length > 0 && (name.includes(spoken) || spoken.includes(name))

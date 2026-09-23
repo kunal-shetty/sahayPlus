@@ -42,6 +42,7 @@ import { QuickMessages } from "@/components/care-receiver/quick-messages";
 import { EmergencyCall } from "@/components/care-receiver/emergency-call";
 import { SafetyCheckPrompt } from "@/components/care-receiver/safety-check-prompt";
 import { IntakeAlarmModal } from "@/components/care-receiver/intake-alarm-modal";
+import { VoiceIntakeModal } from "@/components/care-receiver/voice-intake-modal";
 import {
   playMedicineChime,
   stopMedicineChime,
@@ -93,6 +94,7 @@ export default function CareReceiverPage() {
   const [showUndo, setShowUndo] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showWellness, setShowWellness] = useState(false);
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -476,6 +478,20 @@ export default function CareReceiverPage() {
 
             <button
               onClick={() => {
+                setShowSettings(false);
+                unlockAudioContext();
+                setShowVoiceModal(true);
+              }}
+              className="w-full py-4 px-6 bg-primary/10 border border-primary/20 text-primary text-xl font-semibold
+                       rounded-2xl transition-all active:scale-[0.97] touch-manipulation flex items-center justify-center gap-3
+                       focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <Mic className="w-6 h-6" />
+              Test Voice Intake ("I took my Dolo")
+            </button>
+
+            <button
+              onClick={() => {
                 triggerSafetyCheck("manual");
                 setShowSettings(false);
               }}
@@ -608,6 +624,17 @@ export default function CareReceiverPage() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                unlockAudioContext();
+                setShowVoiceModal(true);
+              }}
+              className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary text-primary hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+              aria-label="Voice Medication Confirmation"
+              title="Speak to record your dose"
+            >
+              <Mic className="w-5 h-5 text-primary" />
+            </button>
             <button
               onClick={handleTestAlarm}
               className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
@@ -765,26 +792,17 @@ export default function CareReceiverPage() {
 
                 <motion.button
                   onClick={() => {
-                    setIsListening(true);
-                    setTimeout(() => {
-                      setIsListening(false);
-                      handleTookIt();
-                    }, 2000);
+                    unlockAudioContext();
+                    setShowVoiceModal(true);
                   }}
-                  className={cn(
-                    "w-20 rounded-2xl flex items-center justify-center border-2 transition-all",
-                    isListening
-                      ? "bg-primary text-primary-foreground border-primary animate-pulse"
-                      : "bg-card border-border text-muted-foreground hover:border-primary/50",
-                  )}
+                  className="w-20 rounded-2xl flex items-center justify-center border-2 border-border bg-card text-primary hover:border-primary/50 hover:bg-primary/5 transition-all shadow-xs active:scale-95"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.25 }}
                   aria-label="Voice confirmation"
+                  title="Speak to confirm taking your medication"
                 >
-                  <Mic
-                    className={cn("w-8 h-8", isListening && "scale-125")}
-                  />
+                  <Mic className="w-8 h-8" />
                 </motion.button>
               </div>
             </>
@@ -936,6 +954,20 @@ export default function CareReceiverPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <VoiceIntakeModal
+        isOpen={showVoiceModal}
+        onClose={() => setShowVoiceModal(false)}
+        medications={data.medications}
+        nextMed={nextMed}
+        onConfirmDose={(medId) => {
+          const med = data.medications.find((m) => m.id === medId) || nextMed;
+          markMedicationTaken(medId, true);
+          if (med) {
+            setConfirmedMed(med);
+            setShowUndo(true);
+          }
+        }}
+      />
       <SafetyCheckPrompt />
     </main>
   );

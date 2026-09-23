@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { Mic, Square, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useSahay } from "@/lib/sahay-context";
 import { cn } from "@/lib/utils";
+import { matchMedicationFromTranscript } from "@/lib/voice-matcher";
+import { playSuccessChime, unlockAudioContext } from "@/lib/audio-chime";
 
 interface VoiceInputProps {
   className?: string;
@@ -52,7 +54,7 @@ function extensionForMimeType(mimeType: string): string {
 }
 
 export function VoiceInput({ className }: VoiceInputProps) {
-  const { user, markMedicationTaken } = useSahay();
+  const { user, data, markMedicationTaken } = useSahay();
   const [isRecording, setIsRecording] = useState(false);
   const [status, setStatus] = useState<
     "idle" | "recording" | "processing" | "success" | "error"
@@ -82,6 +84,7 @@ export function VoiceInput({ className }: VoiceInputProps) {
   }, [stopStream]);
 
   const startRecording = async () => {
+    unlockAudioContext();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStream.current = stream;
@@ -154,7 +157,17 @@ export function VoiceInput({ className }: VoiceInputProps) {
 
       setMessage(`"${text}"`);
 
-      // 2. Process action
+      // 2. Fast Path: Local intelligent matching
+      const localMatch = matchMedicationFromTranscript(text, data.medications);
+      if (localMatch.matchedMed && localMatch.confidence === "high") {
+        playSuccessChime();
+        markMedicationTaken(localMatch.matchedMed.id, true);
+        setStatus("success");
+        setMessage(localMatch.feedbackMessage);
+        return;
+      }
+
+      // 3. Fallback: LLM processing via /api/voice/process
       setStatus("processing");
       setMessage("Updating records...");
       const procRes = await fetch("/api/voice/process", {
@@ -164,14 +177,14 @@ export function VoiceInput({ className }: VoiceInputProps) {
           text,
           userId: user?.id,
           careRelationshipId: user?.care_relationship_id,
+          medications: data.medications,
         }),
       });
       const procData = await procRes.json();
 
       if (procRes.ok && procData.success) {
-        // The server only resolves the match; applying it here keeps the shared
-        // dashboard state (checklist, progress bar, timeline) in sync.
         if (procData.medicationId) {
+          playSuccessChime();
           markMedicationTaken(String(procData.medicationId), true);
         }
         setStatus("success");
