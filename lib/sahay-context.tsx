@@ -6,6 +6,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react'
 import {
@@ -283,6 +284,22 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   const [isDataLoading, setIsDataLoading] = useState(false)
   const [user, setUser] = useState<SahayUser | null>(null)
   const [caregiverId, setCaregiverId] = useState<string | null>(null)
+  const realtimeChannelRef = useRef<any>(null)
+
+  /** Broadcasts real-time events to other connected devices in this care relationship */
+  const broadcastCareSync = useCallback((event: string, payload?: any) => {
+    if (realtimeChannelRef.current) {
+      try {
+        realtimeChannelRef.current.send({
+          type: 'broadcast',
+          event,
+          payload: payload || {},
+        })
+      } catch (err) {
+        console.warn('[Realtime Broadcast]', err)
+      }
+    }
+  }, [])
 
   /** Safely returns the current user ID. */
   const getUserId = useCallback(() => user?.id || '', [user])
@@ -793,16 +810,20 @@ export function SahayProvider({ children }: { children: ReactNode }) {
             refill_days_left: med.refillDaysLeft,
             pharmacist_note: med.pharmacistNote,
           })
-          setData((prev) => ({
-            ...prev,
-            medications: prev.medications.map((m) =>
-              m.id === tempId ? { ...m, id: String(res.medication.id) } : m
-            ),
-          }))
+          if (res?.medication?.id) {
+            setData((prev) => ({
+              ...prev,
+              medications: prev.medications.map((m) =>
+                m.id === tempId ? { ...m, id: String(res.medication.id) } : m
+              ),
+            }))
+            broadcastCareSync('medication_change', { action: 'add', id: res.medication.id })
+          }
+          return res
         })
       }
     },
-    [getCareRelId]
+    [getCareRelId, broadcastCareSync]
   )
 
   /**
@@ -831,10 +852,14 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       if (updates.pharmacistNote !== undefined) dbUpdates.pharmacist_note = updates.pharmacistNote
 
       if (Object.keys(dbUpdates).length > 0) {
-        safeApiCall(() => api.medications.update(id, dbUpdates))
+        safeApiCall(async () => {
+          const res = await api.medications.update(id, dbUpdates)
+          broadcastCareSync('medication_change', { action: 'update', id })
+          return res
+        })
       }
     },
-    []
+    [broadcastCareSync]
   )
 
   /**
@@ -846,8 +871,12 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       medications: prev.medications.filter((med) => med.id !== id),
       lastChangeNotifiedAt: new Date().toISOString(),
     }))
-    safeApiCall(() => api.medications.remove(id))
-  }, [])
+    safeApiCall(async () => {
+      const res = await api.medications.remove(id)
+      broadcastCareSync('medication_change', { action: 'remove', id })
+      return res
+    })
+  }, [broadcastCareSync])
 
   /**
    * Marks a medication as taken or skipped and triggers corresponding API calls and notifications.
@@ -877,7 +906,11 @@ export function SahayProvider({ children }: { children: ReactNode }) {
 
     const userId = getUserId()
     if (taken) {
-      safeApiCall(() => api.medications.take(id, userId))
+      safeApiCall(async () => {
+        const res = await api.medications.take(id, userId)
+        broadcastCareSync('intake_change', { id, taken: true })
+        return res
+      })
 
       if (caregiverId) {
         const medName = med?.name || 'Medicine'
@@ -891,9 +924,13 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         showNotification('Medication Taken', `Notified caregiver that you took ${medName}`)
       }
     } else {
-      safeApiCall(() => api.medications.skip(id, userId))
+      safeApiCall(async () => {
+        const res = await api.medications.skip(id, userId)
+        broadcastCareSync('intake_change', { id, taken: false })
+        return res
+      })
     }
-  }, [getUserId, caregiverId, data.careReceiver?.name, data.medications])
+  }, [getUserId, caregiverId, data.careReceiver?.name, data.medications, broadcastCareSync])
 
   /**
    * Updates the refill countdown for a medication.
@@ -1817,15 +1854,95 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   }, [user?.id, user?.role])
 
   /**
-   * Effect that sets up a Supabase realtime channel for timeline events
-   * so all devices in the care relationship stay synchronized in real time.
+   * Refreshes medication, intake, and timeline data from the database.
+   */
+  const refreshRelationshipData = useCallback(async () => {
+    if (!user?.care_relationship_id) return
+    const crId = user.care_relationship_id
+    const today = new Date().toISOString().split('T')[0]
+
+    try {
+      const [medsRes, logsRes, timelineRes] = await Promise.allSettled([
+        api.medications.list(crId),
+        fetch(`/api/medication-logs?care_relationship_id=${crId}&date=${today}`).then((r) => (r.ok ? r.json() : null)),
+        api.timeline.list(crId),
+      ])
+
+      const takenMedIds = new Set<string>()
+      if (logsRes.status === 'fulfilled' && logsRes.value?.logs) {
+        for (const l of logsRes.value.logs) {
+          if (l.taken) takenMedIds.add(String(l.medication_id))
+        }
+      }
+
+      setData((prev) => {
+        let updatedMeds: Medication[] = prev.medications
+        let countChanged = false
+
+        if (medsRes.status === 'fulfilled' && medsRes.value?.medications) {
+          const freshMedsList = medsRes.value.medications
+          countChanged = freshMedsList.length !== prev.medications.length
+
+          updatedMeds = freshMedsList.map((m: any) => {
+            const mId = String(m.id)
+            const prevMed = prev.medications.find((p) => p.id === mId)
+            return {
+              id: mId,
+              name: m.name,
+              dosage: m.dosage,
+              timeOfDay: m.time_of_day as TimeOfDay,
+              time: m.time || undefined,
+              notes: m.notes || undefined,
+              taken: takenMedIds.has(mId),
+              lastUpdated: m.updated_at || m.created_at,
+              refillDaysLeft: m.refill_days_left || undefined,
+              pharmacistNote: m.pharmacist_note || undefined,
+              simpleExplanation: m.simple_explanation || undefined,
+              streak: prevMed?.streak || 0,
+              totalTaken: prevMed?.totalTaken || 0,
+              lastTaken: takenMedIds.has(mId) ? today : prevMed?.lastTaken,
+            }
+          })
+        } else {
+          updatedMeds = prev.medications.map((m) => ({
+            ...m,
+            taken: takenMedIds.has(m.id),
+          }))
+        }
+
+        const updatedTimeline = timelineRes.status === 'fulfilled'
+          ? timelineRes.value.events.map((e: any) => ({
+            id: String(e.id),
+            type: e.type as TimelineEventType,
+            timestamp: e.created_at,
+            medicationId: e.medication_id ? String(e.medication_id) : undefined,
+            note: e.note || undefined,
+            actor: e.actor_type as any,
+          }))
+          : prev.timeline
+
+        return {
+          ...prev,
+          medications: updatedMeds,
+          timeline: updatedTimeline,
+          lastChangeNotifiedAt: countChanged ? new Date().toISOString() : prev.lastChangeNotifiedAt,
+        }
+      })
+    } catch (err) {
+      console.error('[Sahay] refreshRelationshipData failed:', err)
+    }
+  }, [user?.care_relationship_id])
+
+  /**
+   * Effect that sets up a Supabase realtime channel for live synchronization
+   * of timeline events, medications, and medication intake logs across devices.
    */
   useEffect(() => {
     const crId = user?.care_relationship_id
     if (!crId) return
 
     const channel = supabase
-      .channel(`timeline-events-${crId}`)
+      .channel(`care-sync-${crId}`)
       .on(
         'postgres_changes',
         {
@@ -1846,8 +1963,29 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               medicationId: raw.medication_id ? String(raw.medication_id) : undefined,
             }
             setData((prev) => {
-              if (prev.timeline.some((e) => e.id === newEvent.id)) return prev
-              return { ...prev, timeline: [newEvent, ...prev.timeline] }
+              const updatedTimeline = prev.timeline.some((e) => e.id === newEvent.id)
+                ? prev.timeline
+                : [newEvent, ...prev.timeline]
+
+              // If event is medication intake, also update the local medication taken status
+              let updatedMeds = prev.medications
+              if (raw.type === 'medication_taken' && raw.medication_id) {
+                const mId = String(raw.medication_id)
+                updatedMeds = prev.medications.map((m) =>
+                  m.id === mId ? { ...m, taken: true, lastTaken: raw.created_at } : m
+                )
+              } else if (raw.type === 'medication_skipped' && raw.medication_id) {
+                const mId = String(raw.medication_id)
+                updatedMeds = prev.medications.map((m) =>
+                  m.id === mId ? { ...m, taken: false } : m
+                )
+              }
+
+              return {
+                ...prev,
+                medications: updatedMeds,
+                timeline: updatedTimeline,
+              }
             })
           } else if (payload.eventType === 'UPDATE' && payload.new) {
             const raw = payload.new as any
@@ -1860,12 +1998,130 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           }
         }
       )
-      .subscribe()
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'medications',
+          filter: `care_relationship_id=eq.${crId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const raw = payload.new as any
+            const mId = String(raw.id)
+            const newMed: Medication = {
+              id: mId,
+              name: raw.name,
+              dosage: raw.dosage,
+              timeOfDay: raw.time_of_day as TimeOfDay,
+              time: raw.time || undefined,
+              notes: raw.notes || undefined,
+              taken: false,
+              lastUpdated: raw.updated_at || raw.created_at || new Date().toISOString(),
+              refillDaysLeft: raw.refill_days_left || undefined,
+              pharmacistNote: raw.pharmacist_note || undefined,
+              simpleExplanation: raw.simple_explanation || undefined,
+              streak: 0,
+              totalTaken: 0,
+            }
+            setData((prev) => {
+              if (prev.medications.some((m) => m.id === mId)) return prev
+              return {
+                ...prev,
+                medications: [...prev.medications, newMed],
+                lastChangeNotifiedAt: new Date().toISOString(),
+              }
+            })
+          } else if (payload.eventType === 'UPDATE' && payload.new) {
+            const raw = payload.new as any
+            const mId = String(raw.id)
+            setData((prev) => ({
+              ...prev,
+              medications: prev.medications.map((m) => {
+                if (m.id !== mId) return m
+                return {
+                  ...m,
+                  name: raw.name ?? m.name,
+                  dosage: raw.dosage ?? m.dosage,
+                  timeOfDay: (raw.time_of_day as TimeOfDay) ?? m.timeOfDay,
+                  time: raw.time !== undefined ? raw.time : m.time,
+                  notes: raw.notes !== undefined ? raw.notes : m.notes,
+                  refillDaysLeft: raw.refill_days_left !== undefined ? raw.refill_days_left : m.refillDaysLeft,
+                  pharmacistNote: raw.pharmacist_note !== undefined ? raw.pharmacist_note : m.pharmacistNote,
+                  simpleExplanation: raw.simple_explanation !== undefined ? raw.simple_explanation : m.simpleExplanation,
+                  lastUpdated: raw.updated_at || new Date().toISOString(),
+                }
+              }),
+              lastChangeNotifiedAt: new Date().toISOString(),
+            }))
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            const raw = payload.old as any
+            if (raw?.id) {
+              const mId = String(raw.id)
+              setData((prev) => ({
+                ...prev,
+                medications: prev.medications.filter((m) => m.id !== mId),
+                lastChangeNotifiedAt: new Date().toISOString(),
+              }))
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'medication_logs',
+        },
+        (payload) => {
+          if ((payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') && payload.new) {
+            const raw = payload.new as any
+            const mId = String(raw.medication_id)
+            const today = new Date().toISOString().split('T')[0]
+            const isToday = raw.date === today
+            const isTaken = Boolean(raw.taken)
+
+            if (isToday) {
+              setData((prev) => {
+                if (!prev.medications.some((m) => m.id === mId)) return prev
+                return {
+                  ...prev,
+                  medications: prev.medications.map((m) => {
+                    if (m.id !== mId) return m
+                    return {
+                      ...m,
+                      taken: isTaken,
+                      lastTaken: isTaken ? (raw.taken_at || raw.date || m.lastTaken) : m.lastTaken,
+                      lastUpdated: new Date().toISOString(),
+                    }
+                  }),
+                }
+              })
+            }
+          }
+        }
+      )
+      .on('broadcast', { event: 'medication_change' }, () => {
+        refreshRelationshipData()
+      })
+      .on('broadcast', { event: 'intake_change' }, () => {
+        refreshRelationshipData()
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          realtimeChannelRef.current = channel
+        }
+      })
+
+    realtimeChannelRef.current = channel
 
     return () => {
+      realtimeChannelRef.current = null
       supabase.removeChannel(channel)
     }
-  }, [user?.care_relationship_id])
+  }, [user?.care_relationship_id, refreshRelationshipData])
 
   /**
    * Effect that polls the server for relationship link updates for the care receiver.
@@ -1890,54 +2146,13 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id, user?.role, user?.care_relationship_id, refreshUserFromDb])
 
-  /**
-   * Effect that periodically refreshes medication and timeline data for the caregiver.
-   */
-  const refreshRelationshipData = useCallback(async () => {
-    if (!user?.care_relationship_id) return
-    const crId = user.care_relationship_id
-    const today = new Date().toISOString().split('T')[0]
 
-    try {
-      const [logsRes, timelineRes] = await Promise.allSettled([
-        fetch(`/api/medication-logs?care_relationship_id=${crId}&date=${today}`).then((r) => (r.ok ? r.json() : null)),
-        api.timeline.list(crId),
-      ])
-
-      const takenMedIds = new Set<string>()
-      if (logsRes.status === 'fulfilled' && logsRes.value?.logs) {
-        for (const l of logsRes.value.logs) {
-          if (l.taken) takenMedIds.add(String(l.medication_id))
-        }
-      }
-
-      setData((prev) => ({
-        ...prev,
-        medications: prev.medications.map((m) => ({
-          ...m,
-          taken: takenMedIds.has(m.id) ? true : m.taken,
-        })),
-        timeline: timelineRes.status === 'fulfilled'
-          ? timelineRes.value.events.map((e: any) => ({
-            id: String(e.id),
-            type: e.type as TimelineEventType,
-            timestamp: e.created_at,
-            medicationId: e.medication_id ? String(e.medication_id) : undefined,
-            note: e.note || undefined,
-            actor: e.actor_type as any,
-          }))
-          : prev.timeline,
-      }))
-    } catch (err) {
-      console.error('[Sahay] refreshRelationshipData failed:', err)
-    }
-  }, [user?.care_relationship_id])
 
   useEffect(() => {
     if (!user?.care_relationship_id) return
 
     refreshRelationshipData()
-    const interval = setInterval(refreshRelationshipData, 10000)
+    const interval = setInterval(refreshRelationshipData, 3000)
     const onFocus = () => refreshRelationshipData()
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onFocus)

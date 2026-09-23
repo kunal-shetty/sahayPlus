@@ -11,18 +11,47 @@ export async function POST(
         const body = await req.json().catch(() => ({}));
         const { marked_by } = body;
 
-        // Insert medication log
-        const { data: log, error: logError } = await supabase
+        const today = new Date().toISOString().split("T")[0];
+
+        // Check if a log already exists for this medication today
+        const { data: existingLog } = await supabase
             .from("medication_logs")
-            .insert({
-                medication_id: id,
-                date: new Date().toISOString().split("T")[0],
-                taken: true,
-                taken_at: new Date().toISOString(),
-                marked_by: marked_by || null,
-            })
-            .select()
-            .single();
+            .select("id")
+            .eq("medication_id", id)
+            .eq("date", today)
+            .maybeSingle();
+
+        let log;
+        let logError;
+
+        if (existingLog) {
+            const res = await supabase
+                .from("medication_logs")
+                .update({
+                    taken: true,
+                    taken_at: new Date().toISOString(),
+                    marked_by: marked_by || null,
+                })
+                .eq("id", existingLog.id)
+                .select()
+                .single();
+            log = res.data;
+            logError = res.error;
+        } else {
+            const res = await supabase
+                .from("medication_logs")
+                .insert({
+                    medication_id: id,
+                    date: today,
+                    taken: true,
+                    taken_at: new Date().toISOString(),
+                    marked_by: marked_by || null,
+                })
+                .select()
+                .single();
+            log = res.data;
+            logError = res.error;
+        }
 
         if (logError) {
             return NextResponse.json(
