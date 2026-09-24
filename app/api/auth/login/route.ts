@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
                 .from("care_relationships")
                 .select("*")
                 .or(
-                    `caregiver_id.eq.${existingUser.id},care_receiver_id.eq.${existingUser.id}`,
+                    `caregiver_id.eq.${existingUser.id},alt_caregiver_id.eq.${existingUser.id},care_receiver_id.eq.${existingUser.id}`,
                 )
                 .limit(1);
 

@@ -469,6 +469,29 @@ export function CareReceiverHome() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {data.caregiver?.handover?.isActive && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300"
+          >
+            <div className="flex items-center gap-2 max-w-[80%]">
+              <ArrowLeftRight className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span className="truncate">
+                Care temporarily supported by <strong>{data.caregiver.handover.targetName}</strong>
+              </span>
+            </div>
+            <span className="text-[11px] font-medium opacity-80 shrink-0">
+              {data.caregiver.handover.endDate
+                ? `Until ${new Date(data.caregiver.handover.endDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+                : "Active"}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <header className="p-6 pb-4">
         <div className="flex items-center justify-between">
           <div>

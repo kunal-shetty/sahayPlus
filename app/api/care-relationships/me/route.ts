@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         const { data: relationships } = await supabase
             .from("care_relationships")
             .select("*")
-            .or(`caregiver_id.eq.${userId},care_receiver_id.eq.${userId}`)
+            .or(`caregiver_id.eq.${userId},alt_caregiver_id.eq.${userId},care_receiver_id.eq.${userId}`)
             .limit(1);
 
         const relationship =

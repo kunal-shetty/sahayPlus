@@ -1114,9 +1114,15 @@ export function CaregiverHome() {
                       </span>
                     </div>
                     <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-semibold">
-                      Until {new Date(data.caregiver.handover.endDate).toLocaleDateString()}
+                      {data.caregiver.handover.endDate
+                        ? `Until ${new Date(data.caregiver.handover.endDate).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`
+                        : "Active"}
                     </span>
                   </div>
+
+                  <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mb-2">
+                    Access restores to you automatically when this time expires.
+                  </p>
 
                   <p className="text-base font-semibold text-foreground mb-1">
                     Transferred to: {data.caregiver.handover.targetName}
@@ -1133,13 +1139,13 @@ export function CaregiverHome() {
                     <div>
                       <p className="text-xs text-muted-foreground font-medium">Caregiver Claim / Invite Code</p>
                       <p className="font-mono text-lg font-bold tracking-widest text-primary">
-                        {data.caregiver.handover.inviteCode || user?.care_code || "SHY892"}
+                        {data.caregiver.handover.inviteCode || data.careReceiver?.careCode || user?.care_code || "T9TSXM"}
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => {
-                          const code = data.caregiver?.handover?.inviteCode || user?.care_code || "SHY892";
+                          const code = data.caregiver?.handover?.inviteCode || data.careReceiver?.careCode || user?.care_code || "T9TSXM";
                           navigator.clipboard.writeText(code);
                           setCopiedHandoverCode(true);
                           setTimeout(() => setCopiedHandoverCode(false), 2000);
@@ -1152,7 +1158,7 @@ export function CaregiverHome() {
                       <a
                         href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
                           `Hi ${data.caregiver.handover.targetName}! Here is your temporary Sahay+ caregiver access code: ${
-                            data.caregiver.handover.inviteCode || user?.care_code || "SHY892"
+                            data.caregiver.handover.inviteCode || data.careReceiver?.careCode || user?.care_code || "T9TSXM"
                           } to monitor ${data.careReceiver?.name || "care"}. Enter it at /care-code`
                         )}`}
                         target="_blank"
@@ -1257,7 +1263,7 @@ export function CaregiverHome() {
                               Temporary Care Code for them to enter on <code className="font-semibold text-primary">/care-code</code>:
                             </p>
                             <p className="font-mono text-lg font-bold tracking-widest text-primary">
-                              {user?.care_code || "SHY892"}
+                              {data.careReceiver?.careCode || user?.care_code || "T9TSXM"}
                             </p>
                           </div>
 
@@ -1265,7 +1271,7 @@ export function CaregiverHome() {
                             onClick={() => {
                               const date = new Date();
                               date.setDate(date.getDate() + parseInt(handoverDays));
-                              const inviteCode = user?.care_code || "SHY892";
+                              const inviteCode = data.careReceiver?.careCode || user?.care_code || "T9TSXM";
                               startHandover(handoverName, date.toISOString(), handoverEmail || undefined, inviteCode);
                               setShowHandoverSetup(false);
                             }}

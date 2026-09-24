@@ -231,6 +231,8 @@ export interface CaregiverProfile {
 export interface CareReceiverProfile {
   /** Full name of the care receiver. */
   name: string
+  /** 6-character unique care code used to link caregivers. */
+  careCode?: string
   /** Times of day when the receiver is typically independent. */
   independentTimes?: TimeOfDay[]
   /** Whether the receiver prefers larger text for accessibility. */

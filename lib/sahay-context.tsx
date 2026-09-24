@@ -26,6 +26,7 @@ import {
   type WellnessEntry,
   type WellnessLevel,
   type CareMessage,
+  type HandoverInfo,
   generateId,
   defaultAppData,
   STORAGE_KEY,
@@ -441,28 +442,71 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Fetches medications, timeline, notes, wellness, closures, messages, and emergency contacts.
    */
   useEffect(() => {
-    if (!user?.care_relationship_id) return
+    if (!user?.id) return
 
-    const crId = user.care_relationship_id
     const userId = user.id
 
     setIsDataLoading(true)
 
     async function loadData() {
       try {
-        const [medsRes, timelineRes, notesRes, wellnessRes, dayRes, msgsRes, contactsRes, relRes] =
+        let currentCrId = user?.care_relationship_id
+
+        // Always check /api/care-relationships/me to get the latest authoritative relationship ID
+        try {
+          const meRes = await fetch(`/api/care-relationships/me?user_id=${encodeURIComponent(userId)}`)
+          if (meRes.ok) {
+            const mePayload = await meRes.json()
+            if (mePayload?.relationship?.id) {
+              const freshCrId = String(mePayload.relationship.id)
+              if (freshCrId !== currentCrId) {
+                currentCrId = freshCrId
+                const updatedUser: SahayUser = {
+                  ...user!,
+                  care_relationship_id: freshCrId,
+                }
+                setUser(updatedUser)
+                localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser))
+              }
+            }
+          }
+        } catch {
+          // best-effort
+        }
+
+        if (!currentCrId) {
+          setIsDataLoading(false)
+          return
+        }
+
+        const [medsRes, timelineRes, notesRes, wellnessRes, dayRes, msgsRes, contactsRes, relRes, handoverRes] =
           await Promise.allSettled([
-            api.medications.list(crId),
-            api.timeline.list(crId),
-            api.notes.list(crId),
-            api.wellness.list(crId),
-            api.day.history(crId),
-            api.messages.list(crId),
-            api.emergencyContacts.list(crId),
-            api.careRelationships.get(crId),
+            api.medications.list(currentCrId),
+            api.timeline.list(currentCrId),
+            api.notes.list(currentCrId),
+            api.wellness.list(currentCrId),
+            api.day.history(currentCrId),
+            api.messages.list(currentCrId),
+            api.emergencyContacts.list(currentCrId),
+            api.careRelationships.get(currentCrId),
+            api.handover.current(currentCrId),
           ])
 
+        let loadedHandoverInfo: { isActive: boolean; targetName?: string; endDate?: string; secondaryEmail?: string; inviteCode?: string } = { isActive: false }
+        if (handoverRes.status === 'fulfilled' && handoverRes.value?.handover) {
+          const h = handoverRes.value.handover
+          if (h.is_active !== false) {
+            loadedHandoverInfo = {
+              isActive: true,
+              targetName: h.to_person_name,
+              endDate: h.end_date,
+              inviteCode: user?.care_code || undefined,
+            }
+          }
+        }
+
         let otherPartyName: string | undefined
+        let otherPartyCareCode: string | undefined
         if (relRes.status === 'fulfilled') {
           const rel = relRes.value.relationship
           if (rel) {
@@ -478,10 +522,23 @@ export function SahayProvider({ children }: { children: ReactNode }) {
                 if (otherRes.ok) {
                   const otherPayload = await otherRes.json()
                   otherPartyName = otherPayload?.user?.name
+                  otherPartyCareCode = otherPayload?.user?.care_code
                 }
               } catch {
                 // best-effort
               }
+            }
+          }
+        }
+
+        if (handoverRes.status === 'fulfilled' && handoverRes.value?.handover) {
+          const h = handoverRes.value.handover
+          if (h.is_active !== false) {
+            loadedHandoverInfo = {
+              isActive: true,
+              targetName: h.to_person_name,
+              endDate: h.end_date,
+              inviteCode: otherPartyCareCode || user?.care_code || undefined,
             }
           }
         }
@@ -496,7 +553,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         try {
           // Fetch all medication logs for this care relationship
           const logsRes = await fetch(
-            `/api/medication-logs?care_relationship_id=${crId}`
+            `/api/medication-logs?care_relationship_id=${currentCrId}`
           )
           if (logsRes.ok) {
             const logsPayload = await logsRes.json()
@@ -739,8 +796,41 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               return todayFineEvent?.created_at || (todayWellnessEntry ? (todayWellnessEntry.created_at || todayWellnessEntry.date) : prev.lastFineCheckIn)
             })(),
             ...(user!.role === 'caregiver'
-              ? { careReceiver: { name: otherPartyName || 'Care Receiver', preferVoiceConfirm: false } }
-              : { caregiver: prev.caregiver || (otherPartyName ? { name: otherPartyName, setupComplete: true, roleStatus: 'active' as CareRoleStatus } : null) }
+              ? {
+                  careReceiver: {
+                    name: otherPartyName || 'Care Receiver',
+                    careCode: otherPartyCareCode,
+                    preferVoiceConfirm: false
+                  },
+                  caregiver: prev.caregiver ? {
+                    ...prev.caregiver,
+                    name: user!.name || prev.caregiver.name,
+                    handover: {
+                      ...loadedHandoverInfo,
+                      inviteCode: otherPartyCareCode || loadedHandoverInfo.inviteCode || user?.care_code,
+                    },
+                  } : {
+                    name: user!.name || 'Caregiver',
+                    setupComplete: true,
+                    roleStatus: 'active' as CareRoleStatus,
+                    handover: {
+                      ...loadedHandoverInfo,
+                      inviteCode: otherPartyCareCode || loadedHandoverInfo.inviteCode || user?.care_code,
+                    },
+                  }
+                }
+              : {
+                  caregiver: prev.caregiver ? {
+                    ...prev.caregiver,
+                    name: otherPartyName || prev.caregiver.name,
+                    handover: loadedHandoverInfo,
+                  } : (otherPartyName ? {
+                    name: otherPartyName,
+                    setupComplete: true,
+                    roleStatus: 'active' as CareRoleStatus,
+                    handover: loadedHandoverInfo,
+                  } : null)
+                }
             ),
           }
         })
@@ -1761,7 +1851,12 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         caregiver: prev.caregiver ? {
           ...prev.caregiver,
           handover: { isActive: true, targetName, endDate, secondaryEmail, inviteCode }
-        } : null,
+        } : {
+          name: user?.name || 'Caregiver',
+          setupComplete: true,
+          roleStatus: 'active',
+          handover: { isActive: true, targetName, endDate, secondaryEmail, inviteCode }
+        },
         timeline: [...prev.timeline, newEvent],
       }
     })
@@ -1776,11 +1871,18 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           end_date: endDate,
         })
       )
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.send({
+          type: 'broadcast',
+          event: 'handover_change',
+          payload: { action: 'start', targetName, endDate },
+        })
+      }
     }
-  }, [getCareRelId, getUserId])
+  }, [getCareRelId, getUserId, user?.name])
 
   /**
-   * Terminates an active care handover.
+   * Terminates an active care handover and restores the primary caregiver.
    */
   const endHandover = useCallback(() => {
     setData((prev) => {
@@ -1789,6 +1891,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         type: 'handover_ended',
         timestamp: new Date().toISOString(),
         actor: 'caregiver',
+        note: 'Care handover ended. Primary caregiver restored.',
       }
       return {
         ...prev,
@@ -1809,8 +1912,38 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           await api.handover.end(hId)
         }
       })
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.send({
+          type: 'broadcast',
+          event: 'handover_change',
+          payload: { action: 'end' },
+        })
+      }
     }
   }, [getCareRelId, getUserId])
+
+  /**
+   * Effect that continuously checks for care handover expiration.
+   * If an active handover has passed its end date, it automatically triggers
+   * endHandover() to restore the primary caregiver without requiring manual action.
+   */
+  useEffect(() => {
+    if (!data.caregiver?.handover?.isActive || !data.caregiver.handover.endDate) return
+
+    const checkExpiry = () => {
+      if (data.caregiver?.handover?.isActive && data.caregiver.handover.endDate) {
+        const endMs = new Date(data.caregiver.handover.endDate).getTime()
+        if (!isNaN(endMs) && endMs <= Date.now()) {
+          console.log('[Sahay Handover] Active handover end_date elapsed. Auto-expiring and restoring primary caregiver.')
+          endHandover()
+        }
+      }
+    }
+
+    checkExpiry()
+    const timer = setInterval(checkExpiry, 10000)
+    return () => clearInterval(timer)
+  }, [data.caregiver?.handover?.isActive, data.caregiver?.handover?.endDate, endHandover])
 
   /**
    * Pure getter that generates human-readable insights based on timeline patterns, adherence, and streaks.
@@ -1993,17 +2126,33 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     const today = new Date().toISOString().split('T')[0]
 
     try {
-      const [medsRes, logsRes, timelineRes, wellnessRes] = await Promise.allSettled([
+      const [medsRes, logsRes, timelineRes, wellnessRes, handoverRes] = await Promise.allSettled([
         api.medications.list(crId),
         fetch(`/api/medication-logs?care_relationship_id=${crId}&date=${today}`).then((r) => (r.ok ? r.json() : null)),
         api.timeline.list(crId),
         api.wellness.list(crId),
+        api.handover.current(crId),
       ])
 
       const takenMedIds = new Set<string>()
       if (logsRes.status === 'fulfilled' && logsRes.value?.logs) {
         for (const l of logsRes.value.logs) {
           if (l.taken) takenMedIds.add(String(l.medication_id))
+        }
+      }
+
+      let freshHandover: HandoverInfo | undefined = undefined
+      if (handoverRes.status === 'fulfilled') {
+        const h = handoverRes.value?.handover
+        if (h && h.is_active !== false) {
+          freshHandover = {
+            isActive: true,
+            targetName: h.to_person_name,
+            endDate: h.end_date,
+            inviteCode: data.careReceiver?.careCode || data.caregiver?.handover?.inviteCode || user?.care_code || undefined,
+          }
+        } else {
+          freshHandover = { isActive: false }
         }
       }
 
@@ -2073,6 +2222,15 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           wellnessEntries: updatedWellness,
           lastFineCheckIn: todayWellness ? (todayWellness.timestamp || today) : prev.lastFineCheckIn,
           lastChangeNotifiedAt: countChanged ? new Date().toISOString() : prev.lastChangeNotifiedAt,
+          caregiver: prev.caregiver ? {
+            ...prev.caregiver,
+            ...(freshHandover !== undefined ? { handover: freshHandover } : {}),
+          } : (freshHandover !== undefined ? {
+            name: 'Caregiver',
+            setupComplete: true,
+            roleStatus: 'active' as CareRoleStatus,
+            handover: freshHandover,
+          } : null),
         }
       })
     } catch (err) {
@@ -2291,6 +2449,21 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       .on('broadcast', { event: 'wellness_change' }, () => {
         refreshRelationshipData()
       })
+      .on('broadcast', { event: 'handover_change' }, () => {
+        refreshRelationshipData()
+      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'handovers',
+          filter: `care_relationship_id=eq.${crId}`,
+        },
+        () => {
+          refreshRelationshipData()
+        }
+      )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           realtimeChannelRef.current = channel
@@ -2309,24 +2482,32 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Effect that polls the server for relationship link updates for the care receiver.
    */
   useEffect(() => {
-    if (!user || user.role !== 'care_receiver') return
-    if (user.care_relationship_id) return // already linked — no need to poll
+    if (!user) return
 
     const poll = () => {
       refreshUserFromDb()
     }
 
-    poll()
-    const interval = setInterval(poll, 3000)
+    if (!user.care_relationship_id) {
+      poll()
+      const interval = setInterval(poll, 3000)
+      window.addEventListener('focus', poll)
+      document.addEventListener('visibilitychange', poll)
+      return () => {
+        clearInterval(interval)
+        window.removeEventListener('focus', poll)
+        document.removeEventListener('visibilitychange', poll)
+      }
+    }
+
     window.addEventListener('focus', poll)
     document.addEventListener('visibilitychange', poll)
 
     return () => {
-      clearInterval(interval)
       window.removeEventListener('focus', poll)
       document.removeEventListener('visibilitychange', poll)
     }
-  }, [user?.id, user?.role, user?.care_relationship_id, refreshUserFromDb])
+  }, [user?.id, user?.care_relationship_id, refreshUserFromDb])
 
 
 
