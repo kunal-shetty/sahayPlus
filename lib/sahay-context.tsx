@@ -1455,10 +1455,17 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       (e) => (e.type === 'fine_check_in' || e.type === 'wellness_logged') && e.timestamp?.startsWith(today)
     )
     if (fineEvent) {
+      let inferredLevel: WellnessLevel = 'great'
+      const noteLower = (fineEvent.note || '').toLowerCase()
+      if (noteLower.includes('not_great') || noteLower.includes('notgreat') || noteLower.includes('not great')) {
+        inferredLevel = 'notGreat'
+      } else if (noteLower.includes('okay')) {
+        inferredLevel = 'okay'
+      }
       return {
         id: fineEvent.id,
         date: today,
-        level: 'great' as WellnessLevel,
+        level: inferredLevel,
         note: fineEvent.note || 'Checked in as doing fine',
         timestamp: fineEvent.timestamp,
       }

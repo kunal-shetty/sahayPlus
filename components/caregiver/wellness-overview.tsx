@@ -89,7 +89,7 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
         {todayWellness && (
           <div
             className={`rounded-2xl p-6 mb-6 ${
-              wellnessConfig[todayWellness.level].bgColor
+              getWellnessCfg(todayWellness.level).bgColor
             }`}
           >
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-2">
@@ -97,7 +97,7 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
             </p>
             <div className="flex items-center gap-4">
               {(() => {
-                const config = wellnessConfig[todayWellness.level];
+                const config = getWellnessCfg(todayWellness.level);
                 const Icon = config.icon;
                 return (
                   <>
@@ -139,15 +139,15 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
             </h2>
             <p className="text-muted-foreground">
               {careReceiverName} has mostly been{" "}
-              <span className={wellnessConfig[mostCommon].color}>
-                {wellnessConfig[mostCommon].label.toLowerCase()}
+              <span className={getWellnessCfg(mostCommon).color}>
+                {getWellnessCfg(mostCommon).label.toLowerCase()}
               </span>{" "}
               this week.
             </p>
             <div className="flex items-center gap-4 mt-4">
               {(["great", "okay", "notGreat"] as WellnessLevel[]).map(
                 (level) => {
-                  const config = wellnessConfig[level];
+                  const config = getWellnessCfg(level);
                   const Icon = config.icon;
                   const count = wellnessCounts[level] || 0;
                   return (
@@ -174,7 +174,7 @@ export function WellnessOverview({ onClose }: WellnessOverviewProps) {
           </h2>
           <div className="space-y-3">
             {trend.map((entry) => {
-              const config = wellnessConfig[entry.level];
+              const config = getWellnessCfg(entry.level);
               const Icon = config.icon;
               const date = new Date(entry.timestamp);
               return (

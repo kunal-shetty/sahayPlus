@@ -679,16 +679,16 @@ export const dummyAppData: AppData = {
   wellnessEntries: [
     {
       id: 'well_001',
-      date: daysAgo(0).split('T')[0],
+      date: daysAgo(1).split('T')[0],
       level: 'okay',
       note: 'Slight tiredness in the afternoon',
-      timestamp: daysAgo(0),
+      timestamp: daysAgo(1),
     },
     {
       id: 'well_002',
-      date: daysAgo(1).split('T')[0],
+      date: daysAgo(2).split('T')[0],
       level: 'great',
-      timestamp: daysAgo(1),
+      timestamp: daysAgo(2),
     },
     {
       id: 'well_003',

@@ -29,8 +29,12 @@ export function MorningWellnessCard({ isLateMorningReminder = false }: MorningWe
   const caregiverName = data.caregiver?.name || "your caregiver";
 
   const handleSelectLevel = (level: WellnessLevel) => {
-    unlockAudioContext();
-    playSuccessChime();
+    try {
+      unlockAudioContext();
+      playSuccessChime();
+    } catch (e) {
+      console.warn("Audio chime error:", e);
+    }
     logWellness(level, noteText.trim() || undefined);
     setJustSubmitted(level);
     setIsUpdating(false);
@@ -82,7 +86,13 @@ export function MorningWellnessCard({ isLateMorningReminder = false }: MorningWe
 
   // If already checked in today and not currently editing:
   if (todayWellness && !isUpdating) {
-    const activeConfig = wellnessOptions.find((o) => o.level === todayWellness.level) || wellnessOptions[0];
+    const normalizedLevel: WellnessLevel =
+      todayWellness.level === ("not_great" as any)
+        ? "notGreat"
+        : (todayWellness.level as WellnessLevel);
+    const activeConfig =
+      wellnessOptions.find((o) => o.level === normalizedLevel) ||
+      wellnessOptions[0];
     const ActiveIcon = activeConfig.icon;
     const formattedTime = todayWellness.timestamp
       ? new Date(todayWellness.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
@@ -115,12 +125,26 @@ export function MorningWellnessCard({ isLateMorningReminder = false }: MorningWe
             </div>
           </div>
           <button
-            onClick={() => setIsUpdating(true)}
+            onClick={() => {
+              if (todayWellness.note) {
+                setNoteText(todayWellness.note);
+                setShowNoteInput(true);
+              }
+              setIsUpdating(true);
+            }}
             className="px-2.5 py-1 rounded-xl text-xs font-semibold text-primary hover:bg-secondary border border-border/80 transition-all active:scale-95 shrink-0"
           >
             Update
           </button>
         </div>
+        {justSubmitted && (
+          <div className="mt-2 p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
+            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="text-xs font-semibold">
+              Thank you! {caregiverName} can see how you are feeling.
+            </span>
+          </div>
+        )}
       </div>
     );
   }

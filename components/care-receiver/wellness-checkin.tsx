@@ -67,11 +67,10 @@ interface WellnessCheckinProps {
 
 export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
   const { logWellness, getTodayWellness, data } = useSahay();
-  const [selectedLevel, setSelectedLevel] = useState<WellnessLevel | null>(
-    null,
-  );
+  const [selectedLevel, setSelectedLevel] = useState<WellnessLevel | null>(null);
   const [note, setNote] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const todayWellness = getTodayWellness();
   const caregiverName = data.caregiver?.name || "your caregiver";
@@ -83,17 +82,22 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
     if (selectedLevel) {
       logWellness(selectedLevel, note.trim() || undefined);
       setSubmitted(true);
+      setIsEditing(false);
     }
   };
 
   /**
    * Read-only view.
-   * Rendered when the user has already completed their check-in for the day.
+   * Rendered when the user has already completed their check-in for the day and is not editing.
    */
-  if (todayWellness && !submitted) {
-    const config = wellnessOptions.find(
-      (o) => o.level === todayWellness.level,
-    )!;
+  if (todayWellness && !submitted && !isEditing) {
+    const normalizedLevel: WellnessLevel =
+      todayWellness.level === ("not_great" as any)
+        ? "notGreat"
+        : (todayWellness.level as WellnessLevel);
+    const config =
+      wellnessOptions.find((o) => o.level === normalizedLevel) ||
+      wellnessOptions[0];
     const Icon = config.icon;
 
     return (
@@ -114,25 +118,41 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
             <Icon className={`w-12 h-12 ${config.color}`} />
           </div>
 
-          <h1 className="text-2xl font-semibold text-foreground mb-2 text-center">
+          <h1 className="text-2xl font-semibold text-foreground mb-1 text-center">
             You checked in today
           </h1>
-          <p className="text-xl text-muted-foreground text-center mb-4">
+          <p className="text-xl font-bold text-foreground text-center mb-1">
             {config.label}
           </p>
+          <p className="text-sm text-muted-foreground text-center mb-4">
+            Shared with {caregiverName}
+          </p>
           {todayWellness.note && (
-            <p className="text-muted-foreground text-center italic">
+            <p className="text-base text-muted-foreground text-center italic bg-secondary/50 p-3 rounded-xl w-full max-w-xs mb-4">
               &quot;{todayWellness.note}&quot;
             </p>
           )}
 
-          <button
-            onClick={onClose}
-            className="mt-8 px-8 py-4 bg-secondary text-foreground text-lg font-medium rounded-xl
-                     touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            Go back
-          </button>
+          <div className="w-full max-w-xs flex flex-col gap-3 mt-4">
+            <button
+              onClick={() => {
+                setSelectedLevel(normalizedLevel);
+                if (todayWellness.note) setNote(todayWellness.note);
+                setIsEditing(true);
+              }}
+              className="w-full py-4 px-6 bg-primary text-primary-foreground text-lg font-semibold rounded-xl
+                       touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all active:scale-[0.98]"
+            >
+              Update how I feel
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full py-3.5 px-6 bg-secondary text-foreground text-base font-medium rounded-xl
+                       touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all active:scale-[0.98]"
+            >
+              Go back
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -198,21 +218,31 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
   return (
     <main className="min-h-screen flex flex-col bg-background p-6">
       {/* Header */}
-      <button
-        onClick={onClose}
-        className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center mb-6
-                 touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring"
-        aria-label="Go back"
-      >
-        <ArrowLeft className="w-6 h-6 text-foreground" />
-      </button>
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={isEditing ? () => setIsEditing(false) : onClose}
+          className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center
+                   touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-6 h-6 text-foreground" />
+        </button>
+        {isEditing && (
+          <button
+            onClick={() => setIsEditing(false)}
+            className="text-sm font-semibold text-muted-foreground hover:text-foreground underline px-2 py-1"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
 
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
         <h1 className="text-3xl font-semibold text-foreground mb-2 text-center">
-          How are you feeling?
+          {isEditing ? "Update your check-in" : "How are you feeling?"}
         </h1>
         <p className="text-xl text-muted-foreground text-center mb-8">
-          Take a moment to check in
+          {isEditing ? "Change how you're feeling today" : "Take a moment to check in"}
         </p>
 
         {/* Wellness options selection grid */}
@@ -289,7 +319,6 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
           )}
         </AnimatePresence>
 
-        {/* Submit button - enabled only after level selection */}
         <motion.button
           onClick={handleSubmit}
           disabled={!selectedLevel}
@@ -299,7 +328,7 @@ export function WellnessCheckin({ onClose }: WellnessCheckinProps) {
           whileTap={{ scale: 0.97 }}
           animate={{ opacity: selectedLevel ? 1 : 0.5 }}
         >
-          Share how I feel
+          {isEditing ? "Update how I feel" : "Share how I feel"}
         </motion.button>
       </div>
     </main>
