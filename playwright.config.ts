@@ -23,6 +23,16 @@ export default defineConfig({
       name: 'msedge',
       use: { ...devices['Desktop Edge'], channel: 'msedge' },
     },
+    {
+      name: 'msedge-slow',
+      use: {
+        ...devices['Desktop Edge'],
+        channel: 'msedge',
+        launchOptions: {
+          slowMo: 800,
+        },
+      },
+    },
   ],
   webServer: {
     command: 'npm run dev',
