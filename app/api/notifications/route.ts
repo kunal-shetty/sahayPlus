@@ -80,6 +80,8 @@ export async function POST(req: NextRequest) {
             safety_escalation: "safety_alert",
             help_request: "safety_alert",
             wellness_check_in: "wellness_reminder",
+            refill_needed: "refill_warning",
+            medication_overdue: "safety_alert",
         };
 
         const normalizedType = typeAliases[type] || type;

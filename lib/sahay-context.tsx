@@ -1099,7 +1099,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         if (med?.refillDaysLeft !== undefined && med.refillDaysLeft <= 3) {
           safeApiCall(() => api.notifications.create({
             user_id: caregiverId,
-            type: 'refill_needed',
+            type: 'refill_warning',
             title: '⚠️ Refill Needed Soon',
             body: `${medName} has only ${med.refillDaysLeft} days of supply left for ${careReceiverName}.`
           }))
@@ -1880,7 +1880,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         safeApiCall(() =>
           api.notifications.create({
             user_id: caregiverId,
-            type: 'medication_overdue',
+            type: 'safety_alert',
             title: '⚠️ Missed Dose Alert',
             body: `${careReceiverName} has not confirmed ${med.name} (${med.dosage}). Scheduled ${delayMinutes}m ago.`,
           })
