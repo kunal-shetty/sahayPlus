@@ -266,6 +266,15 @@ export async function setupMockApi(page: Page, role: 'caregiver' | 'care_receive
     });
   });
 
+  // Intercept Notifications
+  await page.route(/\/api\/notifications/, async (route) => {
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, notification: { id: 'notif-' + Date.now() } }),
+    });
+  });
+
   // Intercept Wellness
   const wellnessEntries: any[] = [];
   await page.route(/\/api\/wellness/, async (route) => {
