@@ -675,6 +675,14 @@ export default function CareReceiverPage() {
               <Mic className="w-4 h-4 text-primary" />
             </button>
             <button
+              onClick={() => setShowMessages(true)}
+              className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary text-primary hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+              aria-label="Send Message"
+              title="Send message to caregiver"
+            >
+              <MessageCircle className="w-4 h-4" />
+            </button>
+            <button
               onClick={handleTestAlarm}
               className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
               aria-label="Test Medicine Reminder"

@@ -1528,12 +1528,14 @@ export function SahayProvider({ children }: { children: ReactNode }) {
             from_user_id: userId,
             text,
           })
-          setData((prev) => ({
-            ...prev,
-            messages: (prev.messages || []).map((m) =>
-              m.id === tempId ? { ...m, id: String(res.data.id) } : m
-            ),
-          }))
+          if (res?.data?.id) {
+            setData((prev) => ({
+              ...prev,
+              messages: (prev.messages || []).map((m) =>
+                m?.id === tempId ? { ...m, id: String(res.data.id) } : m
+              ),
+            }))
+          }
         })
       }
     },

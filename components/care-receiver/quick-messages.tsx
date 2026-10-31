@@ -11,7 +11,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useSahay } from "@/lib/sahay-context";
-import { ArrowLeft, Send, Check, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, Check, MessageCircle, Pill } from "lucide-react";
+import { playSuccessChime } from "@/lib/audio-chime";
+import { matchMedicationFromTranscript } from "@/lib/voice-matcher";
 
 /**
  * Props for the QuickMessages component.
@@ -31,8 +33,9 @@ interface QuickMessagesProps {
  * @returns {JSX.Element} The messaging interface.
  */
 export function QuickMessages({ onClose }: QuickMessagesProps) {
-  const { data, sendMessage } = useSahay();
+  const { data, sendMessage, markMedicationTaken } = useSahay();
   const [sentMessage, setSentMessage] = useState<string | null>(null);
+  const [loggedMedication, setLoggedMedication] = useState<string | null>(null);
   const [customMessage, setCustomMessage] = useState("");
   const [sendingIndex, setSendingIndex] = useState<number | null>(null);
 
@@ -52,7 +55,9 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
 
   /**
    * Handles sending a pre-defined quick message.
-   * Includes a small artificial delay for visual feedback (sending state).
+   * If the message indicates medicine intake ("I took my medicine"), it automatically
+   * marks the active pending medication as taken so the caregiver dashboard,
+   * adherence charts, and scheduled alarm stay strictly synchronized.
    *
    * @param {string} message - The content of the message to send.
    * @param {number} index - The index of the message in the list for UI tracking.
@@ -60,7 +65,30 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
   const handleSendQuick = (message: string, index: number) => {
     setSendingIndex(index);
     setTimeout(() => {
+      // 1. Send chat notification to caregiver
       sendMessage(message, true);
+
+      // 2. Identify if this confirms medication intake
+      let loggedName: string | null = null;
+      const lower = message.toLowerCase();
+      const isIntakeMsg =
+        lower.includes("took my medicine") ||
+        lower.includes("took medicine") ||
+        lower.includes("took my pill") ||
+        lower.includes("dawa le li") ||
+        lower.includes("dawai le li");
+
+      if (isIntakeMsg) {
+        // Find the active pending / untaken medication
+        const pendingMed = data.medications.find((m) => !m.taken);
+        if (pendingMed) {
+          markMedicationTaken(pendingMed.id, true);
+          loggedName = pendingMed.name;
+          playSuccessChime();
+        }
+      }
+
+      setLoggedMedication(loggedName);
       setSentMessage(message);
       setSendingIndex(null);
     }, 400);
@@ -68,11 +96,23 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
 
   /**
    * Handles sending a user-typed custom message.
+   * Also parses medicine names or affirmations to update dose schedule automatically.
    */
   const handleSendCustom = () => {
     if (customMessage.trim()) {
-      sendMessage(customMessage.trim(), false);
-      setSentMessage(customMessage.trim());
+      const msg = customMessage.trim();
+      sendMessage(msg, false);
+
+      let loggedName: string | null = null;
+      const match = matchMedicationFromTranscript(msg, data.medications);
+      if (match.intent === "mark_taken" && match.matchedMed && !match.matchedMed.taken) {
+        markMedicationTaken(match.matchedMed.id, true);
+        loggedName = match.matchedMed.name;
+        playSuccessChime();
+      }
+
+      setLoggedMedication(loggedName);
+      setSentMessage(msg);
       setCustomMessage("");
     }
   };
@@ -126,6 +166,18 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
             &quot;{sentMessage}&quot;
           </motion.p>
 
+          {loggedMedication && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.55 }}
+              className="mt-4 px-4 py-3 rounded-2xl bg-emerald-500/15 border-2 border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-center font-bold text-base sm:text-lg flex items-center justify-center gap-2 shadow-xs"
+            >
+              <Pill className="w-5 h-5 text-emerald-600 shrink-0" />
+              <span>Marked {loggedMedication} as taken in your schedule!</span>
+            </motion.div>
+          )}
+
           <motion.div
             className="flex flex-col gap-3 mt-8 w-full"
             initial={{ opacity: 0, y: 20 }}
@@ -133,7 +185,10 @@ export function QuickMessages({ onClose }: QuickMessagesProps) {
             transition={{ delay: 0.6 }}
           >
             <button
-              onClick={() => setSentMessage(null)}
+              onClick={() => {
+                setSentMessage(null);
+                setLoggedMedication(null);
+              }}
               className="w-full py-4 bg-secondary text-foreground text-lg font-medium rounded-xl
                        touch-manipulation active:scale-[0.98] transition-all
                        focus:outline-none focus:ring-2 focus:ring-ring"

@@ -3,6 +3,7 @@ import {
   cleanText,
   stringSimilarity,
   matchMedicationFromTranscript,
+  matchAlarmVoiceIntent,
 } from '@/lib/voice-matcher';
 import { Medication } from '@/lib/types';
 
@@ -79,5 +80,50 @@ describe('Voice Matcher - Elder Speech & Phonetic Processing', () => {
     expect(result.matchedMed).toBeNull();
     expect(result.intent).toBe('unknown');
   });
+
+  describe('Hands-Free Alarm Voice Recognition', () => {
+    const activeMed = sampleMeds[0]; // Amlodipine
+
+    it('matches intake affirmations hands-free ("I took it", "Done", "Maine le li")', () => {
+      const res1 = matchAlarmVoiceIntent('I took it', activeMed);
+      expect(res1.intent).toBe('confirm_intake');
+      expect(res1.feedback).toContain('Amlodipine');
+
+      const res2 = matchAlarmVoiceIntent('done', activeMed);
+      expect(res2.intent).toBe('confirm_intake');
+
+      const res3 = matchAlarmVoiceIntent('maine le li', activeMed);
+      expect(res3.intent).toBe('confirm_intake');
+    });
+
+    it('matches medication name hands-free during alarm', () => {
+      const res = matchAlarmVoiceIntent('Amlodipine', activeMed);
+      expect(res.intent).toBe('confirm_intake');
+      expect(res.feedback).toContain('Amlodipine');
+    });
+
+    it('matches snooze commands hands-free ("snooze", "remind in 10 minutes", "baad mein")', () => {
+      const res1 = matchAlarmVoiceIntent('snooze', activeMed);
+      expect(res1.intent).toBe('snooze');
+
+      const res2 = matchAlarmVoiceIntent('remind in 10 minutes', activeMed);
+      expect(res2.intent).toBe('snooze');
+
+      const res3 = matchAlarmVoiceIntent('baad me', activeMed);
+      expect(res3.intent).toBe('snooze');
+    });
+
+    it('matches dismiss commands hands-free ("not now", "dismiss", "abhi nahi")', () => {
+      const res1 = matchAlarmVoiceIntent('not right now', activeMed);
+      expect(res1.intent).toBe('dismiss');
+
+      const res2 = matchAlarmVoiceIntent('dismiss', activeMed);
+      expect(res2.intent).toBe('dismiss');
+
+      const res3 = matchAlarmVoiceIntent('abhi nahi', activeMed);
+      expect(res3.intent).toBe('dismiss');
+    });
+  });
 });
+
 

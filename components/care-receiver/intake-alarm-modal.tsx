@@ -7,13 +7,15 @@
  * and a 10-minute snooze option. Layout prevents any clipping on shorter screens.
  */
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "motion/react";
 import { type Medication, formatTime12h } from "@/lib/types";
-import { Check, Clock, Volume2, VolumeX, Bell, AlertCircle } from "lucide-react";
+import { Check, Clock, Volume2, VolumeX, Bell, AlertCircle, Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getLocalMedMeta, stripAllMeta } from "@/lib/medication-meta";
 import { PillVisualizer, PillBadge } from "@/components/pill-visualizer";
+import { useVoiceRecognition } from "@/hooks/use-voice-recognition";
+import { matchAlarmVoiceIntent } from "@/lib/voice-matcher";
 
 interface IntakeAlarmModalProps {
   medication: Medication;
@@ -37,11 +39,81 @@ export function IntakeAlarmModal({
   isMuted = false,
 }: IntakeAlarmModalProps) {
   const [muted, setMuted] = useState(isMuted);
+  const [isHandsFreeActive, setIsHandsFreeActive] = useState(true);
+  const [voiceFeedback, setVoiceFeedback] = useState<string | null>(null);
+  const handledRef = useRef(false);
+
+  const handleVoiceTranscript = useCallback(
+    (transcript: string, _isFinal: boolean) => {
+      if (handledRef.current || !transcript.trim()) return;
+
+      const result = matchAlarmVoiceIntent(transcript, medication);
+
+      if (result.intent === "confirm_intake") {
+        handledRef.current = true;
+        setVoiceFeedback(`Heard: "${transcript}" ✓`);
+        setTimeout(() => {
+          onTookIt();
+        }, 500);
+      } else if (result.intent === "snooze") {
+        handledRef.current = true;
+        setVoiceFeedback("Snoozing for 10 minutes...");
+        setTimeout(() => {
+          onSnooze();
+        }, 500);
+      } else if (result.intent === "dismiss") {
+        handledRef.current = true;
+        setVoiceFeedback("Dismissing...");
+        setTimeout(() => {
+          onDismiss();
+        }, 500);
+      } else if (transcript.trim().length > 3) {
+        setVoiceFeedback(`Heard: "${transcript}" (say "I took it")`);
+      }
+    },
+    [medication, onTookIt, onSnooze, onDismiss]
+  );
+
+  const { isListening, error: voiceError, startListening, stopListening } = useVoiceRecognition({
+    onTranscript: handleVoiceTranscript,
+    timeoutMs: 45000,
+  });
+
+  useEffect(() => {
+    handledRef.current = false;
+    setVoiceFeedback(null);
+    if (isHandsFreeActive) {
+      startListening();
+    } else {
+      stopListening();
+    }
+    return () => {
+      stopListening();
+    };
+  }, [isHandsFreeActive, startListening, stopListening]);
 
   const handleMuteToggle = () => {
     const next = !muted;
     setMuted(next);
     onToggleSound?.(next);
+  };
+
+  const handleTookItClick = () => {
+    handledRef.current = true;
+    stopListening();
+    onTookIt();
+  };
+
+  const handleSnoozeClick = () => {
+    handledRef.current = true;
+    stopListening();
+    onSnooze();
+  };
+
+  const handleDismissClick = () => {
+    handledRef.current = true;
+    stopListening();
+    onDismiss();
   };
 
   const formattedTime = medication.time
@@ -119,6 +191,74 @@ export function IntakeAlarmModal({
             {muted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
             <span className="hidden sm:inline">{muted ? "Muted" : "Chiming"}</span>
           </button>
+        </div>
+
+        {/* Hands-Free Voice Assistant Banner */}
+        <div className="w-full my-1 shrink-0">
+          <div
+            className={cn(
+              "w-full px-4 py-2.5 rounded-2xl border transition-all flex items-center justify-between shadow-xs",
+              isListening
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200"
+                : "bg-muted/40 border-border text-muted-foreground"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative flex items-center justify-center shrink-0">
+                {isListening ? (
+                  <>
+                    <motion.span
+                      animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                      className="absolute w-7 h-7 rounded-full bg-emerald-500/30"
+                    />
+                    <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                      <Mic className="w-4 h-4" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-muted text-muted-foreground flex items-center justify-center">
+                    <MicOff className="w-4 h-4" />
+                  </div>
+                )}
+              </div>
+
+              <div className="text-left">
+                <p className="font-bold text-sm sm:text-base leading-tight">
+                  {voiceFeedback ? (
+                    <span className="text-emerald-700 dark:text-emerald-300 font-extrabold">{voiceFeedback}</span>
+                  ) : isListening ? (
+                    <span>
+                      Say <span className="underline decoration-emerald-500 decoration-2">&quot;I took it&quot;</span> or &quot;{medication.name}&quot;
+                    </span>
+                  ) : voiceError ? (
+                    <span>Tap button below to confirm</span>
+                  ) : (
+                    <span>Hands-free voice paused</span>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  {isListening
+                    ? "Hands-free voice active — confirm without touching screen"
+                    : "Tap microphone to enable hands-free voice"}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsHandsFreeActive((prev) => !prev)}
+              type="button"
+              aria-label={isHandsFreeActive ? "Pause hands-free voice" : "Enable hands-free voice"}
+              className={cn(
+                "px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer shrink-0 ml-2",
+                isHandsFreeActive
+                  ? "bg-emerald-600/10 text-emerald-700 border-emerald-500/30 hover:bg-emerald-600/20"
+                  : "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80"
+              )}
+            >
+              {isHandsFreeActive ? "Listening" : "Turn On"}
+            </button>
+          </div>
         </div>
 
         {/* Main Card: Medicine Information (Naturally Centered without clipping) */}
@@ -209,7 +349,7 @@ export function IntakeAlarmModal({
         <div className="w-full space-y-4 pt-2 pb-4">
           {/* Primary Action Button: Massive, Unmissable */}
           <button
-            onClick={onTookIt}
+            onClick={handleTookItClick}
             type="button"
             className="w-full py-6 px-8 rounded-3xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-extrabold text-2xl sm:text-3xl shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-4 transition-all border-2 border-emerald-400/40"
           >
@@ -222,7 +362,7 @@ export function IntakeAlarmModal({
           {/* Secondary Action: Snooze for 10 minutes */}
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={onSnooze}
+              onClick={handleSnoozeClick}
               type="button"
               className={cn(
                 "py-4 px-4 rounded-2xl border font-bold text-base sm:text-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98]",
@@ -236,7 +376,7 @@ export function IntakeAlarmModal({
             </button>
 
             <button
-              onClick={onDismiss}
+              onClick={handleDismissClick}
               type="button"
               className={cn(
                 "py-4 px-4 rounded-2xl border font-bold text-base sm:text-lg transition-all active:scale-[0.98]",

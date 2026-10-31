@@ -122,26 +122,31 @@ export function useVoiceRecognition(options?: UseVoiceRecognitionOptions) {
     // 1. Always capture microphone stream for Whisper backup
     let stream: MediaStream | null = null;
     try {
+      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Microphone API not available");
+      }
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
 
-      const recorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = recorder;
-      audioChunksRef.current = [];
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-
-      recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      if (typeof MediaRecorder !== "undefined") {
+        const recorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = recorder;
         audioChunksRef.current = [];
-        if (!lastTranscriptRef.current.trim()) {
-          transcribeWithWhisper(audioBlob);
-        }
-      };
 
-      recorder.start();
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
+
+        recorder.onstop = () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          audioChunksRef.current = [];
+          if (!lastTranscriptRef.current.trim()) {
+            transcribeWithWhisper(audioBlob);
+          }
+        };
+
+        recorder.start();
+      }
       setIsListening(true);
     } catch (err: any) {
       stopStream();

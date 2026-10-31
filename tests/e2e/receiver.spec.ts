@@ -23,13 +23,28 @@ test.describe('Care Receiver Suite', () => {
     await expect(tookItButton).toBeVisible();
 
     // Confirm dose name is displayed (either Amlodipine or Metformin)
-    await expect(page.getByText('Amlodipine').or(page.getByText('Metformin'))).toBeVisible();
+    await expect(page.getByText('Amlodipine').or(page.getByText('Metformin')).first()).toBeVisible();
 
     // If Metformin with uploaded photo is active, confirm pill image renders
-    const metforminText = page.getByText('Metformin');
+    const metforminText = page.getByText('Metformin').first();
     if (await metforminText.isVisible().catch(() => false)) {
-      await expect(page.locator('img[alt="Metformin"]')).toBeVisible();
+      await expect(page.locator('img[alt="Metformin"]').first()).toBeVisible();
     }
+  });
+
+  test('should show hands-free voice detection on active alarm modal', async ({ page }) => {
+    await page.goto('/care-receiver');
+    await page.waitForLoadState('networkidle');
+
+    // If alarm modal is not already displayed, trigger it via Test Medicine Reminder
+    const alarmVoiceBanner = page.getByText(/Say "I took it"|Hands-free voice/i).first();
+    if (!(await alarmVoiceBanner.isVisible().catch(() => false))) {
+      await page.getByRole('button', { name: 'Test Medicine Reminder' }).click();
+    }
+
+    // Confirm hands-free indicator is active on alarm modal
+    await expect(page.getByText(/Say "I took it"|Hands-free voice/i).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: /hands-free voice/i }).first()).toBeVisible();
   });
 
   test('should allow senior to confirm dose intake by tapping "I took it"', async ({ page }) => {
@@ -82,4 +97,32 @@ test.describe('Care Receiver Suite', () => {
     await callHelpBtn.click();
     await expect(page.getByRole('heading', { name: 'Need Help?' })).toBeVisible();
   });
+
+  test('should synchronize medication intake when sending "I took my medicine" via quick messages', async ({ page }) => {
+    await page.goto('/care-receiver');
+    await page.waitForLoadState('networkidle');
+
+    // If alarm is up, dismiss to reach main screen
+    const dismissBtn = page.getByRole('button', { name: 'Not right now' });
+    try {
+      await dismissBtn.waitFor({ state: 'visible', timeout: 3000 });
+      await dismissBtn.click();
+    } catch {
+      // Alarm modal wasn't active
+    }
+
+    // Open Quick Messages via header button
+    const messageBtn = page.getByRole('button', { name: 'Send Message' });
+    await expect(messageBtn).toBeVisible({ timeout: 5000 });
+    await messageBtn.click();
+
+    // Tap "I took my medicine"
+    const tookMedQuick = page.getByRole('button', { name: 'I took my medicine' });
+    await expect(tookMedQuick).toBeVisible();
+    await tookMedQuick.click();
+
+    // Confirm that the dose was marked as taken in the schedule
+    await expect(page.getByText(/Marked .* as taken in your schedule!/i)).toBeVisible({ timeout: 5000 });
+  });
 });
+

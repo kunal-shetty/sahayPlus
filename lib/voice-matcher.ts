@@ -272,3 +272,73 @@ export function matchMedicationFromTranscript(
     feedbackMessage: `Heard: "${rawTranscript}". Tap your pill below or say the name again.`,
   };
 }
+
+export type AlarmVoiceIntent = "confirm_intake" | "snooze" | "dismiss" | "unknown";
+
+export interface AlarmVoiceResult {
+  intent: AlarmVoiceIntent;
+  feedback: string;
+}
+
+const SNOOZE_PHRASES = [
+  "snooze",
+  "remind later",
+  "remind in 10 minutes",
+  "remind in 10 mins",
+  "remind in 10m",
+  "10 minutes",
+  "later",
+  "baad me",
+  "baad mein",
+  "snooze alarm",
+  "thodi der baad",
+];
+
+const DISMISS_PHRASES = [
+  "not now",
+  "not right now",
+  "dismiss",
+  "cancel",
+  "stop alarm",
+  "abhi nahi",
+  "nahi",
+  "leave it",
+];
+
+/**
+ * Evaluates spoken voice commands during the full-screen medication intake alarm.
+ * Allows elders to confirm dose hands-free ("I took it", "Dolo"), snooze ("snooze", "10 minutes"),
+ * or dismiss ("not now") without touching the screen.
+ */
+export function matchAlarmVoiceIntent(
+  rawTranscript: string,
+  medication: Medication
+): AlarmVoiceResult {
+  if (!rawTranscript || !rawTranscript.trim()) {
+    return { intent: "unknown", feedback: "" };
+  }
+
+  const cleaned = cleanText(rawTranscript);
+
+  // 1. Check for Snooze intent
+  if (SNOOZE_PHRASES.some((phrase) => cleaned === phrase || cleaned.includes(phrase))) {
+    return { intent: "snooze", feedback: "Snoozing for 10 minutes" };
+  }
+
+  // 2. Check for Dismiss intent
+  if (DISMISS_PHRASES.some((phrase) => cleaned === phrase || cleaned.includes(phrase))) {
+    return { intent: "dismiss", feedback: "Dismissed for now" };
+  }
+
+  // 3. Check for Intake Confirmation (using core matcher engine)
+  const match = matchMedicationFromTranscript(rawTranscript, [medication], medication);
+  if (match.intent === "mark_taken" && match.matchedMed?.id === medication.id) {
+    return {
+      intent: "confirm_intake",
+      feedback: `Confirmed: ${medication.name}`,
+    };
+  }
+
+  return { intent: "unknown", feedback: `Heard: "${rawTranscript}"` };
+}
+

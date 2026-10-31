@@ -351,10 +351,18 @@ export async function setupMockApi(page: Page, role: 'caregiver' | 'care_receive
   });
 
   await page.route(/\/api\/messages/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify([]),
-    });
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: { id: 'msg-mock-1', created_at: new Date().toISOString() } }),
+      });
+    } else {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    }
   });
 }
