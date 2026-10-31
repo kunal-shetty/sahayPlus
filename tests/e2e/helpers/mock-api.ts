@@ -310,11 +310,22 @@ export async function setupMockApi(page: Page, role: 'caregiver' | 'care_receive
   });
 
   // Intercept Day Closures
+  const dayClosuresList: any[] = [];
   await page.route(/\/api\/day/, async (route) => {
+    if (route.request().method() === 'POST') {
+      const newClosure = { id: 'closure-' + Date.now(), closed_at: new Date().toISOString() };
+      dayClosuresList.push(newClosure);
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, closure: newClosure }),
+      });
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ closures: [] }),
+      body: JSON.stringify({ closures: dayClosuresList }),
     });
   });
 

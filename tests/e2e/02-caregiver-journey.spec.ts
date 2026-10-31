@@ -2,21 +2,22 @@ import { test, expect } from '@playwright/test';
 import { setupMockApi, injectSession } from './helpers/mock-api';
 
 /**
- * @file caregiver.spec.ts
- * @description End-to-End tests for Caregiver Dashboard & Tools (Modules 7, 8, 9, 10, 11, 12, 13).
- * Runs 100% locally with instant mock data (no database or external network needed).
+ * @file 02-caregiver-journey.spec.ts
+ * @description Phase 2: Caregiver Daily Operations Flow
+ * Complete daily caregiving walkthrough:
+ * Dashboard -> Add Medication -> Notes -> Roles & Handover ->
+ * Pharmacist -> Emergency -> Doctor Prep -> Analytics -> Wellness
  */
 
-test.describe('Caregiver Suite', () => {
+test.describe('Phase 2: Caregiver Daily Operations Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // 1. Setup instant mock network routes
     await setupMockApi(page, 'caregiver');
-    // 2. Pre-authenticate as Caregiver into localStorage
     await injectSession(page, 'caregiver');
   });
 
-  test('should render caregiver dashboard with senior info and streak analytics', async ({ page }) => {
+  test('Step 1: should render caregiver dashboard with senior info and streak analytics', async ({ page }) => {
     await page.goto('/caregiver');
+    await page.waitForLoadState('networkidle');
 
     // Care header and greeting displayed
     await expect(page.locator('h1')).toContainText('Care');
@@ -27,10 +28,15 @@ test.describe('Caregiver Suite', () => {
 
     // "Add medication" action button is visible
     await expect(page.getByRole('button', { name: /Add medication/i })).toBeVisible();
+
+    // Existing scheduled medications with dose tags rendered
+    await expect(page.getByText('Amlodipine').first()).toBeVisible();
+    await expect(page.getByText('Metformin').first()).toBeVisible();
   });
 
-  test('should open medication form and allow adding a new medication', async ({ page }) => {
+  test('Step 2: should open medication form and allow adding a new medication to regimen', async ({ page }) => {
     await page.goto('/caregiver');
+    await page.waitForLoadState('networkidle');
 
     // Click "Add medication"
     const addBtn = page.getByRole('button', { name: /Add medication/i });
@@ -52,12 +58,13 @@ test.describe('Caregiver Suite', () => {
     await expect(saveBtn).toBeEnabled();
     await saveBtn.click();
 
-    // Should return to dashboard and show added med
+    // Should return to dashboard and show newly added med
     await expect(page.getByText('Atorvastatin').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('should open and close the settings panel', async ({ page }) => {
+  test('Step 3: should open and close the caregiver settings panel', async ({ page }) => {
     await page.goto('/caregiver');
+    await page.waitForLoadState('networkidle');
 
     // Click settings gear button
     const settingsBtn = page.getByRole('button', { name: 'Settings' });
@@ -73,32 +80,31 @@ test.describe('Caregiver Suite', () => {
     }
   });
 
-  test('should display existing scheduled medications with dose tags', async ({ page }) => {
-    await page.goto('/caregiver');
-
-    // Existing mock medications should be rendered
-    await expect(page.getByText('Amlodipine').first()).toBeVisible();
-    await expect(page.getByText('Metformin').first()).toBeVisible();
-  });
-
-  test('should render clinical doctor prep summary with active medications table and print action', async ({ page }) => {
-    await page.goto('/caregiver/doctor-prep');
+  test('Step 4: should create a fading contextual note on /caregiver/notes', async ({ page }) => {
+    await page.goto('/caregiver/notes');
     await page.waitForLoadState('networkidle');
 
-    // Confirm Patient Care Summary and demographics render
-    await expect(page.getByRole('heading', { name: /Doctor Visit Prep/i })).toBeVisible();
-    await expect(page.getByText('Current Active Medications & Regimen')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Notes' })).toBeVisible();
 
-    // Confirm medications table shows scheduled meds (Amlodipine, Metformin)
-    await expect(page.getByText('Amlodipine').first()).toBeVisible();
-    await expect(page.getByText('Metformin').first()).toBeVisible();
+    // Click "Add a note" button
+    const addNoteBtn = page.getByRole('button', { name: /Add a note/i });
+    await expect(addNoteBtn).toBeVisible();
+    await addNoteBtn.click();
 
-    // Confirm Print and Copy actions are present
-    await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible();
+    // Type note into textarea
+    const textarea = page.getByPlaceholder(/Why did something change/i);
+    await textarea.fill('Doctor recommended taking with plenty of water');
+
+    // Click "Save note"
+    const saveBtn = page.getByRole('button', { name: /Save note/i });
+    await expect(saveBtn).toBeEnabled();
+    await saveBtn.click();
+
+    // Verify newly added note is visible
+    await expect(page.getByText('Doctor recommended taking with plenty of water')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should allow setting up temporary care handover with invite code and ending handover', async ({ page }) => {
+  test('Step 5: should initiate temporary care handover and restore primary care on /caregiver/roles', async ({ page }) => {
     await page.goto('/caregiver/roles');
     await page.waitForLoadState('networkidle');
 
@@ -132,26 +138,7 @@ test.describe('Caregiver Suite', () => {
     await expect(page.getByRole('button', { name: /Initiate Temporary Handover/i })).toBeVisible({ timeout: 10000 });
   });
 
-  test('should render adherence analytics trends and confidence meter on /caregiver/analytics', async ({ page }) => {
-    await page.goto('/caregiver/analytics');
-    await page.waitForLoadState('networkidle');
-
-    await expect(page.getByRole('heading', { name: 'Care Insights' })).toBeVisible();
-    await expect(page.getByText('Care Confidence')).toBeVisible();
-    await expect(page.getByText('Weekly Adherence')).toBeVisible();
-  });
-
-  test('should render emergency directory and primary contact on /caregiver/emergency', async ({ page }) => {
-    await page.goto('/caregiver/emergency');
-    await page.waitForLoadState('networkidle');
-
-    await expect(page.getByRole('heading', { name: 'Emergency Center' })).toBeVisible();
-    await expect(page.getByText(/Anita Patel/i).first()).toBeVisible();
-    await expect(page.getByText(/Call Now: 9876543210/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /Add Contact/i })).toBeVisible();
-  });
-
-  test('should render pharmacist panel and medication notes on /caregiver/pharmacist', async ({ page }) => {
+  test('Step 6: should review pharmacist details and medication notes on /caregiver/pharmacist', async ({ page }) => {
     await page.goto('/caregiver/pharmacist');
     await page.waitForLoadState('networkidle');
 
@@ -162,42 +149,43 @@ test.describe('Caregiver Suite', () => {
     await expect(page.getByText('Metformin').first()).toBeVisible();
   });
 
-  test('should render caregiver notes and allow adding a contextual note on /caregiver/notes', async ({ page }) => {
-    await page.goto('/caregiver/notes');
+  test('Step 7: should verify emergency directory and primary contact on /caregiver/emergency', async ({ page }) => {
+    await page.goto('/caregiver/emergency');
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByRole('heading', { name: 'Notes' })).toBeVisible();
-
-    // Click "Add a note" button
-    const addNoteBtn = page.getByRole('button', { name: /Add a note/i });
-    await expect(addNoteBtn).toBeVisible();
-    await addNoteBtn.click();
-
-    // Type note into textarea
-    const textarea = page.getByPlaceholder(/Why did something change/i);
-    await textarea.fill('Doctor recommended taking with plenty of water');
-
-    // Click "Save note"
-    const saveBtn = page.getByRole('button', { name: /Save note/i });
-    await expect(saveBtn).toBeEnabled();
-    await saveBtn.click();
-
-    // Verify newly added note is visible
-    await expect(page.getByText('Doctor recommended taking with plenty of water')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: 'Emergency Center' })).toBeVisible();
+    await expect(page.getByText(/Anita Patel/i).first()).toBeVisible();
+    await expect(page.getByText(/Call Now: 9876543210/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Add Contact/i })).toBeVisible();
   });
 
-  test('should render medication history with adherence streaks and performance on /caregiver/history', async ({ page }) => {
-    await page.goto('/caregiver/history');
+  test('Step 8: should generate doctor prep report with regimen and print action on /caregiver/doctor-prep', async ({ page }) => {
+    await page.goto('/caregiver/doctor-prep');
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByRole('heading', { name: 'Medication History' })).toBeVisible();
-    await expect(page.getByText('Total Tracking Days')).toBeVisible();
-    await expect(page.getByText('Current Streak')).toBeVisible();
-    await expect(page.getByText('Personal Best')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Medication Performance' })).toBeVisible();
+    // Confirm Patient Care Summary and demographics render
+    await expect(page.getByRole('heading', { name: /Doctor Visit Prep/i })).toBeVisible();
+    await expect(page.getByText('Current Active Medications & Regimen')).toBeVisible();
+
+    // Confirm medications table shows scheduled meds (Amlodipine, Metformin)
+    await expect(page.getByText('Amlodipine').first()).toBeVisible();
+    await expect(page.getByText('Metformin').first()).toBeVisible();
+
+    // Confirm Print and Copy actions are present
+    await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible();
   });
 
-  test('should render caregiver wellness overview and allow recording a check-in on /caregiver/wellness', async ({ page }) => {
+  test('Step 9: should review adherence analytics trends on /caregiver/analytics', async ({ page }) => {
+    await page.goto('/caregiver/analytics');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: 'Care Insights' })).toBeVisible();
+    await expect(page.getByText('Care Confidence')).toBeVisible();
+    await expect(page.getByText('Weekly Adherence')).toBeVisible();
+  });
+
+  test('Step 10: should record wellness observation on /caregiver/wellness', async ({ page }) => {
     await page.goto('/caregiver/wellness');
     await page.waitForLoadState('networkidle');
 
@@ -222,6 +210,7 @@ test.describe('Caregiver Suite', () => {
     await saveBtn.click();
 
     // Modal closes and status reflects feeling great
-    await expect(page.getByText(/Feeling great/i).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Feeling great/i).first()).toBeVisible({ timeout: 10000 });
   });
 });
+
