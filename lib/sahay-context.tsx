@@ -2176,18 +2176,36 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           updatedMeds = freshMedsList.map((m: any) => {
             const mId = String(m.id)
             const prevMed = prev.medications.find((p) => p.id === mId)
+            const { cleanNotes, meta } = decodeMedicationNotes(m.notes)
+            const localMeta = getLocalMedMeta(mId, m.name)
+
+            const imageUrl = meta.imageUrl || prevMed?.imageUrl || localMeta?.imageUrl
+            const color = meta.color || prevMed?.color || localMeta?.color || 'white'
+            const shape = meta.shape || prevMed?.shape || localMeta?.shape || 'round'
+            const foodInstruction = meta.foodInstruction || prevMed?.foodInstruction || localMeta?.foodInstruction || 'after_meal'
+            const simpleExplanation = m.simple_explanation || meta.simpleExplanation || prevMed?.simpleExplanation || localMeta?.simpleExplanation
+            const finalNotes = stripAllMeta(cleanNotes !== undefined ? cleanNotes : (prevMed?.notes || undefined))
+
+            if (imageUrl || color || shape || foodInstruction || simpleExplanation) {
+              saveLocalMedMeta(mId, m.name, { imageUrl, color, shape, foodInstruction, simpleExplanation })
+            }
+
             return {
               id: mId,
               name: m.name,
               dosage: m.dosage,
               timeOfDay: m.time_of_day as TimeOfDay,
               time: m.time || undefined,
-              notes: m.notes || undefined,
+              notes: finalNotes,
               taken: takenMedIds.has(mId),
               lastUpdated: m.updated_at || m.created_at,
               refillDaysLeft: m.refill_days_left || undefined,
               pharmacistNote: m.pharmacist_note || undefined,
-              simpleExplanation: m.simple_explanation || undefined,
+              simpleExplanation,
+              imageUrl,
+              color,
+              shape,
+              foodInstruction,
               streak: prevMed?.streak || 0,
               totalTaken: prevMed?.totalTaken || 0,
               lastTaken: takenMedIds.has(mId) ? today : prevMed?.lastTaken,

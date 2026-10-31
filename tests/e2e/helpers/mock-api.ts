@@ -55,11 +55,12 @@ export const mockMedications = [
     frequency: 'once_daily',
     taken: false,
     instructions: 'Take with warm water after lunch',
-    notes: 'Take with warm water after lunch',
     simple_explanation: 'Take with lunch',
     food_instruction: 'with_meal',
     color: 'white',
     shape: 'oval',
+    imageUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    notes: 'Take with warm water after lunch\n<!--SAHAY_META:{"imageUrl":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==","color":"white","shape":"oval"}:SAHAY_META-->',
     refill_days_left: 20,
   },
 ];
@@ -117,6 +118,8 @@ export async function injectSession(page: Page, role: 'caregiver' | 'care_receiv
             foodInstruction: 'with_meal',
             color: 'white',
             shape: 'oval',
+            imageUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+            notes: 'Take with warm water after lunch\n<!--SAHAY_META:{"imageUrl":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==","color":"white","shape":"oval"}:SAHAY_META-->',
             refillDaysLeft: 20,
           },
         ],
@@ -247,7 +250,7 @@ export async function setupMockApi(page: Page, role: 'caregiver' | 'care_receive
       let postData: any = {};
       try {
         postData = route.request().postDataJSON();
-      } catch {}
+      } catch { }
       const newEntry = {
         id: 'w-' + Date.now(),
         level: postData?.level || 'great',

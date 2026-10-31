@@ -9,7 +9,7 @@
  * to reduce eye strain and signal a wind-down period.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useSahay } from "@/lib/sahay-context";
 import {
@@ -36,6 +36,7 @@ import {
   ShieldAlert,
   AlertTriangle,
   Bell,
+  Camera,
 } from "lucide-react";
 import { WellnessCheckin } from "@/components/care-receiver/wellness-checkin";
 import { MorningWellnessCard } from "@/components/care-receiver/morning-wellness-card";
@@ -103,6 +104,7 @@ export default function CareReceiverPage() {
   const [showEmergency, setShowEmergency] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [helpRequestedAt, setHelpRequestedAt] = useState<string | null>(null);
+  const [selectedMedId, setSelectedMedId] = useState<string | null>(null);
 
   // Scheduled Medicine Alarm State
   const [alarmMedication, setAlarmMedication] = useState<Medication | null>(null);
@@ -242,7 +244,7 @@ export default function CareReceiverPage() {
 
   /** Test button to preview the full-screen alarm and chime immediately */
   const handleTestAlarm = () => {
-    const medToTest = nextMed || data.medications[0] || {
+    const medToTest = (selectedMedId && data.medications.find((m) => m.id === selectedMedId)) || nextMed || data.medications[0] || {
       id: "demo_pill",
       name: "Metformin",
       dosage: "500 mg",
@@ -347,12 +349,27 @@ export default function CareReceiverPage() {
   const allDone =
     data.medications.length > 0 && data.medications.every((m) => m.taken);
 
+  const pendingMeds = useMemo(
+    () => data.medications.filter((m) => !m.taken),
+    [data.medications]
+  );
+
+  const activeMed = useMemo(() => {
+    if (selectedMedId) {
+      const selected = pendingMeds.find((m) => m.id === selectedMedId);
+      if (selected) return selected;
+    }
+    return nextMed;
+  }, [selectedMedId, pendingMeds, nextMed]);
+
   /** Marks the current medication as taken and triggers a temporary undo state. */
   const handleTookIt = () => {
-    if (nextMed) {
-      markMedicationTaken(nextMed.id, true);
-      setConfirmedMed(nextMed);
+    const medToTake = activeMed || nextMed;
+    if (medToTake) {
+      markMedicationTaken(medToTake.id, true);
+      setConfirmedMed(medToTake);
       setShowUndo(true);
+      setSelectedMedId(null);
     }
   };
 
@@ -712,18 +729,49 @@ export default function CareReceiverPage() {
             <MorningWellnessCard isLateMorningReminder={isLateMorningReminder} />
           </div>
 
-          {nextMed ? (
+          {activeMed ? (
             <div className="flex-1 flex flex-col justify-between min-h-0 my-1">
+              {/* Optional Medication Selector if multiple pending pills exist */}
+              {pendingMeds.length > 1 && (
+                <div className="flex items-center justify-center gap-1.5 overflow-x-auto py-1 px-1 mb-1 max-w-full">
+                  {pendingMeds.map((med) => {
+                    const isSelected = activeMed.id === med.id;
+                    const medMeta = getLocalMedMeta(med.id, med.name);
+                    const hasPhoto = !!(med.imageUrl || medMeta?.imageUrl);
+                    return (
+                      <button
+                        key={med.id}
+                        type="button"
+                        onClick={() => setSelectedMedId(med.id)}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 touch-manipulation active:scale-95",
+                          isSelected
+                            ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                            : "bg-card text-muted-foreground border-border hover:bg-secondary"
+                        )}
+                      >
+                        {hasPhoto && <Camera className="w-3.5 h-3.5 text-amber-500" />}
+                        <span className="truncate max-w-[120px]">{med.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Scheduled slot tag */}
               <div className="flex items-center justify-center gap-1.5 shrink-0 text-muted-foreground mb-1">
-                <TimeIcon
-                  className="w-4 h-4 text-primary"
-                  strokeWidth={1.5}
-                />
-                <span className="text-xs sm:text-sm font-semibold">
-                  {timeOfDayLabels[nextMed!.timeOfDay]}
-                  {nextMed?.time && ` at ${formatTime12h(nextMed.time)}`}
-                </span>
+                {(() => {
+                  const MedTimeIcon = timeIcons[activeMed.timeOfDay] || Sun;
+                  return (
+                    <>
+                      <MedTimeIcon className="w-4 h-4 text-primary" strokeWidth={1.5} />
+                      <span className="text-xs sm:text-sm font-semibold">
+                        {timeOfDayLabels[activeMed.timeOfDay]}
+                        {activeMed.time && ` at ${formatTime12h(activeMed.time)}`}
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Main Next Med Card */}
@@ -735,13 +783,13 @@ export default function CareReceiverPage() {
               >
                 {/* Pill Image or Visual Representation */}
                 {(() => {
-                  const localMeta = getLocalMedMeta(nextMed!.id, nextMed!.name);
-                  const displayImage = nextMed!.imageUrl || localMeta?.imageUrl;
-                  const pillColor = nextMed!.color || localMeta?.color || "yellow";
-                  const pillShape = nextMed!.shape || localMeta?.shape || "oval";
-                  const cleanNotes = stripAllMeta(nextMed!.notes);
+                  const localMeta = getLocalMedMeta(activeMed.id, activeMed.name);
+                  const displayImage = activeMed.imageUrl || localMeta?.imageUrl;
+                  const pillColor = activeMed.color || localMeta?.color || "yellow";
+                  const pillShape = activeMed.shape || localMeta?.shape || "oval";
+                  const cleanNotes = stripAllMeta(activeMed.notes);
                   const displayExplanation =
-                    nextMed!.simpleExplanation ||
+                    activeMed.simpleExplanation ||
                     localMeta?.simpleExplanation ||
                     cleanNotes ||
                     "Take 1 dose with a full glass of water as prescribed.";
@@ -754,7 +802,7 @@ export default function CareReceiverPage() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={displayImage}
-                              alt={nextMed!.name}
+                              alt={activeMed.name}
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -774,19 +822,19 @@ export default function CareReceiverPage() {
                       )}
 
                       <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight leading-tight truncate max-w-full">
-                        {nextMed!.name}
+                        {activeMed.name}
                       </h2>
 
                       {/* Dosage + Meal timing badges grouped on a single row */}
                       <div className="flex items-center justify-center gap-1.5 my-1 flex-wrap shrink-0">
                         <div className="px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-xs sm:text-sm">
-                          {nextMed!.dosage}
+                          {activeMed.dosage}
                         </div>
                         <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-secondary text-foreground font-semibold text-xs border border-border">
-                          {nextMed?.foodInstruction === "before_meal" && "🍽️ Before Meal"}
-                          {nextMed?.foodInstruction === "with_meal" && "🍲 With Food"}
-                          {(!nextMed?.foodInstruction || nextMed?.foodInstruction === "after_meal") && "☕ After Meal"}
-                          {nextMed?.foodInstruction === "anytime" && "🕒 Anytime"}
+                          {activeMed?.foodInstruction === "before_meal" && "🍽️ Before Meal"}
+                          {activeMed?.foodInstruction === "with_meal" && "🍲 With Food"}
+                          {(!activeMed?.foodInstruction || activeMed?.foodInstruction === "after_meal") && "☕ After Meal"}
+                          {activeMed?.foodInstruction === "anytime" && "🕒 Anytime"}
                         </div>
                       </div>
 
@@ -804,11 +852,11 @@ export default function CareReceiverPage() {
                   );
                 })()}
 
-                {nextMed!.pharmacistNote && (
+                {activeMed.pharmacistNote && (
                   <div className="mt-1 pt-1 border-t border-border w-full shrink-0">
                     <p className="text-[11px] text-muted-foreground truncate">
                       <span className="font-semibold text-primary">Pharmacist: </span>
-                      {nextMed!.pharmacistNote}
+                      {activeMed.pharmacistNote}
                     </p>
                   </div>
                 )}
@@ -1010,9 +1058,9 @@ export default function CareReceiverPage() {
         isOpen={showVoiceModal}
         onClose={() => setShowVoiceModal(false)}
         medications={data.medications}
-        nextMed={nextMed}
+        nextMed={activeMed || nextMed}
         onConfirmDose={(medId) => {
-          const med = data.medications.find((m) => m.id === medId) || nextMed;
+          const med = data.medications.find((m) => m.id === medId) || activeMed || nextMed;
           markMedicationTaken(medId, true);
           if (med) {
             setConfirmedMed(med);

@@ -46,6 +46,7 @@ export function encodeMedicationNotes(
   if (meta.shape) lightweightMeta.shape = meta.shape;
   if (meta.foodInstruction) lightweightMeta.foodInstruction = meta.foodInstruction;
   if (meta.simpleExplanation) lightweightMeta.simpleExplanation = meta.simpleExplanation;
+  if (meta.imageUrl) lightweightMeta.imageUrl = meta.imageUrl;
 
   const hasMeta = Object.keys(lightweightMeta).length > 0;
   if (!hasMeta) {

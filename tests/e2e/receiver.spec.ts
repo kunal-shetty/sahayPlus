@@ -15,7 +15,7 @@ test.describe('Care Receiver Suite', () => {
     await injectSession(page, 'care_receiver');
   });
 
-  test('should display active dose alarm modal or senior home card', async ({ page }) => {
+  test('should display active dose alarm modal or senior home card with medication photo', async ({ page }) => {
     await page.goto('/care-receiver');
 
     // Either the full-screen alarm modal is active or the senior home screen
@@ -24,6 +24,12 @@ test.describe('Care Receiver Suite', () => {
 
     // Confirm dose name is displayed (either Amlodipine or Metformin)
     await expect(page.getByText('Amlodipine').or(page.getByText('Metformin'))).toBeVisible();
+
+    // If Metformin with uploaded photo is active, confirm pill image renders
+    const metforminText = page.getByText('Metformin');
+    if (await metforminText.isVisible().catch(() => false)) {
+      await expect(page.locator('img[alt="Metformin"]')).toBeVisible();
+    }
   });
 
   test('should allow senior to confirm dose intake by tapping "I took it"', async ({ page }) => {
