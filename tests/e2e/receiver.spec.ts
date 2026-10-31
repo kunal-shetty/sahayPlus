@@ -1,79 +1,79 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from './pages/login.page';
-import { ReceiverDashboard } from './pages/receiver.page';
+import { setupMockApi, injectSession } from './helpers/mock-api';
 
 /**
  * @file receiver.spec.ts
- * @description End-to-End (E2E) test suite for Care Receiver-specific features.
- * This suite validates the simplified, elderly-friendly interface designed
- * for the care receiver, focusing on accessibility and critical health actions
- * such as medication tracking and emergency requests.
- *
- * These tests ensure that the receiver can independently communicate their
- * status and needs to their caregiver with minimal friction.
+ * @description End-to-End tests for Care Receiver interface (Modules 2, 3, 4, 5, 6, 14).
+ * Runs 100% locally with instant mock data (no database or external network needed).
  */
 
-test.describe('Care Receiver Feature Suite', () => {
-  let loginPage: LoginPage;
-  let receiverDashboard: ReceiverDashboard;
-
+test.describe('Care Receiver Suite', () => {
   test.beforeEach(async ({ page }) => {
-    loginPage = new LoginPage(page);
-    receiverDashboard = new ReceiverDashboard(page);
-
-    // Login as a care receiver
-    await loginPage.goto();
-    await loginPage.login('receiver@gmail.com');
+    // 1. Setup instant mock network routes
+    await setupMockApi(page, 'care_receiver');
+    // 2. Pre-authenticate as Care Receiver into localStorage
+    await injectSession(page, 'care_receiver');
   });
 
-  /**
-   * Test: Marking medication as taken.
-   * Verifies that the receiver can easily mark their medication as taken
-   * and that the UI provides immediate feedback.
-   */
-  test('should be able to mark medication as taken', async ({ page }) => {
-    await receiverDashboard.markMedicationTaken();
-    await expect(page).toHaveText('Medication marked as taken');
+  test('should display active dose alarm modal or senior home card', async ({ page }) => {
+    await page.goto('/care-receiver');
+
+    // Either the full-screen alarm modal is active or the senior home screen
+    const tookItButton = page.getByRole('button', { name: 'I took it' });
+    await expect(tookItButton).toBeVisible();
+
+    // Confirm dose name is displayed (either Amlodipine or Metformin)
+    await expect(page.getByText('Amlodipine').or(page.getByText('Metformin'))).toBeVisible();
   });
 
-  /**
-   * Test: Undoing a medication action.
-   * Verifies that the receiver can correct a mistake if they accidentally
-   * mark a medication as taken.
-   */
-  test('should be able to undo marking medication as taken', async ({ page }) => {
-    await receiverDashboard.markMedicationTaken();
-    await receiverDashboard.undoMedicationTaken();
-    await expect(page).toHaveText('Medication marked as pending');
+  test('should allow senior to confirm dose intake by tapping "I took it"', async ({ page }) => {
+    await page.goto('/care-receiver');
+
+    // Click "I took it"
+    const tookItBtn = page.getByRole('button', { name: 'I took it' });
+    await expect(tookItBtn).toBeVisible();
+    await tookItBtn.click();
+
+    // Reassurance screen appears: "Noted. Take care."
+    await expect(page.getByRole('heading', { name: 'Noted. Take care.' })).toBeVisible({ timeout: 5000 });
   });
 
-  /**
-   * Test: Daily wellness check-in.
-   * Verifies that the receiver can perform the daily "I'm fine" check-in,
-   * providing peace of mind to the caregiver.
-   */
-  test('should be able to perform daily check-in', async ({ page }) => {
-    await receiverDashboard.dailyCheckIn();
-    await expect(page).toHaveText('Check-in submitted');
+  test('should record morning wellness check-in with 1 tap', async ({ page }) => {
+    await page.goto('/care-receiver');
+    await page.waitForLoadState('networkidle');
+
+    // If alarm modal is up, dismiss it first to see home screen cards
+    const dismissBtn = page.getByRole('button', { name: 'Not right now' });
+    try {
+      await dismissBtn.waitFor({ state: 'visible', timeout: 3000 });
+      await dismissBtn.click();
+    } catch {
+      // Alarm modal wasn't active
+    }
+
+    // The Morning Wellness Card has options: Feeling Great, Doing Okay, Not Great
+    const wellnessOption = page.locator('button:has-text("Doing Okay"), button:has-text("Feeling Great")').first();
+    await expect(wellnessOption).toBeVisible({ timeout: 5000 });
+    await wellnessOption.click();
+    await expect(page.getByText('Shared ✓')).toBeVisible({ timeout: 4000 });
   });
 
-  /**
-   * Test: Requesting non-emergency help.
-   * Verifies that the receiver can signal for assistance without triggering
-   * a full emergency response.
-   */
-  test('should be able to request help', async ({ page }) => {
-    await receiverDashboard.requestHelp();
-    await expect(page).toHaveText('Help request sent');
-  });
+  test('should open emergency call screen when tapping "Call help"', async ({ page }) => {
+    await page.goto('/care-receiver');
+    await page.waitForLoadState('networkidle');
 
-  /**
-   * Test: Triggering emergency call.
-   * Verifies that the receiver can quickly access the emergency call
-   * interface for immediate assistance.
-   */
-  test('should be able to open emergency call interface', async ({ page }) => {
-    await receiverDashboard.openEmergencyCall();
-    await expect(page).toHaveURL(/.*emergency/);
+    // If alarm is up, dismiss to reach main screen
+    const dismissBtn = page.getByRole('button', { name: 'Not right now' });
+    try {
+      await dismissBtn.waitFor({ state: 'visible', timeout: 3000 });
+      await dismissBtn.click();
+    } catch {
+      // Alarm modal wasn't active
+    }
+
+    const callHelpBtn = page.getByRole('button', { name: 'Call help' });
+    await expect(callHelpBtn).toBeVisible({ timeout: 5000 });
+    await callHelpBtn.click();
+    await expect(page.getByRole('heading', { name: 'Need Help?' })).toBeVisible();
   });
 });

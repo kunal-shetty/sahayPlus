@@ -331,6 +331,8 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           setData((prev) => ({
             ...prev,
             userRole: parsed.role === 'caregiver' ? 'caregiver' : 'careReceiver',
+            careReceiver: parsed.role === 'care_receiver' ? { name: parsed.name, nickname: 'Dada Ji' } : prev.careReceiver,
+            caregiver: parsed.role === 'caregiver' ? { name: parsed.name, setupComplete: true, roleStatus: 'active' } : prev.caregiver,
           }))
         } catch {
           localStorage.removeItem(AUTH_STORAGE_KEY)
@@ -620,11 +622,11 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         }
 
         setData((prev) => {
-          const rawMeds = medsRes.status === 'fulfilled' ? medsRes.value.medications : []
+          const rawMeds = medsRes.status === 'fulfilled' ? (medsRes.value?.medications || (Array.isArray(medsRes.value) ? medsRes.value : [])) : []
           const totalMedsCount = rawMeds.length || prev.medications.length || 1
 
           const medsWithTaken = (medsRes.status === 'fulfilled'
-            ? medsRes.value.medications.map((m: any) => {
+            ? rawMeds.map((m: any) => {
               const mId = String(m.id)
               const medLogs = logsByMed.get(mId) || []
               const totalTaken = medLogs.length
@@ -701,7 +703,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
 
           // Merge day closures from API with any active dates recorded in medication_logs
           const existingClosures = dayRes.status === 'fulfilled'
-            ? dayRes.value.closures.map((d: any) => ({
+            ? (dayRes.value?.closures || []).map((d: any) => ({
               date: d.date,
               closedAt: d.closed_at,
               allTaken: d.all_taken,
@@ -734,7 +736,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
             longestStreak: longestStreak || prev.longestStreak,
             totalDaysTracked: logsByDate.size || mergedClosures.length || prev.totalDaysTracked,
             timeline: timelineRes.status === 'fulfilled'
-              ? timelineRes.value.events.map((e: any) => ({
+              ? (timelineRes.value?.events || (Array.isArray(timelineRes.value) ? timelineRes.value : [])).map((e: any) => ({
                 id: String(e.id),
                 type: e.type as TimelineEventType,
                 timestamp: e.created_at,
@@ -744,7 +746,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               }))
               : prev.timeline,
             contextualNotes: notesRes.status === 'fulfilled'
-              ? notesRes.value.notes.map((n: any) => ({
+              ? (notesRes.value?.notes || []).map((n: any) => ({
                 id: String(n.id),
                 text: n.text,
                 createdAt: n.created_at,
@@ -766,7 +768,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               : prev.wellnessEntries,
             dayClosures: mergedClosures,
             messages: msgsRes.status === 'fulfilled'
-              ? msgsRes.value.messages.map((m: any) => ({
+              ? (msgsRes.value?.messages || (Array.isArray(msgsRes.value) ? msgsRes.value : [])).map((m: any) => ({
                 id: String(m.id),
                 from: m.from_user_id === userId ? (user!.role === 'caregiver' ? 'caregiver' : 'careReceiver') : (user!.role === 'caregiver' ? 'careReceiver' : 'caregiver') as any,
                 text: m.text,
@@ -776,7 +778,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               })).reverse()
               : prev.messages,
             emergencyContacts: contactsRes.status === 'fulfilled'
-              ? contactsRes.value.contacts.map((c: any) => ({
+              ? (contactsRes.value?.contacts || (Array.isArray(contactsRes.value) ? contactsRes.value : [])).map((c: any) => ({
                 id: String(c.id),
                 name: c.name,
                 relationship: c.relationship || '',
@@ -786,7 +788,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               : prev.emergencyContacts,
             lastFineCheckIn: (() => {
               const todayFineEvent = timelineRes.status === 'fulfilled'
-                ? (timelineRes.value.events || []).find(
+                ? ((timelineRes.value?.events || (Array.isArray(timelineRes.value) ? timelineRes.value : []))).find(
                     (e: any) => (e.type === 'fine_check_in' || e.type === 'wellness_logged') && e.created_at?.startsWith(today)
                   )
                 : undefined
@@ -2199,7 +2201,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         }
 
         const updatedTimeline = timelineRes.status === 'fulfilled'
-          ? timelineRes.value.events.map((e: any) => ({
+          ? (timelineRes.value?.events || (Array.isArray(timelineRes.value) ? timelineRes.value : [])).map((e: any) => ({
             id: String(e.id),
             type: e.type as TimelineEventType,
             timestamp: e.created_at,
