@@ -190,6 +190,7 @@ export async function setupMockApi(page: Page, role: 'caregiver' | 'care_receive
   });
 
   // Intercept Medications CRUD & Actions
+  const currentMedications: any[] = [...mockMedications];
   await page.route(/\/api\/medications/, async (route) => {
     const url = route.request().url();
     const method = route.request().method();
@@ -211,10 +212,30 @@ export async function setupMockApi(page: Page, role: 'caregiver' | 'care_receive
       return;
     }
     if (method === 'POST') {
+      let postData: any = {};
+      try {
+        postData = route.request().postDataJSON();
+      } catch { }
+      const newMed = {
+        id: 'med-' + Date.now(),
+        name: postData?.name || 'New Med',
+        dosage: postData?.dosage || '10mg',
+        time_of_day: postData?.time_of_day || 'morning',
+        timeOfDay: postData?.time_of_day || 'morning',
+        time: postData?.time || '08:00',
+        taken: false,
+        instructions: postData?.instructions || '',
+        simple_explanation: postData?.simple_explanation || '',
+        notes: postData?.notes || '',
+        refill_days_left: postData?.refill_days_left || 30,
+        color: postData?.color || 'yellow',
+        shape: postData?.shape || 'oval',
+      };
+      currentMedications.push(newMed);
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, medication: { id: 'med-new', name: 'New Med' } }),
+        body: JSON.stringify({ success: true, medication: newMed }),
       });
       return;
     }
@@ -222,7 +243,7 @@ export async function setupMockApi(page: Page, role: 'caregiver' | 'care_receive
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ medications: mockMedications }),
+      body: JSON.stringify({ medications: currentMedications }),
     });
   });
 
@@ -347,20 +368,46 @@ export async function setupMockApi(page: Page, role: 'caregiver' | 'care_receive
   });
 
   // Intercept Handover
+  let activeHandover: any = null;
   await page.route(/\/api\/handover/, async (route) => {
-    if (route.request().method() === 'POST' || route.request().method() === 'PATCH') {
+    const url = route.request().url();
+    const method = route.request().method();
+
+    if (url.includes('/start') || (method === 'POST' && !url.includes('/end'))) {
+      let postData: any = {};
+      try {
+        postData = route.request().postDataJSON();
+      } catch { }
+      activeHandover = {
+        id: 'handover-' + Date.now(),
+        is_active: true,
+        to_person_name: postData?.to_person_name || 'Sister Priya',
+        end_date: postData?.end_date || new Date(Date.now() + 86400000).toISOString(),
+      };
       await route.fulfill({
-        status: 200,
+        status: 201,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, handover: { id: 'handover-mock-1' } }),
+        body: JSON.stringify({ success: true, handover: activeHandover }),
       });
-    } else {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ handover: null }),
-      });
+      return;
     }
+
+    if (url.includes('/end') || method === 'PATCH') {
+      activeHandover = null;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, handover: null }),
+      });
+      return;
+    }
+
+    // Default GET (e.g. /current)
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ handover: activeHandover }),
+    });
   });
 
   // Intercept Pharmacist Contacts

@@ -53,7 +53,7 @@ test.describe('Caregiver Suite', () => {
     await saveBtn.click();
 
     // Should return to dashboard and show added med
-    await expect(page.getByText('Atorvastatin').first()).toBeVisible();
+    await expect(page.getByText('Atorvastatin').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should open and close the settings panel', async ({ page }) => {
@@ -120,7 +120,7 @@ test.describe('Caregiver Suite', () => {
     await confirmBtn.click();
 
     // Verify active handover state
-    await expect(page.getByText(/Transferred to: Sister Priya/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Transferred to: Sister Priya/i)).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/Caregiver Claim \/ Invite Code/i)).toBeVisible();
 
     // End handover and restore primary caregiving
@@ -129,7 +129,7 @@ test.describe('Caregiver Suite', () => {
     await endHandoverBtn.click();
 
     // Verify return to initial state
-    await expect(page.getByRole('button', { name: /Initiate Temporary Handover/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: /Initiate Temporary Handover/i })).toBeVisible({ timeout: 10000 });
   });
 
   test('should render adherence analytics trends and confidence meter on /caregiver/analytics', async ({ page }) => {

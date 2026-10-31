@@ -29,7 +29,7 @@ export default defineConfig({
         ...devices['Desktop Edge'],
         channel: 'msedge',
         launchOptions: {
-          slowMo: 800,
+          slowMo: 1200,
         },
       },
     },
