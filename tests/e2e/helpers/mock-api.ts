@@ -133,6 +133,7 @@ export async function injectSession(page: Page, role: 'caregiver' | 'care_receiv
             isPrimary: true,
           },
         ],
+        contextualNotes: [],
         timeline: [
           {
             id: 'tl-1',
@@ -297,11 +298,31 @@ export async function setupMockApi(page: Page, role: 'caregiver' | 'care_receive
   });
 
   // Intercept Contextual Notes
+  const contextualNotesList: any[] = [];
   await page.route(/\/api\/notes/, async (route) => {
+    if (route.request().method() === 'POST') {
+      let postData: any = {};
+      try {
+        postData = route.request().postDataJSON();
+      } catch { }
+      const newNote = {
+        id: 'note-' + Date.now(),
+        text: postData?.text || 'Test note',
+        linked_type: postData?.linked_type || 'day',
+        created_at: new Date().toISOString(),
+      };
+      contextualNotesList.push(newNote);
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Note added', note: newNote }),
+      });
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ notes: [] }),
+      body: JSON.stringify({ notes: contextualNotesList }),
     });
   });
 

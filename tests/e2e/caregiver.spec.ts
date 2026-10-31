@@ -161,4 +161,67 @@ test.describe('Caregiver Suite', () => {
     await expect(page.getByText('Amlodipine').first()).toBeVisible();
     await expect(page.getByText('Metformin').first()).toBeVisible();
   });
+
+  test('should render caregiver notes and allow adding a contextual note on /caregiver/notes', async ({ page }) => {
+    await page.goto('/caregiver/notes');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: 'Notes' })).toBeVisible();
+
+    // Click "Add a note" button
+    const addNoteBtn = page.getByRole('button', { name: /Add a note/i });
+    await expect(addNoteBtn).toBeVisible();
+    await addNoteBtn.click();
+
+    // Type note into textarea
+    const textarea = page.getByPlaceholder(/Why did something change/i);
+    await textarea.fill('Doctor recommended taking with plenty of water');
+
+    // Click "Save note"
+    const saveBtn = page.getByRole('button', { name: /Save note/i });
+    await expect(saveBtn).toBeEnabled();
+    await saveBtn.click();
+
+    // Verify newly added note is visible
+    await expect(page.getByText('Doctor recommended taking with plenty of water')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should render medication history with adherence streaks and performance on /caregiver/history', async ({ page }) => {
+    await page.goto('/caregiver/history');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: 'Medication History' })).toBeVisible();
+    await expect(page.getByText('Total Tracking Days')).toBeVisible();
+    await expect(page.getByText('Current Streak')).toBeVisible();
+    await expect(page.getByText('Personal Best')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Medication Performance' })).toBeVisible();
+  });
+
+  test('should render caregiver wellness overview and allow recording a check-in on /caregiver/wellness', async ({ page }) => {
+    await page.goto('/caregiver/wellness');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: 'Wellness Tracking' })).toBeVisible();
+    await expect(page.getByText('Past 7 Days Overview')).toBeVisible();
+
+    // Open record wellness check-in modal
+    const recordBtn = page.getByRole('button', { name: /Record.*Check-in/i }).first();
+    await expect(recordBtn).toBeVisible();
+    await recordBtn.click();
+
+    // Verify modal options Great, Okay, Not Great inside the modal container
+    const modal = page.locator('.fixed');
+    await expect(modal.getByRole('button', { name: 'Great', exact: true })).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Okay', exact: true })).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Not Great', exact: true })).toBeVisible();
+
+    // Select Great and save
+    await modal.getByRole('button', { name: 'Great', exact: true }).click();
+    const saveBtn = modal.getByRole('button', { name: /Save Check-in/i });
+    await expect(saveBtn).toBeVisible();
+    await saveBtn.click();
+
+    // Modal closes and status reflects feeling great
+    await expect(page.getByText(/Feeling great/i).first()).toBeVisible({ timeout: 5000 });
+  });
 });

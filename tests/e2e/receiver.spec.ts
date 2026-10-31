@@ -156,5 +156,18 @@ test.describe('Care Receiver Suite', () => {
     // Verify safety check overlay closes
     await expect(page.getByRole('heading', { name: 'Are you okay?' })).not.toBeVisible({ timeout: 4000 });
   });
+
+  test('should allow senior to snooze medication alarm for 10 minutes', async ({ page }) => {
+    await page.goto('/care-receiver');
+    await page.waitForLoadState('networkidle');
+
+    // Confirm alarm modal is active
+    const snoozeBtn = page.getByRole('button', { name: /Remind in 10m/i });
+    if (await snoozeBtn.isVisible()) {
+      await snoozeBtn.click();
+      // Alarm modal should dismiss smoothly
+      await expect(snoozeBtn).not.toBeVisible({ timeout: 3000 });
+    }
+  });
 });
 

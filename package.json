@@ -12,6 +12,7 @@
     "test:e2e:report": "playwright show-report",
     "test:headed": "playwright test --headed",
     "test:edge": "playwright test --project=msedge --headed",
+    "test:edge:slow": "playwright test --project=msedge --headed --slow-mo=800",
     "test": "vitest",
     "test:unit": "vitest run",
     "test:all": "npm run test:unit && npm run test:e2e"

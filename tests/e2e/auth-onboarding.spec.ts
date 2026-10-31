@@ -58,4 +58,29 @@ test.describe('Authentication & Entry Flow', () => {
 
     await expect(page).toHaveURL('/caregiver', { timeout: 10000 });
   });
+
+  test('should step through onboarding intro wizard and proceed to login', async ({ page }) => {
+    await page.goto('/onboarding');
+    await expect(page.getByText('Welcome to Sahay+')).toBeVisible();
+
+    // Step 1: Welcome -> Step 2
+    const continueBtn = page.getByRole('button', { name: /Continue/i });
+    await expect(continueBtn).toBeVisible();
+    await continueBtn.click();
+
+    // Step 2: Features -> Step 3
+    await expect(continueBtn).toBeVisible();
+    await continueBtn.click();
+
+    // Step 3: Goals -> Step 4
+    await expect(continueBtn).toBeVisible();
+    await continueBtn.click();
+
+    // Step 4: Ready -> Click "Get Started" to navigate to login
+    const getStartedBtn = page.getByRole('button', { name: /Get Started/i });
+    await expect(getStartedBtn).toBeVisible();
+    await getStartedBtn.click();
+
+    await expect(page).toHaveURL('/login', { timeout: 10000 });
+  });
 });

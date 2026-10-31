@@ -1171,7 +1171,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       }
       setData((prev) => ({
         ...prev,
-        contextualNotes: [...prev.contextualNotes, newNote],
+        contextualNotes: [...(prev.contextualNotes || []), newNote],
       }))
 
       const crId = getCareRelId()
@@ -1185,12 +1185,14 @@ export function SahayProvider({ children }: { children: ReactNode }) {
             created_by: userId,
             linked_medication_id: linkedTo?.id,
           })
-          setData((prev) => ({
-            ...prev,
-            contextualNotes: prev.contextualNotes.map((n) =>
-              n.id === tempId ? { ...n, id: String(res.note.id) } : n
-            ),
-          }))
+          if (res?.note?.id) {
+            setData((prev) => ({
+              ...prev,
+              contextualNotes: (prev.contextualNotes || []).map((n) =>
+                n.id === tempId ? { ...n, id: String(res.note.id) } : n
+              ),
+            }))
+          }
         })
       }
     },

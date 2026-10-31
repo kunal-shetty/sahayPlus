@@ -20,7 +20,7 @@ export default function NotesPage() {
 
   // Filter out faded notes (older than 7 days)
   const now = new Date();
-  const activeNotes = data.contextualNotes.filter((note) => {
+  const activeNotes = (data.contextualNotes || []).filter((note) => {
     return new Date(note.fadingAt) > now;
   });
 
