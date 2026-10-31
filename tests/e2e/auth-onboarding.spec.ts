@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupMockApi } from './helpers/mock-api';
+import { setupMockApi, injectSession } from './helpers/mock-api';
 
 /**
  * @file auth-onboarding.spec.ts
@@ -33,5 +33,29 @@ test.describe('Authentication & Entry Flow', () => {
     await page.goto('/login');
     const continueBtn = page.locator('button:has-text("Continue")');
     await expect(continueBtn).toBeDisabled();
+  });
+
+  test('should display senior care code on /care-code page for care receiver', async ({ page }) => {
+    await injectSession(page, 'care_receiver');
+    await page.goto('/care-code');
+    await expect(page.getByRole('heading', { name: 'Your Care Code' })).toBeVisible();
+    await expect(page.getByText('SAHAY9')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Copy Code/i })).toBeVisible();
+  });
+
+  test('should allow caregiver to enter 6-character care code and link', async ({ page }) => {
+    await setupMockApi(page, 'caregiver');
+    await injectSession(page, 'caregiver');
+    await page.goto('/care-code');
+    await expect(page.getByRole('heading', { name: 'Link to Care Receiver' })).toBeVisible();
+
+    const input = page.getByPlaceholder('Enter 6-char code');
+    await input.fill('SAHAY9');
+
+    const linkBtn = page.getByRole('button', { name: 'Link' });
+    await expect(linkBtn).toBeEnabled();
+    await linkBtn.click();
+
+    await expect(page).toHaveURL('/caregiver', { timeout: 10000 });
   });
 });

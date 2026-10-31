@@ -785,7 +785,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
                 name: c.name,
                 relationship: c.relationship || '',
                 phone: c.phone,
-                isPrimary: c.is_primary,
+                isPrimary: Boolean(c.is_primary ?? c.isPrimary),
               }))
               : prev.emergencyContacts,
             lastFineCheckIn: (() => {

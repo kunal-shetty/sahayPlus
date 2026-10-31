@@ -131,4 +131,34 @@ test.describe('Caregiver Suite', () => {
     // Verify return to initial state
     await expect(page.getByRole('button', { name: /Initiate Temporary Handover/i })).toBeVisible({ timeout: 5000 });
   });
+
+  test('should render adherence analytics trends and confidence meter on /caregiver/analytics', async ({ page }) => {
+    await page.goto('/caregiver/analytics');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: 'Care Insights' })).toBeVisible();
+    await expect(page.getByText('Care Confidence')).toBeVisible();
+    await expect(page.getByText('Weekly Adherence')).toBeVisible();
+  });
+
+  test('should render emergency directory and primary contact on /caregiver/emergency', async ({ page }) => {
+    await page.goto('/caregiver/emergency');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: 'Emergency Center' })).toBeVisible();
+    await expect(page.getByText(/Anita Patel/i).first()).toBeVisible();
+    await expect(page.getByText(/Call Now: 9876543210/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Add Contact/i })).toBeVisible();
+  });
+
+  test('should render pharmacist panel and medication notes on /caregiver/pharmacist', async ({ page }) => {
+    await page.goto('/caregiver/pharmacist');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: 'Pharmacist Panel' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Local Pharmacy' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Medication Notes' })).toBeVisible();
+    await expect(page.getByText('Amlodipine').first()).toBeVisible();
+    await expect(page.getByText('Metformin').first()).toBeVisible();
+  });
 });
