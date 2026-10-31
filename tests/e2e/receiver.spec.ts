@@ -125,5 +125,36 @@ test.describe('Care Receiver Suite', () => {
     // Confirm that the dose was marked as taken in the schedule
     await expect(page.getByText(/Marked .* as taken in your schedule!/i)).toBeVisible({ timeout: 5000 });
   });
+
+  test('should display full-screen safety check prompt on motion detection and dismiss when confirmed okay', async ({ page }) => {
+    await page.goto('/care-receiver');
+    await page.waitForLoadState('networkidle');
+
+    // Dismiss alarm modal if active
+    const dismissBtn = page.getByRole('button', { name: 'Not right now' });
+    try {
+      await dismissBtn.waitFor({ state: 'visible', timeout: 3000 });
+      await dismissBtn.click();
+    } catch {
+      // Alarm modal was not active
+    }
+
+    // Trigger safety check
+    await page.evaluate(() => {
+      (window as any).triggerMotionSafetyCheck?.();
+    });
+
+    // Verify "Are you okay?" prompt renders
+    await expect(page.getByRole('heading', { name: 'Are you okay?' })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/We noticed a quick movement/i)).toBeVisible();
+
+    // Tap "Yes, I'm okay"
+    const confirmBtn = page.getByRole('button', { name: "Yes, I'm okay" });
+    await expect(confirmBtn).toBeVisible();
+    await confirmBtn.click();
+
+    // Verify safety check overlay closes
+    await expect(page.getByRole('heading', { name: 'Are you okay?' })).not.toBeVisible({ timeout: 4000 });
+  });
 });
 

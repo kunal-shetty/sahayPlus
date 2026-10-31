@@ -48,12 +48,6 @@ export function SafetyCheckPrompt() {
         return () => clearInterval(timer);
     }, [data.safetyCheck.status, data.safetyCheck.lastTriggered]);
 
-    if (data.safetyCheck.status !== "pending_check") return null;
-
-    const minutes = Math.floor(countdown / 60);
-    const seconds = countdown % 60;
-    const progress = (countdown / 300) * 100;
-
     /**
      * Device motion listener.
      * Re-triggers the safety check if significant motion (shake) is detected,
@@ -87,6 +81,12 @@ export function SafetyCheckPrompt() {
             window.removeEventListener("devicemotion", handleMotion);
         };
     }, [triggerSafetyCheck]);
+
+    if (data.safetyCheck.status !== "pending_check") return null;
+
+    const minutes = Math.floor(countdown / 60);
+    const seconds = countdown % 60;
+    const progress = (countdown / 300) * 100;
 
     return (
         <AnimatePresence>

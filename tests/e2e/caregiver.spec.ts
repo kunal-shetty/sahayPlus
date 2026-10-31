@@ -97,4 +97,38 @@ test.describe('Caregiver Suite', () => {
     await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible();
   });
+
+  test('should allow setting up temporary care handover with invite code and ending handover', async ({ page }) => {
+    await page.goto('/caregiver/roles');
+    await page.waitForLoadState('networkidle');
+
+    // Confirm Care Roles page loads
+    await expect(page.getByRole('heading', { name: 'Care Roles' })).toBeVisible();
+
+    // Click "Initiate Temporary Handover"
+    const initiateBtn = page.getByRole('button', { name: /Initiate Temporary Handover/i });
+    await expect(initiateBtn).toBeVisible();
+    await initiateBtn.click();
+
+    // Fill in secondary caregiver details
+    await page.getByPlaceholder(/Sister, Sibling/i).fill('Sister Priya');
+    await page.getByPlaceholder(/sister@example.com/i).fill('priya@example.com');
+
+    // Confirm handover and generate code
+    const confirmBtn = page.getByRole('button', { name: /Confirm Handover/i });
+    await expect(confirmBtn).toBeVisible();
+    await confirmBtn.click();
+
+    // Verify active handover state
+    await expect(page.getByText(/Transferred to: Sister Priya/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Caregiver Claim \/ Invite Code/i)).toBeVisible();
+
+    // End handover and restore primary caregiving
+    const endHandoverBtn = page.getByRole('button', { name: /Resume Full Care \(End Handover\)/i });
+    await expect(endHandoverBtn).toBeVisible();
+    await endHandoverBtn.click();
+
+    // Verify return to initial state
+    await expect(page.getByRole('button', { name: /Initiate Temporary Handover/i })).toBeVisible({ timeout: 5000 });
+  });
 });

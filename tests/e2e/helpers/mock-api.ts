@@ -325,11 +325,19 @@ export async function setupMockApi(page: Page, role: 'caregiver' | 'care_receive
 
   // Intercept Handover
   await page.route(/\/api\/handover/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ handover: null }),
-    });
+    if (route.request().method() === 'POST' || route.request().method() === 'PATCH') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, handover: { id: 'handover-mock-1' } }),
+      });
+    } else {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ handover: null }),
+      });
+    }
   });
 
   // Intercept Pharmacist Contacts
