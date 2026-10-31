@@ -255,3 +255,67 @@ export function stopCaregiverEmergencySiren(): void {
   });
   activeSirenOscs = [];
 }
+
+let heartbeatInterval: NodeJS.Timeout | null = null;
+let activeHeartbeatOscs: OscillatorNode[] = [];
+
+/**
+ * Plays a low-frequency rhythmic heartbeat pulse (85Hz / 110Hz)
+ * during the 10-second SOS grace window to provide tactile and audible pacing.
+ */
+export function playHeartbeatPulse(): void {
+  stopHeartbeatPulse();
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const pulse = () => {
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const beats = [
+      { freq: 85, offset: 0.0, dur: 0.12, gainVal: 0.3 },
+      { freq: 110, offset: 0.15, dur: 0.10, gainVal: 0.22 },
+    ];
+
+    beats.forEach(({ freq, offset, dur, gainVal }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now + offset);
+
+      gain.gain.setValueAtTime(0.0001, now + offset);
+      gain.gain.linearRampToValueAtTime(gainVal, now + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + dur);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now + offset);
+      osc.stop(now + offset + dur);
+
+      activeHeartbeatOscs.push(osc);
+      osc.onended = () => {
+        activeHeartbeatOscs = activeHeartbeatOscs.filter((o) => o !== osc);
+      };
+    });
+  };
+
+  pulse();
+  heartbeatInterval = setInterval(pulse, 1000);
+}
+
+/**
+ * Stops the 10-second SOS grace heartbeat pulse.
+ */
+export function stopHeartbeatPulse(): void {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+  activeHeartbeatOscs.forEach((osc) => {
+    try {
+      osc.stop();
+    } catch {}
+  });
+  activeHeartbeatOscs = [];
+}

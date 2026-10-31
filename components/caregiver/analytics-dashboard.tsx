@@ -10,8 +10,20 @@
  */
 
 import { useSahay } from "@/lib/sahay-context";
-import { ArrowLeft, TrendingUp, Calendar, Award, Pill } from "lucide-react";
+import {
+  ArrowLeft,
+  TrendingUp,
+  Calendar,
+  Award,
+  Pill,
+  Sun,
+  Sunset,
+  Moon,
+  Lightbulb,
+  Sparkles,
+} from "lucide-react";
 import { calculateConfidence, getConfidenceMessage } from "@/lib/types";
+import { computeHabitPatternInsights } from "@/lib/overdue-utils";
 
 /**
  * Props for the AnalyticsDashboard component.
@@ -38,6 +50,7 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
   /** Confidence score based on adherence consistency and day closures. */
   const confidence = calculateConfidence(data.timeline, data.dayClosures);
   const confidenceMessage = getConfidenceMessage(confidence);
+  const habitInsights = computeHabitPatternInsights(data.medications, data.timeline, 7);
 
   /**
    * Overall adherence calculation.
@@ -166,6 +179,52 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
               </p>
               <p className="text-sm text-muted-foreground">days</p>
             </div>
+          </div>
+        </section>
+
+        {/* Habit Pattern Insights & Delay Analytics (Module 8) */}
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-sahay-warm" />
+              Habit Delay Patterns
+            </h2>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-secondary text-muted-foreground">
+              Stability: {habitInsights.overallStabilityScore}%
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-center">
+              <Sun className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Morning</p>
+              <p className="text-base font-extrabold text-foreground">{habitInsights.slots.morning.consistencyRate}%</p>
+              <p className="text-[10px] text-muted-foreground">+{habitInsights.slots.morning.avgDelayMinutes}m</p>
+            </div>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-center">
+              <Sunset className="w-4 h-4 text-blue-500 mx-auto mb-1" />
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Afternoon</p>
+              <p className="text-base font-extrabold text-foreground">{habitInsights.slots.afternoon.consistencyRate}%</p>
+              <p className="text-[10px] text-muted-foreground">+{habitInsights.slots.afternoon.avgDelayMinutes}m</p>
+            </div>
+            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 text-center">
+              <Moon className="w-4 h-4 text-indigo-500 mx-auto mb-1" />
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Evening</p>
+              <p className="text-base font-extrabold text-foreground">{habitInsights.slots.evening.consistencyRate}%</p>
+              <p className="text-[10px] text-muted-foreground">+{habitInsights.slots.evening.avgDelayMinutes}m</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {habitInsights.proactiveRecommendations.map((rec, idx) => (
+              <div
+                key={idx}
+                className="p-3 bg-secondary/50 rounded-xl border border-border/80 flex items-start gap-2.5"
+              >
+                <Sparkles className="w-4 h-4 text-sahay-warm shrink-0 mt-0.5" />
+                <p className="text-xs font-medium text-foreground leading-relaxed">{rec}</p>
+              </div>
+            ))}
           </div>
         </section>
 

@@ -34,6 +34,7 @@ import {
   Mic,
   Info,
   ShieldAlert,
+  ShieldCheck,
   AlertTriangle,
   Bell,
   Camera,
@@ -43,6 +44,7 @@ import { MorningWellnessCard } from "@/components/care-receiver/morning-wellness
 import { QuickMessages } from "@/components/care-receiver/quick-messages";
 import { EmergencyCall } from "@/components/care-receiver/emergency-call";
 import { SafetyCheckPrompt } from "@/components/care-receiver/safety-check-prompt";
+import { EmergencySosModal } from "@/components/care-receiver/emergency-sos-modal";
 import { IntakeAlarmModal } from "@/components/care-receiver/intake-alarm-modal";
 import { VoiceIntakeModal } from "@/components/care-receiver/voice-intake-modal";
 import { PillVisualizer, PillBadge } from "@/components/pill-visualizer";
@@ -103,6 +105,7 @@ export default function CareReceiverPage() {
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [showSosModal, setShowSosModal] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [helpRequestedAt, setHelpRequestedAt] = useState<string | null>(null);
   const [selectedMedId, setSelectedMedId] = useState<string | null>(null);
@@ -293,13 +296,19 @@ export default function CareReceiverPage() {
   }, [data.timeline, helpRequestedAt]);
 
   const handleRequestHelp = () => {
+    setShowSosModal(true);
+  };
+
+  const handleSosDispatch = (location?: { latitude: number; longitude: number }) => {
     requestHelp();
+    triggerSafetyCheck("manual");
     const nowIso = new Date().toISOString();
     setHelpRequestedAt(nowIso);
   };
 
   const handleDismissHelp = () => {
     setHelpRequestedAt(null);
+    setShowSosModal(false);
     resolveHelpRequest();
   };
 
@@ -614,8 +623,8 @@ export default function CareReceiverPage() {
    * any moment — emergencies often follow a dose. A formally closed day shares
    * the same reassuring card, since the pills are equally all recorded.
    */
-  const finishedTitle = "You're all set for today!";
-  const finishedMessage = "All medications have been recorded. Rest well.";
+  const finishedTitle = "You are all caught up";
+  const finishedMessage = "At this time no medicine is required.";
 
   const doneCount = data.medications.filter((m) => m.taken).length;
   const TimeIcon = nextMed ? timeIcons[nextMed.timeOfDay] : Check;
@@ -920,7 +929,7 @@ export default function CareReceiverPage() {
                   )}
                 >
                   {allDone ? (
-                    <Check
+                    <ShieldCheck
                       className="w-8 h-8"
                       strokeWidth={2}
                     />
@@ -1084,6 +1093,15 @@ export default function CareReceiverPage() {
         }}
       />
       <SafetyCheckPrompt />
+
+      {/* Module 6: Emergency SOS & Two-Stage Grace Countdown Modal */}
+      <EmergencySosModal
+        isOpen={showSosModal}
+        onCancel={() => setShowSosModal(false)}
+        onDispatch={handleSosDispatch}
+        primaryContactName={data.emergencyContacts?.find((c) => c.isPrimary)?.name || data.caregiver?.name || "Primary Caregiver"}
+        primaryContactPhone={data.emergencyContacts?.find((c) => c.isPrimary)?.phone || "911"}
+      />
 
       {/* Floating Red SOS Button (Module 6 Requirement) */}
       <div className="fixed bottom-6 right-6 z-40">

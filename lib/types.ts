@@ -249,6 +249,8 @@ export interface CareReceiverProfile {
 export interface PharmacistContact {
   /** Name of the pharmacist or pharmacy. */
   name?: string
+  /** Phone number of the pharmacy or chemist for 1-tap WhatsApp refills. */
+  phone?: string
   /** ISO date of the last refill confirmation. */
   lastRefillConfirm?: string
   /** General notes about pharmacy dealings. */
@@ -606,6 +608,7 @@ export const dummyAppData: AppData = {
   ],
   pharmacist: {
     name: 'Apollo Pharmacy - Mumbai',
+    phone: '+91 98765 43210',
     lastRefillConfirm: daysAgo(2),
     note: 'Ask for Mr. Sharma for home delivery',
   },

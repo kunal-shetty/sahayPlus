@@ -13,8 +13,12 @@ import {
   Clock,
   Sun,
   Sunset,
+  Moon,
+  Sparkles,
+  Lightbulb,
 } from "lucide-react";
 import { calculateConfidence, getConfidenceMessage } from "@/lib/types";
+import { computeHabitPatternInsights } from "@/lib/overdue-utils";
 import { motion } from "motion/react";
 
 /**
@@ -27,6 +31,7 @@ export default function AnalyticsPage() {
   const weeklyData = getWeeklyAdherence();
   const confidence = calculateConfidence(data.timeline, data.dayClosures);
   const confidenceMessage = getConfidenceMessage(confidence);
+  const habitInsights = computeHabitPatternInsights(data.medications, data.timeline, 7);
 
   const totalTaken = weeklyData.reduce((sum, d) => sum + d.taken, 0);
   const totalPossible = weeklyData.reduce((sum, d) => sum + d.total, 0);
@@ -200,6 +205,139 @@ export default function AnalyticsPage() {
             </div>
           </section>
         </div>
+
+        {/* Module 8: Habit Pattern Insights & Time-of-Day Delay Analytics */}
+        <section className="bg-card border-2 border-border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-sahay-warm/15 text-sahay-warm flex items-center justify-center">
+                <Lightbulb className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Habit Pattern Insights & Delay Analytics</h2>
+                <p className="text-xs text-muted-foreground">
+                  Module 8: Dose timing patterns and proactive schedule recommendations
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-full text-xs font-semibold text-muted-foreground w-fit">
+              <Sparkles className="w-3.5 h-3.5 text-sahay-warm" />
+              <span>Routine Stability: {habitInsights.overallStabilityScore}%</span>
+            </div>
+          </div>
+
+          {/* Time-of-Day Consistency Performance Bands */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Morning */}
+            <div className="p-5 rounded-2xl border-2 border-amber-500/30 bg-amber-500/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                  <Sun className="w-5 h-5" />
+                  <span className="font-bold text-sm">Morning Routine</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                  {habitInsights.slots.morning.status === "needs_attention" ? "Delayed" : "On Schedule"}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-3xl font-extrabold text-foreground">
+                  {habitInsights.slots.morning.consistencyRate}%
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  avg +{habitInsights.slots.morning.avgDelayMinutes}m delay
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {habitInsights.slots.morning.delayedCount > 0
+                  ? `${habitInsights.slots.morning.delayedCount} dose(s) delayed past 15m window`
+                  : "Consistent early intake on waking"}
+              </p>
+            </div>
+
+            {/* Afternoon */}
+            <div className="p-5 rounded-2xl border-2 border-blue-500/30 bg-blue-500/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                  <Sunset className="w-5 h-5" />
+                  <span className="font-bold text-sm">Afternoon Routine</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                  {habitInsights.slots.afternoon.status === "needs_attention" ? "Attention" : "Stable"}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-3xl font-extrabold text-foreground">
+                  {habitInsights.slots.afternoon.consistencyRate}%
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  avg +{habitInsights.slots.afternoon.avgDelayMinutes}m delay
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {habitInsights.slots.afternoon.delayedCount > 0
+                  ? `${habitInsights.slots.afternoon.delayedCount} dose(s) delayed past lunch`
+                  : "Well-aligned with midday meals"}
+              </p>
+            </div>
+
+            {/* Evening */}
+            <div className="p-5 rounded-2xl border-2 border-indigo-500/30 bg-indigo-500/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                  <Moon className="w-5 h-5" />
+                  <span className="font-bold text-sm">Evening Routine</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  habitInsights.slots.evening.severeDelayCount > 0 || habitInsights.slots.evening.status === "needs_attention"
+                    ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+                    : "bg-indigo-500/20 text-indigo-700 dark:text-indigo-300"
+                }`}>
+                  {habitInsights.slots.evening.severeDelayCount > 0 ? "45m+ Delay" : "Stable"}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-3xl font-extrabold text-foreground">
+                  {habitInsights.slots.evening.consistencyRate}%
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  avg +{habitInsights.slots.evening.avgDelayMinutes}m delay
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {habitInsights.slots.evening.severeDelayCount > 0
+                  ? `${habitInsights.slots.evening.severeDelayCount} doses delayed >45m (bedtime fatigue)`
+                  : "Evening routine on schedule"}
+              </p>
+            </div>
+          </div>
+
+          {/* Proactive Recommendations */}
+          <div className="space-y-3 pt-2">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
+              Proactive Schedule Recommendations
+            </h3>
+            <div className="grid grid-cols-1 gap-3">
+              {habitInsights.proactiveRecommendations.map((rec, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-2xl bg-secondary/40 border border-border flex items-start gap-3.5"
+                >
+                  <div className="w-8 h-8 rounded-full bg-sahay-warm/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <Lightbulb className="w-4 h-4 text-sahay-warm" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground leading-snug">
+                      {rec}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Generated from rolling 7-day intake timestamps vs scheduled doses.
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* Medication Detailed Breakdown */}
         <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm">

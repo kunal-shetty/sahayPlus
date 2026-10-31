@@ -39,6 +39,7 @@ import {
   Mic,
   Info,
   ShieldAlert,
+  ShieldCheck,
   AlertTriangle,
 } from "lucide-react";
 import { WellnessCheckin } from "./wellness-checkin";
@@ -390,15 +391,15 @@ export function CareReceiverHome() {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full">
-          <div className="w-24 h-24 rounded-full bg-sahay-sage-light flex items-center justify-center mb-8">
-            <Check className="w-12 h-12 text-sahay-sage" strokeWidth={2} />
+          <div className="w-24 h-24 rounded-full bg-emerald-500/15 flex items-center justify-center mb-8 shadow-xs">
+            <ShieldCheck className="w-12 h-12 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
           </div>
 
           <h1 className="text-3xl font-semibold text-foreground mb-3 text-center text-balance">
-            You&apos;re all set for today
+            You are all caught up
           </h1>
           <p className="text-xl text-muted-foreground text-center">
-            Everything looks good right now
+            At this time no medicine is required.
           </p>
         </div>
       </main>
