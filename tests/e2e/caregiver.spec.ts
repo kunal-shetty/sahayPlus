@@ -80,4 +80,21 @@ test.describe('Caregiver Suite', () => {
     await expect(page.getByText('Amlodipine').first()).toBeVisible();
     await expect(page.getByText('Metformin').first()).toBeVisible();
   });
+
+  test('should render clinical doctor prep summary with active medications table and print action', async ({ page }) => {
+    await page.goto('/caregiver/doctor-prep');
+    await page.waitForLoadState('networkidle');
+
+    // Confirm Patient Care Summary and demographics render
+    await expect(page.getByRole('heading', { name: /Doctor Visit Prep/i })).toBeVisible();
+    await expect(page.getByText('Current Active Medications & Regimen')).toBeVisible();
+
+    // Confirm medications table shows scheduled meds (Amlodipine, Metformin)
+    await expect(page.getByText('Amlodipine').first()).toBeVisible();
+    await expect(page.getByText('Metformin').first()).toBeVisible();
+
+    // Confirm Print and Copy actions are present
+    await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible();
+  });
 });

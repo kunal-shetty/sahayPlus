@@ -198,6 +198,8 @@ interface SahayContextValue {
   requestHelp: () => void
   /** Resolves an active help request across devices. */
   resolveHelpRequest: (eventId?: string) => Promise<void>
+  /** Reports an overdue medication dose to caregiver with realtime broadcast and notification. */
+  reportOverdueDose: (medicationId: string, delayMinutes: number) => void
   /** Initiates a care handover to another person with optional email and invite code. */
   startHandover: (targetName: string, endDate: string, secondaryEmail?: string, inviteCode?: string) => void
   /** Ends an active care handover. */
@@ -1092,6 +1094,16 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           body: `${careReceiverName} took ${medName}`
         }))
         showNotification('Medication Taken', `Notified caregiver that you took ${medName}`)
+
+        // If stock is low (<= 3 days left), notify caregiver for refill planning
+        if (med?.refillDaysLeft !== undefined && med.refillDaysLeft <= 3) {
+          safeApiCall(() => api.notifications.create({
+            user_id: caregiverId,
+            type: 'refill_needed',
+            title: '⚠️ Refill Needed Soon',
+            body: `${medName} has only ${med.refillDaysLeft} days of supply left for ${careReceiverName}.`
+          }))
+        }
       }
     } else {
       safeApiCall(async () => {
@@ -1271,6 +1283,14 @@ export function SahayProvider({ children }: { children: ReactNode }) {
 
       return {
         ...prev,
+        // Auto-decrement refill countdown by 1 day for medications taken today
+        medications: prev.medications.map((m) => ({
+          ...m,
+          refillDaysLeft:
+            m.taken && m.refillDaysLeft !== undefined && m.refillDaysLeft > 0
+              ? m.refillDaysLeft - 1
+              : m.refillDaysLeft,
+        })),
         dayClosures: [...prev.dayClosures, newClosure],
         timeline: [...prev.timeline, newEvent],
       }
@@ -1844,6 +1864,31 @@ export function SahayProvider({ children }: { children: ReactNode }) {
 
     safeApiCall(() => api.timeline.resolve(targetId, resolvedNote, crId))
   }, [data.timeline, user?.care_relationship_id])
+
+  /**
+   * Broadcasts an overdue dose alert to caregivers and creates a high-priority notification.
+   */
+  const reportOverdueDose = useCallback(
+    (medicationId: string, delayMinutes: number) => {
+      const med = data.medications.find((m) => m.id === medicationId)
+      if (!med) return
+
+      broadcastCareSync('dose_overdue', { id: medicationId, delayMinutes })
+
+      if (caregiverId) {
+        const careReceiverName = data.careReceiver?.name || 'Care Receiver'
+        safeApiCall(() =>
+          api.notifications.create({
+            user_id: caregiverId,
+            type: 'medication_overdue',
+            title: '⚠️ Missed Dose Alert',
+            body: `${careReceiverName} has not confirmed ${med.name} (${med.dosage}). Scheduled ${delayMinutes}m ago.`,
+          })
+        )
+      }
+    },
+    [caregiverId, data.careReceiver?.name, data.medications, broadcastCareSync]
+  )
 
   /**
    * Initiates a care handover to another designated person.
@@ -2481,6 +2526,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       .on('broadcast', { event: 'handover_change' }, () => {
         refreshRelationshipData()
       })
+      .on('broadcast', { event: 'dose_overdue' }, () => {
+        refreshRelationshipData()
+      })
       .on(
         'postgres_changes',
         {
@@ -2604,6 +2652,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     completeDailyCheckIn,
     requestHelp,
     resolveHelpRequest,
+    reportOverdueDose,
     startHandover,
     endHandover,
     getHumanInsights,

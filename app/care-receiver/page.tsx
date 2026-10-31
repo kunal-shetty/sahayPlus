@@ -9,7 +9,7 @@
  * to reduce eye strain and signal a wind-down period.
  */
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useSahay } from "@/lib/sahay-context";
 import {
@@ -74,6 +74,7 @@ export default function CareReceiverPage() {
     completeDailyCheckIn,
     requestHelp,
     resolveHelpRequest,
+    reportOverdueDose,
     dismissChangeIndicator,
   } = useSahay();
   const router = useRouter();
@@ -112,6 +113,7 @@ export default function CareReceiverPage() {
   const [snoozedMeds, setSnoozedMeds] = useState<Record<string, number>>({});
   const [dismissedMeds, setDismissedMeds] = useState<Record<string, string>>({});
   const [isAlarmSoundMuted, setIsAlarmSoundMuted] = useState(false);
+  const reportedOverdueMedsRef = useRef<Record<string, boolean>>({});
 
   /** Unlock browser AudioContext on first touch/click */
   useEffect(() => {
@@ -184,6 +186,10 @@ export default function CareReceiverPage() {
           const overdue = nowInMinutes >= scheduledMinutes + 15;
           setIsAlarmOverdue(overdue);
           setAlarmMedication(med);
+          if (overdue && !reportedOverdueMedsRef.current[med.id]) {
+            reportedOverdueMedsRef.current[med.id] = true;
+            reportOverdueDose(med.id, nowInMinutes - scheduledMinutes);
+          }
           if (!isAlarmSoundMuted) {
             if (overdue) {
               playLouderMedicineChime();
@@ -199,7 +205,7 @@ export default function CareReceiverPage() {
     checkSchedule();
     const interval = setInterval(checkSchedule, 10000);
     return () => clearInterval(interval);
-  }, [data.medications, alarmMedication, snoozedMeds, dismissedMeds, isAlarmSoundMuted]);
+  }, [data.medications, alarmMedication, snoozedMeds, dismissedMeds, isAlarmSoundMuted, reportOverdueDose]);
 
   /** User confirms taking the alarm dose */
   const handleAlarmTookIt = () => {
@@ -207,6 +213,7 @@ export default function CareReceiverPage() {
     playSuccessChime();
     setIsAlarmOverdue(false);
     if (alarmMedication) {
+      reportedOverdueMedsRef.current[alarmMedication.id] = false;
       markMedicationTaken(alarmMedication.id, true);
       setConfirmedMed(alarmMedication);
       setShowUndo(true);

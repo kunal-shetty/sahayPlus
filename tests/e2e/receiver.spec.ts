@@ -25,10 +25,11 @@ test.describe('Care Receiver Suite', () => {
     // Confirm dose name is displayed (either Amlodipine or Metformin)
     await expect(page.getByText('Amlodipine').or(page.getByText('Metformin')).first()).toBeVisible();
 
-    // If Metformin with uploaded photo is active, confirm pill image renders
-    const metforminText = page.getByText('Metformin').first();
-    if (await metforminText.isVisible().catch(() => false)) {
-      await expect(page.locator('img[alt="Metformin"]').first()).toBeVisible();
+    // If Metformin button exists in pill selector, click it and confirm uploaded photo renders
+    const metforminTab = page.getByRole('button', { name: /Metformin/i }).first();
+    if (await metforminTab.isVisible().catch(() => false)) {
+      await metforminTab.click();
+      await expect(page.locator('img[alt="Metformin"]').first()).toBeVisible({ timeout: 5000 });
     }
   });
 

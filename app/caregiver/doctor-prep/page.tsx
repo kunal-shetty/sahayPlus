@@ -15,10 +15,12 @@ import {
   Mail,
   MessageSquare,
   Calendar,
+  Pill,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { CaregiverLayout } from "@/components/caregiver/caregiver-layout";
 import { motion } from "motion/react";
+import { formatTime12h } from "@/lib/types";
 
 /**
  * Doctor Visit Prep Page
@@ -26,14 +28,31 @@ import { motion } from "motion/react";
  * with interactive 7 to 30 day reporting windows and 1-tap sharing options.
  */
 export default function DoctorPrepPage() {
-  const { getDoctorPrepData } = useSahay();
+  const { data, getDoctorPrepData } = useSahay();
   const router = useRouter();
 
   const [daysRange, setDaysRange] = useState<7 | 14 | 30>(7);
   const [copied, setCopied] = useState(false);
   const prepData = getDoctorPrepData(daysRange);
 
+  const patientName = data.careReceiver?.name || "Patient";
+  const caregiverName = data.caregiver?.name || "Primary Caregiver";
+  const contactPhone =
+    data.emergencyContacts?.find((c) => c.isPrimary)?.phone || data.emergencyContacts?.[0]?.phone;
+
   const generateShareText = () => {
+    const medsText =
+      data.medications.length > 0
+        ? data.medications
+            .map(
+              (m) =>
+                `• ${m.name} (${m.dosage}) - ${m.timeOfDay.toUpperCase()}${
+                  m.time ? ` at ${formatTime12h(m.time)}` : ""
+                }${m.foodInstruction ? ` (${m.foodInstruction.replace("_", " ")})` : ""}`
+            )
+            .join("\n")
+        : "• No active medications listed.";
+
     const changesText =
       prepData.changes.length > 0
         ? prepData.changes.map((c) => `• ${c.medicationName}: ${c.note} (${c.date})`).join("\n")
@@ -45,12 +64,15 @@ export default function DoctorPrepPage() {
         : "• No clinical notes recorded.";
 
     return `*SAHAY+ PATIENT CARE SUMMARY (${daysRange}-DAY REPORT)*\n` +
+      `Patient: ${patientName}\n` +
+      `Caregiver Contact: ${caregiverName}${contactPhone ? ` (Ph: ${contactPhone})` : ""}\n` +
       `Generated: ${new Date().toLocaleDateString()}\n\n` +
+      `💊 *CURRENT MEDICATIONS & REGIMEN:*\n${medsText}\n\n` +
       `📊 *CLINICAL HIGHLIGHTS:*\n` +
       `• Medication Adherence: ${prepData.adherenceRate}%\n` +
       `• Wellness Trend: ${prepData.wellnessTrend.join(", ") || "Stable"}\n\n` +
-      `💊 *ROUTINE & DOSAGE CHANGES:*\n${changesText}\n\n` +
-      `📝 *RECENT OBSERVATIONS:*\n${notesText}\n\n` +
+      `🔄 *ROUTINE & DOSAGE CHANGES:*\n${changesText}\n\n` +
+      `📝 *CLINICAL OBSERVATIONS:*\n${notesText}\n\n` +
       `Shared via Sahay+ Health Platform`;
   };
 
@@ -173,55 +195,120 @@ export default function DoctorPrepPage() {
 
       <div className="max-w-4xl mx-auto space-y-8 print:space-y-6">
         {/* Report Header */}
-        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border-0 print:shadow-none print:p-0">
-          <div className="flex justify-between items-start mb-6">
+        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border print:border-slate-300 print:shadow-none print:p-6 print:rounded-2xl break-inside-avoid">
+          <div className="flex justify-between items-start mb-6 pb-6 border-b border-border print:border-slate-300">
             <div>
-              <h2 className="text-3xl font-bold text-primary">
-                Patient Care Summary ({daysRange}-Day Overview)
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-2 print:border print:border-slate-400">
+                <span>Clinical Consultation Summary</span>
+              </div>
+              <h2 className="text-3xl font-extrabold text-foreground print:text-black">
+                {patientName}
               </h2>
-              <p className="text-muted-foreground mt-1">
-                Generated on{" "}
+              <p className="text-muted-foreground text-sm mt-1 print:text-slate-600">
+                Reporting Window: Last {daysRange} days · Generated on{" "}
                 {new Date().toLocaleDateString("en-US", {
                   weekday: "long",
                   year: "numeric",
                   month: "long",
                   day: "numeric",
-                })}{" "}
-                · Window: Last {daysRange} days
+                })}
               </p>
             </div>
             <div className="text-right">
-              <div className="text-sm font-medium text-muted-foreground">
-                Caregiver Report
+              <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+                Primary Caregiver
               </div>
-              <div className="text-lg font-bold">Sahay+ Health System</div>
+              <div className="text-base font-bold text-foreground print:text-black">
+                {caregiverName}
+              </div>
+              {contactPhone && (
+                <div className="text-xs text-muted-foreground print:text-slate-600">
+                  Ph: {contactPhone}
+                </div>
+              )}
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-border">
-            <div className="p-4 bg-secondary/30 rounded-2xl">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-secondary/30 rounded-2xl print:bg-slate-50 print:border print:border-slate-200">
               <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-1">
                 Avg. Adherence
               </p>
-              <p className="text-2xl font-bold text-sahay-success">
+              <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 print:text-emerald-800">
                 {prepData.adherenceRate}%
               </p>
             </div>
-            <div className="p-4 bg-secondary/30 rounded-2xl">
+            <div className="p-4 bg-secondary/30 rounded-2xl print:bg-slate-50 print:border print:border-slate-200">
               <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-1">
                 Wellness Trend
               </p>
-              <p className="text-2xl font-bold capitalize">
-                {prepData.wellnessTrend[0] || "No data"}
+              <p className="text-3xl font-extrabold capitalize text-foreground print:text-black">
+                {prepData.wellnessTrend[0] || "Stable"}
               </p>
             </div>
-            <div className="p-4 bg-secondary/30 rounded-2xl">
+            <div className="p-4 bg-secondary/30 rounded-2xl print:bg-slate-50 print:border print:border-slate-200">
               <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-1">
-                Recent Notes
+                Active Regimen
               </p>
-              <p className="text-2xl font-bold">
-                {prepData.observations.length} entries
+              <p className="text-3xl font-extrabold text-foreground print:text-black">
+                {data.medications.length} Prescriptions
               </p>
             </div>
+          </div>
+        </section>
+
+        {/* Current Active Prescriptions Table */}
+        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border print:border-slate-300 print:shadow-none print:p-6 print:rounded-2xl break-inside-avoid">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary print:hidden">
+              <Pill className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-foreground print:text-black">
+                Current Active Medications & Regimen
+              </h3>
+              <p className="text-muted-foreground text-xs print:text-slate-600">
+                Complete verified list of medications currently scheduled for {patientName}
+              </p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr className="border-b-2 border-border print:border-slate-400 text-xs uppercase tracking-wider text-muted-foreground font-bold">
+                  <th className="py-3 px-3">Medication Name</th>
+                  <th className="py-3 px-3">Dosage</th>
+                  <th className="py-3 px-3">Schedule / Timing</th>
+                  <th className="py-3 px-3">Food Instructions</th>
+                  <th className="py-3 px-3 text-right">Supply Left</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border print:divide-slate-200">
+                {data.medications.map((med) => (
+                  <tr key={med.id} className="hover:bg-secondary/10 print:hover:bg-transparent">
+                    <td className="py-3.5 px-3 font-bold text-foreground print:text-black">
+                      {med.name}
+                    </td>
+                    <td className="py-3.5 px-3 text-foreground font-medium print:text-black">
+                      {med.dosage}
+                    </td>
+                    <td className="py-3.5 px-3 capitalize text-muted-foreground print:text-black">
+                      {med.timeOfDay} {med.time ? `(${formatTime12h(med.time)})` : ""}
+                    </td>
+                    <td className="py-3.5 px-3 text-muted-foreground print:text-black">
+                      {med.foodInstruction === "before_meal" && "Before meal"}
+                      {med.foodInstruction === "with_meal" && "With food"}
+                      {(!med.foodInstruction || med.foodInstruction === "after_meal") && "After meal"}
+                      {med.foodInstruction === "anytime" && "Anytime"}
+                    </td>
+                    <td className="py-3.5 px-3 text-right font-medium text-foreground print:text-black">
+                      {med.refillDaysLeft !== undefined ? `${med.refillDaysLeft} days` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
