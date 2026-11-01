@@ -104,6 +104,6 @@ test.describe('Phase 1: Entry & Care Pairing Flow', () => {
     await linkButton.click();
 
     // Successfully redirects to caregiver dashboard
-    await expect(page).toHaveURL('/caregiver', { timeout: 10000 });
+    await expect(page).toHaveURL('/dashboard', { timeout: 10000 });
   });
 });
