@@ -8,6 +8,7 @@ import {
   FileText,
   Smile,
   Calendar,
+  Clock,
   Stethoscope,
   Pill,
   Users,
@@ -108,6 +109,7 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
     { label: "Home", icon: LayoutDashboard, path: "/dashboard" },
     { label: "Messages", icon: MessageCircle, path: "/caregiver/messages" },
     { label: "Emergency", icon: ShieldAlert, path: "/caregiver/emergency" },
+    { label: "Care Timeline", icon: Clock, path: "/caregiver/timeline" },
     { label: "Analytics", icon: BarChart3, path: "/caregiver/analytics" },
     { label: "Care Notes", icon: FileText, path: "/caregiver/notes" },
     { label: "Wellness", icon: Smile, path: "/caregiver/wellness" },
@@ -123,11 +125,11 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex h-screen w-full bg-background text-foreground font-sans overflow-hidden">
+    <div className="flex h-screen w-full bg-background text-foreground font-sans overflow-hidden print:h-auto print:overflow-visible">
       {/* Mobile Menu Toggle */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+        className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors print:hidden"
         aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
       >
         {isMobileMenuOpen ? (
@@ -146,7 +148,7 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
         }}
         transition={{ duration: 0.25, ease: "easeInOut" }}
         className={cn(
-          "z-40 h-full bg-card border-r border-border flex flex-col shrink-0 select-none",
+          "z-40 h-full bg-card border-r border-border flex flex-col shrink-0 select-none print:hidden",
           "fixed inset-y-0 left-0 lg:static lg:h-full",
           !isDesktop && !isMobileMenuOpen && "pointer-events-none",
         )}
@@ -218,7 +220,7 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       {/* Main Content Area - Independently scrollable */}
-      <main ref={mainRef} className="flex-1 h-full min-w-0 overflow-y-auto pt-14 lg:pt-0">
+      <main ref={mainRef} className="flex-1 h-full min-w-0 overflow-y-auto pt-14 lg:pt-0 print:pt-0 print:h-auto print:overflow-visible">
         {children}
       </main>
     </div>

@@ -49,7 +49,7 @@ test.describe('Care receiver help flow', () => {
     const notNow = page.getByRole('button', { name: 'Not right now' });
     if (await notNow.isVisible().catch(() => false)) await notNow.click();
 
-    await page.getByRole('button', { name: 'SOS, I need help' }).click();
+    await page.getByRole('button', { name: 'Emergency SOS' }).click();
     await expect(page.getByText(/Emergency SOS Triggered/i)).toBeVisible();
 
     // Let the 10s grace countdown run out, then close the modal but keep the alert

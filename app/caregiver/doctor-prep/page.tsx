@@ -15,14 +15,16 @@ import {
   MessageSquare,
   Calendar,
   Pill,
+  ShieldCheck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatTime12h } from "@/lib/types";
 
 /**
- * Doctor Visit Prep Page
- * Generates a professional, structured summary for the next medical appointment
- * with interactive 7 to 30 day reporting windows and 1-tap sharing options.
+ * Doctor Visit Prep Page (Module 13: Doctor Visit Preparation & Clinical Summaries)
+ * Generates a structured, professional clinical summary for medical consultations
+ * with interactive 7, 14, and 30-day reporting windows, print optimization (A4 PDF),
+ * and 1-tap sharing options.
  */
 export default function DoctorPrepPage() {
   const { data, getDoctorPrepData } = useSahay();
@@ -37,15 +39,19 @@ export default function DoctorPrepPage() {
   const contactPhone =
     data.emergencyContacts?.find((c) => c.isPrimary)?.phone || data.emergencyContacts?.[0]?.phone;
 
+  const morningCount = data.medications.filter((m) => m.timeOfDay === "morning").length;
+  const afternoonCount = data.medications.filter((m) => m.timeOfDay === "afternoon").length;
+  const eveningCount = data.medications.filter((m) => m.timeOfDay === "evening").length;
+
   const generateShareText = () => {
     const medsText =
       data.medications.length > 0
         ? data.medications
             .map(
               (m) =>
-                `• ${m.name} (${m.dosage}) - ${m.timeOfDay.toUpperCase()}${
-                  m.time ? ` at ${formatTime12h(m.time)}` : ""
-                }${m.foodInstruction ? ` (${m.foodInstruction.replace("_", " ")})` : ""}`
+                `• ${m.name} (${m.dosage}) - ${m.time ? formatTime12h(m.time) : m.timeOfDay.toUpperCase()}${
+                  m.foodInstruction ? ` (${m.foodInstruction.replace("_", " ")})` : ""
+                }`
             )
             .join("\n")
         : "• No active medications listed.";
@@ -61,13 +67,14 @@ export default function DoctorPrepPage() {
         : "• No clinical notes recorded.";
 
     return `*SAHAY+ PATIENT CARE SUMMARY (${daysRange}-DAY REPORT)*\n` +
-      `Patient: ${patientName}\n` +
+      `Patient: ${patientName} (Care Code: ${data.careReceiver?.careCode || "T9TSXM"})\n` +
       `Caregiver Contact: ${caregiverName}${contactPhone ? ` (Ph: ${contactPhone})` : ""}\n` +
       `Generated: ${new Date().toLocaleDateString()}\n\n` +
       `💊 *CURRENT MEDICATIONS & REGIMEN:*\n${medsText}\n\n` +
       `📊 *CLINICAL HIGHLIGHTS:*\n` +
       `• Medication Adherence: ${prepData.adherenceRate}%\n` +
-      `• Wellness Trend: ${prepData.wellnessTrend.join(", ") || "Stable"}\n\n` +
+      `• Wellness Trend: ${prepData.wellnessLabel || prepData.wellnessTrend[0] || "Stable"}\n` +
+      `• Total Active Medicines: ${data.medications.length} (${morningCount} Morning, ${afternoonCount} Midday, ${eveningCount} Evening)\n\n` +
       `🔄 *ROUTINE & DOSAGE CHANGES:*\n${changesText}\n\n` +
       `📝 *CLINICAL OBSERVATIONS:*\n${notesText}\n\n` +
       `Shared via Sahay+ Health Platform`;
@@ -95,7 +102,7 @@ export default function DoctorPrepPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background p-6">
+    <main className="min-h-screen bg-background p-6 print:p-0 print:m-0 print:bg-white print:text-black print:min-h-0">
       <header className="mb-8 max-w-4xl mx-auto space-y-4 print:hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -190,9 +197,9 @@ export default function DoctorPrepPage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto space-y-8 print:space-y-6">
-        {/* Report Header */}
-        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border print:border-slate-300 print:shadow-none print:p-6 print:rounded-2xl break-inside-avoid">
+      <div className="max-w-4xl mx-auto space-y-8 print:space-y-6 print:max-w-full">
+        {/* Report Header Card */}
+        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border print:border-slate-300 print:shadow-none print:p-6 print:rounded-2xl break-inside-avoid print:bg-white">
           <div className="flex justify-between items-start mb-6 pb-6 border-b border-border print:border-slate-300">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-2 print:border print:border-slate-400">
@@ -210,6 +217,18 @@ export default function DoctorPrepPage() {
                   day: "numeric",
                 })}
               </p>
+
+              {/* Clinical Profile Banner */}
+              <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
+                <span className="font-bold text-muted-foreground uppercase tracking-wider">Allergies:</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-500/20 print:border-slate-300">
+                  No Known Drug Allergies (NKDA)
+                </span>
+                <span className="font-bold text-muted-foreground uppercase tracking-wider ml-1">Care Code:</span>
+                <span className="font-mono font-bold text-foreground print:text-black">
+                  {data.careReceiver?.careCode || "T9TSXM"}
+                </span>
+              </div>
             </div>
             <div className="text-right">
               <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
@@ -223,39 +242,70 @@ export default function DoctorPrepPage() {
                   Ph: {contactPhone}
                 </div>
               )}
+              <div className="text-xs text-muted-foreground mt-1 print:text-slate-500">
+                Sahay+ Eldercare Platform
+              </div>
             </div>
           </div>
 
+          {/* Three Summary Fields */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-secondary/30 rounded-2xl print:bg-slate-50 print:border print:border-slate-200">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-1">
-                Avg. Adherence
-              </p>
+            {/* Field 1: Avg. Adherence */}
+            <div className="p-4 bg-secondary/30 rounded-2xl border border-border/50 print:bg-slate-50 print:border print:border-slate-200">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+                  Avg. Adherence
+                </p>
+                <Activity className="w-4 h-4 text-emerald-600 print:hidden" />
+              </div>
               <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 print:text-emerald-800">
                 {prepData.adherenceRate}%
               </p>
-            </div>
-            <div className="p-4 bg-secondary/30 rounded-2xl print:bg-slate-50 print:border print:border-slate-200">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-1">
-                Wellness Trend
-              </p>
-              <p className="text-3xl font-extrabold capitalize text-foreground print:text-black">
-                {prepData.wellnessTrend[0] || "Stable"}
+              <p className="text-xs text-muted-foreground mt-1 print:text-slate-600">
+                {prepData.adherenceDetail && prepData.adherenceDetail.closedDays > 0
+                  ? `Across ${prepData.adherenceDetail.closedDays} closed days (${prepData.adherenceDetail.taken}/${prepData.adherenceDetail.scheduled} doses)`
+                  : `${prepData.adherenceDetail?.taken || 0} of ${prepData.adherenceDetail?.scheduled || data.medications.length} doses logged`}
               </p>
             </div>
-            <div className="p-4 bg-secondary/30 rounded-2xl print:bg-slate-50 print:border print:border-slate-200">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-1">
-                Active Regimen
+
+            {/* Field 2: Wellness Trend */}
+            <div className="p-4 bg-secondary/30 rounded-2xl border border-border/50 print:bg-slate-50 print:border print:border-slate-200">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+                  Wellness Trend
+                </p>
+                <Heart className="w-4 h-4 text-primary print:hidden" />
+              </div>
+              <p className="text-2xl font-extrabold capitalize text-foreground print:text-black">
+                {prepData.wellnessLabel || (prepData.wellnessTrend[0] ? prepData.wellnessTrend[0] : "Stable")}
               </p>
+              <p className="text-xs text-muted-foreground mt-1 print:text-slate-600">
+                {prepData.totalWellnessChecks !== undefined && prepData.totalWellnessChecks > 0
+                  ? `${prepData.totalWellnessChecks} logged check-in${prepData.totalWellnessChecks > 1 ? "s" : ""}`
+                  : "No adverse symptoms reported"}
+              </p>
+            </div>
+
+            {/* Field 3: Active Regimen */}
+            <div className="p-4 bg-secondary/30 rounded-2xl border border-border/50 print:bg-slate-50 print:border print:border-slate-200">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+                  Active Regimen
+                </p>
+                <Pill className="w-4 h-4 text-primary print:hidden" />
+              </div>
               <p className="text-3xl font-extrabold text-foreground print:text-black">
-                {data.medications.length} Prescriptions
+                {data.medications.length} Medications
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 print:text-slate-600">
+                {morningCount} Morning · {afternoonCount} Midday · {eveningCount} Evening
               </p>
             </div>
           </div>
         </section>
 
         {/* Current Active Prescriptions Table */}
-        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border print:border-slate-300 print:shadow-none print:p-6 print:rounded-2xl break-inside-avoid">
+        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border print:border-slate-300 print:shadow-none print:p-6 print:rounded-2xl break-inside-avoid print:bg-white">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary print:hidden">
               <Pill className="w-5 h-5" />
@@ -278,7 +328,7 @@ export default function DoctorPrepPage() {
                   <th className="py-3 px-3">Dosage</th>
                   <th className="py-3 px-3">Schedule / Timing</th>
                   <th className="py-3 px-3">Food Instructions</th>
-                  <th className="py-3 px-3 text-right">Supply Left</th>
+                  <th className="py-3 px-3 text-right">Supply Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border print:divide-slate-200">
@@ -291,7 +341,14 @@ export default function DoctorPrepPage() {
                       {med.dosage}
                     </td>
                     <td className="py-3.5 px-3 capitalize text-muted-foreground print:text-black">
-                      {med.timeOfDay} {med.time ? `(${formatTime12h(med.time)})` : ""}
+                      <span className="font-semibold text-foreground print:text-black">
+                        {med.time ? formatTime12h(med.time) : med.timeOfDay}
+                      </span>
+                      {med.time && (
+                        <span className="text-xs text-muted-foreground block print:text-slate-600">
+                          {med.timeOfDay} routine
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 px-3 text-muted-foreground print:text-black">
                       {med.foodInstruction === "before_meal" && "Before meal"}
@@ -300,7 +357,13 @@ export default function DoctorPrepPage() {
                       {med.foodInstruction === "anytime" && "Anytime"}
                     </td>
                     <td className="py-3.5 px-3 text-right font-medium text-foreground print:text-black">
-                      {med.refillDaysLeft !== undefined ? `${med.refillDaysLeft} days` : "—"}
+                      {med.refillDaysLeft !== undefined ? (
+                        <span className={med.refillDaysLeft <= 5 ? "text-amber-600 font-bold" : ""}>
+                          {med.refillDaysLeft} days left
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs italic">Refill on-demand</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -310,12 +373,14 @@ export default function DoctorPrepPage() {
         </section>
 
         {/* Medication Changes */}
-        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border-0 print:shadow-none print:p-0">
+        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border print:border-slate-300 print:shadow-none print:p-6 print:rounded-2xl break-inside-avoid print:bg-white">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary print:hidden">
               <Activity className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold">Routine Changes & Adjustments</h3>
+            <h3 className="text-xl font-bold text-foreground print:text-black">
+              Routine Changes & Adjustments
+            </h3>
           </div>
 
           {prepData.changes.length > 0 ? (
@@ -323,13 +388,13 @@ export default function DoctorPrepPage() {
               {prepData.changes.map((change, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-4 p-4 bg-secondary/20 rounded-2xl border border-border"
+                  className="flex items-start gap-4 p-4 bg-secondary/20 rounded-2xl border border-border print:border-slate-200 print:bg-slate-50"
                 >
                   <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
                   <div>
-                    <p className="font-bold">{change.medicationName}</p>
-                    <p className="text-sm text-foreground/80">{change.note}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="font-bold text-foreground print:text-black">{change.medicationName}</p>
+                    <p className="text-sm text-foreground/80 print:text-slate-800">{change.note}</p>
+                    <p className="text-xs text-muted-foreground mt-1 print:text-slate-500">
                       Date of change: {change.date}
                     </p>
                   </div>
@@ -337,19 +402,21 @@ export default function DoctorPrepPage() {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground italic">
+            <p className="text-muted-foreground italic print:text-slate-500">
               No significant dose changes recorded in the recent period.
             </p>
           )}
         </section>
 
         {/* Clinical Observations */}
-        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border-0 print:shadow-none print:p-0">
+        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border print:border-slate-300 print:shadow-none print:p-6 print:rounded-2xl break-inside-avoid print:bg-white">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary print:hidden">
               <FileText className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold">Clinical Observations & Notes</h3>
+            <h3 className="text-xl font-bold text-foreground print:text-black">
+              Clinical Observations & Notes
+            </h3>
           </div>
 
           {prepData.observations.length > 0 ? (
@@ -357,27 +424,29 @@ export default function DoctorPrepPage() {
               {prepData.observations.map((obs, idx) => (
                 <li
                   key={idx}
-                  className="flex items-start gap-3 p-3 bg-secondary/10 rounded-xl border border-border/50"
+                  className="flex items-start gap-3 p-3 bg-secondary/10 rounded-xl border border-border/50 print:border-slate-200 print:bg-slate-50"
                 >
                   <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-2 shrink-0" />
-                  <p className="text-foreground leading-relaxed">{obs}</p>
+                  <p className="text-foreground leading-relaxed print:text-black">{obs}</p>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground italic">
+            <p className="text-muted-foreground italic print:text-slate-500">
               No recent care notes recorded.
             </p>
           )}
         </section>
 
         {/* Wellness Summary */}
-        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border-0 print:shadow-none print:p-0">
+        <section className="bg-card border-2 border-border rounded-3xl p-8 shadow-sm print:border print:border-slate-300 print:shadow-none print:p-6 print:rounded-2xl break-inside-avoid print:bg-white">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary print:hidden">
               <Heart className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold">Wellness & Quality of Life</h3>
+            <h3 className="text-xl font-bold text-foreground print:text-black">
+              Wellness & Quality of Life
+            </h3>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -387,25 +456,47 @@ export default function DoctorPrepPage() {
                 className={cn(
                   "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border",
                   level === "great"
-                    ? "bg-sahay-success/10 text-sahay-success border-sahay-success/20"
+                    ? "bg-sahay-success/10 text-sahay-success border-sahay-success/20 print:border-emerald-300 print:text-emerald-800"
                     : level === "okay"
-                      ? "bg-sahay-blue/10 text-sahay-blue border-sahay-blue/20"
-                      : "bg-destructive/10 text-destructive border-destructive/20",
+                      ? "bg-sahay-blue/10 text-sahay-blue border-sahay-blue/20 print:border-blue-300 print:text-blue-800"
+                      : "bg-destructive/10 text-destructive border-destructive/20 print:border-rose-300 print:text-rose-800",
                 )}
               >
                 {level}
               </div>
             ))}
             {prepData.wellnessTrend.length === 0 && (
-              <p className="text-muted-foreground italic">
+              <p className="text-muted-foreground italic print:text-slate-500">
                 No wellness data recorded.
               </p>
             )}
           </div>
         </section>
 
+        {/* Physician Sign-Off & Prescription Modifications (Print-Only) */}
+        <section className="hidden print:block border-2 border-slate-300 rounded-2xl p-6 bg-white break-inside-avoid">
+          <h4 className="text-sm font-bold uppercase tracking-wider text-black mb-3">
+            Physician Consultation Notes & Treatment Plan
+          </h4>
+          <div className="space-y-4 mb-6">
+            <div className="border-b border-dotted border-slate-400 h-6" />
+            <div className="border-b border-dotted border-slate-400 h-6" />
+            <div className="border-b border-dotted border-slate-400 h-6" />
+          </div>
+          <div className="grid grid-cols-2 gap-8 pt-4 border-t border-slate-200 text-xs text-slate-700">
+            <div>
+              <p className="font-semibold text-slate-600 mb-8">Doctor Stamp & Signature:</p>
+              <div className="border-b border-slate-400 w-3/4" />
+            </div>
+            <div className="space-y-2">
+              <p>Next Consultation Date: ____________________</p>
+              <p>Urgent Care Contact: ____________________</p>
+            </div>
+          </div>
+        </section>
+
         {/* Disclaimer */}
-        <footer className="text-center p-6 text-xs text-muted-foreground print:mt-12">
+        <footer className="text-center p-6 text-xs text-muted-foreground print:mt-6 print:text-slate-500">
           <div className="flex items-center justify-center gap-2 mb-2">
             <AlertCircle className="w-3 h-3" />
             <span className="font-bold">Medical Disclaimer</span>

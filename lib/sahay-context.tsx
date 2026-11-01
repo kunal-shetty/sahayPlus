@@ -41,6 +41,7 @@ import {
   getLocalMedMeta,
   stripAllMeta,
 } from './medication-meta'
+import { stopCaregiverEmergencySiren, stopHeartbeatPulse } from './audio-chime'
 
 /**
  * @file sahay-context.tsx
@@ -211,7 +212,10 @@ interface SahayContextValue {
     observations: string[]
     changes: { medicationName: string; date: string; note: string }[]
     wellnessTrend: WellnessLevel[]
+    wellnessLabel?: string
+    totalWellnessChecks?: number
     adherenceRate: number
+    adherenceDetail?: { taken: number; scheduled: number; closedDays: number }
     daysCount?: number
   }
   /** Dismisses the notification that data has changed. */
@@ -1696,6 +1700,8 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Dismisses an active safety check and notifies the backend.
    */
   const dismissSafetyCheck = useCallback(() => {
+    stopCaregiverEmergencySiren()
+    stopHeartbeatPulse()
     setData((prev) => {
       const newEvent: TimelineEvent = {
         id: generateId(),
@@ -1839,7 +1845,11 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Resolves an active help request across devices by updating the database.
    */
   const resolveHelpRequest = useCallback(async (eventId?: string) => {
-    const crId = user?.care_relationship_id
+    // Immediately stop sirens and heartbeat audio alarms
+    stopCaregiverEmergencySiren()
+    stopHeartbeatPulse()
+
+    const crId = getCareRelId()
 
     const target = eventId
       ? data.timeline.find((e) => e.id === eventId)
@@ -1850,7 +1860,8 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       ? (target.note.includes('resolved') ? target.note : `${target.note} (resolved)`)
       : 'resolved'
 
-    // Optimistically update all matching unresolved help_requested events in local state
+    // Optimistically resolve all matching unresolved help_requested events in local state
+    // and reset any active escalating safety check
     setData((prev) => ({
       ...prev,
       timeline: prev.timeline.map((e) => {
@@ -1862,10 +1873,17 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         }
         return e
       }),
+      safetyCheck: {
+        ...prev.safetyCheck,
+        status: 'idle',
+        triggeredAt: null,
+        lastPromptedAt: null,
+      },
     }))
 
+    broadcastCareSync('sos_resolved', { resolvedAt: new Date().toISOString() })
     safeApiCall(() => api.timeline.resolve(targetId, resolvedNote, crId))
-  }, [data.timeline, user?.care_relationship_id])
+  }, [data.timeline, getCareRelId, broadcastCareSync])
 
   /**
    * Broadcasts an overdue dose alert to caregivers and creates a high-priority notification.
@@ -2096,15 +2114,58 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     const closuresInRange = (data.dayClosures || []).filter(
       c => new Date(c.date).getTime() >= cutoffTime
     )
-    const avgAdherence = closuresInRange.length > 0
-      ? Math.round(
-          (closuresInRange.reduce((acc, c) => acc + c.takenCount, 0) /
-            closuresInRange.reduce((acc, c) => acc + (c.totalMeds || 1), 0)) * 100
-        )
-      : Math.round(
-          ((data.medications || []).filter(m => m.taken).length /
-            Math.max((data.medications || []).length, 1)) * 100
-        )
+
+    let avgAdherence = 0
+    let adherenceDetail = { taken: 0, scheduled: 0, closedDays: closuresInRange.length }
+
+    if (closuresInRange.length > 0) {
+      const totalTaken = closuresInRange.reduce((acc, c) => acc + c.takenCount, 0)
+      const totalScheduled = closuresInRange.reduce((acc, c) => acc + (c.totalMeds || 1), 0)
+      avgAdherence = totalScheduled > 0 ? Math.round((totalTaken / totalScheduled) * 100) : 100
+      adherenceDetail = { taken: totalTaken, scheduled: totalScheduled, closedDays: closuresInRange.length }
+    } else {
+      const takenEvents = timeline.filter(
+        t => t.type === 'medication_taken' && new Date(t.timestamp).getTime() >= cutoffTime
+      ).length
+      const skippedEvents = timeline.filter(
+        t => t.type === 'medication_skipped' && new Date(t.timestamp).getTime() >= cutoffTime
+      ).length
+
+      const totalRecordedEvents = takenEvents + skippedEvents
+      if (totalRecordedEvents > 0) {
+        avgAdherence = Math.round((takenEvents / totalRecordedEvents) * 100)
+        adherenceDetail = { taken: takenEvents, scheduled: totalRecordedEvents, closedDays: 0 }
+      } else {
+        const totalMeds = data.medications.length || 1
+        const takenMeds = data.medications.filter(m => m.taken).length
+        avgAdherence = Math.round((takenMeds / totalMeds) * 100)
+        adherenceDetail = { taken: takenMeds, scheduled: totalMeds, closedDays: 0 }
+      }
+    }
+
+    const wellnessInRange = wellness.filter(w => new Date(w.timestamp).getTime() >= cutoffTime)
+    const totalWellnessChecks = wellnessInRange.length
+    const wellnessCounts = wellnessInRange.reduce(
+      (acc, w) => {
+        if (w.level === 'great') acc.great++
+        else if (w.level === 'okay') acc.okay++
+        else if (w.level === 'notGreat') acc.notGreat++
+        return acc
+      },
+      { great: 0, okay: 0, notGreat: 0 }
+    )
+
+    let wellnessLabel = 'Stable'
+    if (wellnessCounts.notGreat > 0) {
+      wellnessLabel = `${wellnessCounts.notGreat} Unwell Alert${wellnessCounts.notGreat > 1 ? 's' : ''}`
+    } else if (wellnessCounts.great > 0 && wellnessCounts.great >= wellnessCounts.okay) {
+      const pct = Math.round((wellnessCounts.great / (totalWellnessChecks || 1)) * 100)
+      wellnessLabel = `Consistently Well (${pct}%)`
+    } else if (totalWellnessChecks > 0) {
+      wellnessLabel = 'Generally Stable'
+    } else if (wellnessTrend.length > 0) {
+      wellnessLabel = wellnessTrend[0] === 'great' ? 'Well' : wellnessTrend[0] === 'okay' ? 'Stable' : 'Needs Review'
+    }
 
     return {
       observations: recentNotes.length > 0 ? recentNotes : notes.slice(0, 5).map(n => n.text),
@@ -2114,7 +2175,10 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         note: c.note || 'Dose changed'
       })),
       wellnessTrend: wellnessTrend.length > 0 ? wellnessTrend : wellness.slice(0, 7).map(w => w.level),
+      wellnessLabel,
+      totalWellnessChecks,
       adherenceRate: avgAdherence,
+      adherenceDetail,
       daysCount,
     }
   }, [data.timeline, data.contextualNotes, data.wellnessEntries, data.dayClosures, data.medications])
@@ -2529,6 +2593,11 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         refreshRelationshipData()
       })
       .on('broadcast', { event: 'dose_overdue' }, () => {
+        refreshRelationshipData()
+      })
+      .on('broadcast', { event: 'sos_resolved' }, () => {
+        stopCaregiverEmergencySiren()
+        stopHeartbeatPulse()
         refreshRelationshipData()
       })
       .on(

@@ -11,8 +11,8 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { ShieldAlert, Phone, X, AlertTriangle, Check, MapPin, Radio } from "lucide-react";
+import { motion } from "motion/react";
+import { ShieldAlert, Phone, X, MapPin, Radio } from "lucide-react";
 import { playHeartbeatPulse, stopHeartbeatPulse } from "@/lib/audio-chime";
 import { EMERGENCY_NUMBER } from "@/lib/utils";
 
@@ -42,6 +42,10 @@ export function EmergencySosModal({
   const [stage, setStage] = useState<"grace" | "dispatched">("grace");
   const [locationStr, setLocationStr] = useState<string | null>(null);
   const wakeLockRef = useRef<any>(null);
+  const isAbortedRef = useRef(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  /** Set by "I am safe now": a location arriving later must not be sent. */
+  const alertResolvedRef = useRef(false);
 
   // Manage WakeLock to prevent screen dimming during emergency states
   useEffect(() => {
@@ -70,6 +74,11 @@ export function EmergencySosModal({
   // Handle 10-second Grace Window Countdown
   useEffect(() => {
     if (!isOpen) {
+      isAbortedRef.current = true;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
       setSecondsLeft(10);
       setStage("grace");
       setLocationStr(null);
@@ -77,6 +86,8 @@ export function EmergencySosModal({
       return;
     }
 
+    isAbortedRef.current = false;
+    alertResolvedRef.current = false;
     setSecondsLeft(10);
     setStage("grace");
 
@@ -86,12 +97,29 @@ export function EmergencySosModal({
       console.warn("Heartbeat audio error:", e);
     }
 
-    const timer = setInterval(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Only counts down; dispatch happens in the effect below so it can't run
+    // twice (React may invoke state updaters more than once).
+    timerRef.current = setInterval(() => {
+      if (isAbortedRef.current) {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        return;
+      }
       setSecondsLeft((prev) => Math.max(0, prev - 1));
     }, 1000);
 
     return () => {
-      clearInterval(timer);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
       stopHeartbeatPulse();
     };
   }, [isOpen]);
@@ -106,6 +134,7 @@ export function EmergencySosModal({
   }, [isOpen, stage, secondsLeft]);
 
   const triggerDispatch = () => {
+    if (isAbortedRef.current) return;
     stopHeartbeatPulse();
     setStage("dispatched");
 
@@ -116,6 +145,7 @@ export function EmergencySosModal({
     if (typeof window !== "undefined" && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          if (alertResolvedRef.current) return;
           const loc = {
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
@@ -131,12 +161,23 @@ export function EmergencySosModal({
     }
   };
 
-  const handleAbort = () => {
+  const handleAbort = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    isAbortedRef.current = true;
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     stopHeartbeatPulse();
     if (wakeLockRef.current) {
       wakeLockRef.current.release?.().catch(() => {});
       wakeLockRef.current = null;
     }
+    setStage("grace");
+    setSecondsLeft(10);
     onCancel();
   };
 
@@ -188,8 +229,9 @@ export function EmergencySosModal({
             {/* Abort Button: Prominent "Cancel (False Alarm)" with high contrast & generous padding */}
             <div className="pt-2">
               <button
+                type="button"
                 onClick={handleAbort}
-                className="w-full py-5 px-6 rounded-2xl bg-secondary hover:bg-secondary/80 text-foreground border-4 border-border text-lg sm:text-xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg touch-manipulation focus:outline-none focus:ring-4 focus:ring-primary/50"
+                className="w-full py-5 px-6 rounded-2xl bg-secondary hover:bg-secondary/80 text-foreground border-4 border-border text-lg sm:text-xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg touch-manipulation focus:outline-none focus:ring-4 focus:ring-primary/50 cursor-pointer"
               >
                 <X className="w-6 h-6 text-foreground" strokeWidth={3} />
                 <span>Cancel (False Alarm)</span>
@@ -228,17 +270,20 @@ export function EmergencySosModal({
               </a>
 
               <button
+                type="button"
                 onClick={() => {
+                  alertResolvedRef.current = true;
                   handleAbort();
                   onSafe?.();
                 }}
-                className="w-full py-3 px-6 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:bg-secondary transition-all"
+                className="w-full py-3 px-6 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:bg-secondary transition-all cursor-pointer"
               >
                 I am safe now
               </button>
               <button
+                type="button"
                 onClick={handleAbort}
-                className="w-full py-3 px-6 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-secondary transition-all"
+                className="w-full py-3 px-6 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-secondary transition-all cursor-pointer"
               >
                 Close (keep alert on)
               </button>
@@ -249,4 +294,3 @@ export function EmergencySosModal({
     </div>
   );
 }
-

@@ -118,8 +118,8 @@ test.describe('Phase 3: Senior Daily Living & Intake Flow', () => {
       // Alarm modal wasn't active
     }
 
-    // Open Quick Messages via header button
-    const messageBtn = page.getByRole('button', { name: 'Send Message' });
+    // Open Quick Messages via the bottom "Message" button
+    const messageBtn = page.getByRole('button', { name: 'Message Caregiver' });
     await expect(messageBtn).toBeVisible({ timeout: 10000 });
     await messageBtn.click();
 
@@ -163,7 +163,7 @@ test.describe('Phase 3: Senior Daily Living & Intake Flow', () => {
     await expect(page.getByRole('heading', { name: 'Are you okay?' })).not.toBeVisible({ timeout: 10000 });
   });
 
-  test('Step 7: should open emergency call screen when tapping "Call someone"', async ({ page }) => {
+  test('Step 7: should open emergency call screen when tapping "Call help"', async ({ page }) => {
     await page.goto('/care-receiver');
     await page.waitForLoadState('networkidle');
 
@@ -176,7 +176,7 @@ test.describe('Phase 3: Senior Daily Living & Intake Flow', () => {
       // Alarm modal wasn't active
     }
 
-    const callHelpBtn = page.getByRole('button', { name: 'Call someone' });
+    const callHelpBtn = page.getByRole('button', { name: 'Call help' });
     await expect(callHelpBtn).toBeVisible({ timeout: 10000 });
     await callHelpBtn.click();
     await expect(page.getByRole('heading', { name: 'Need Help?' })).toBeVisible();

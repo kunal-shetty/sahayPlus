@@ -744,14 +744,6 @@ export default function CareReceiverPage() {
             </h1>
           </div>
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setShowMessages(true)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary text-primary hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-              aria-label="Send Message"
-              title="Send message to caregiver"
-            >
-              <MessageCircle className="w-4 h-4" />
-            </button>
             {SHOW_DEMO_TOOLS && (
             <button
               onClick={handleTestAlarm}
@@ -1061,38 +1053,57 @@ export default function CareReceiverPage() {
           )}
 
           {/*
-            Bottom actions. "Help" is the single SOS: it starts the 10-second
-            countdown and alerts the caregiver. While an alert is active it
-            never cancels it — it opens the call screen instead; cancelling is
-            only done via the explicit "I'm okay" button in the banner above.
+            Bottom actions: Message, Call help, Emergency SOS.
+            SOS starts the 10-second countdown and alerts the caregiver. While
+            an alert is active, tapping it again never cancels it — it opens the
+            call screen instead. Cancelling is only done via the explicit
+            "I'm okay" button in the banner above.
           */}
-          <div className="grid grid-cols-2 gap-2 shrink-0 w-full mb-1">
+          <div className="grid grid-cols-3 gap-2 shrink-0 w-full mb-1">
             <motion.button
-              onClick={helpRequestedAt ? () => setShowEmergency(true) : handleRequestHelp}
-              className={cn(
-                "py-3 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive shadow-md focus:outline-none focus:ring-4",
-                helpRequestedAt
-                  ? "bg-amber-600 text-white border-amber-700 ring-2 ring-amber-500/40"
-                  : "bg-destructive text-white border-destructive focus:ring-destructive/40",
-              )}
+              onClick={() => setShowMessages(true)}
+              aria-label="Message Caregiver"
+              className="py-2.5 px-1.5 border-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all touch-manipulation button-interactive bg-card border-border hover:border-primary/50 text-foreground shadow-xs"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              aria-label={helpRequestedAt ? "Help is on the way. Call someone" : "SOS, I need help"}
             >
-              <ShieldAlert className={cn("w-6 h-6", helpRequestedAt && "animate-pulse")} />
-              <span className="text-sm font-bold">
-                {helpRequestedAt ? "Help is coming" : "SOS · I need help"}
-              </span>
+              <MessageCircle className="w-5 h-5 text-primary" />
+              <span className="text-xs font-semibold leading-tight">Message</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">Caregiver</span>
             </motion.button>
 
             <motion.button
               onClick={() => setShowEmergency(true)}
-              className="py-3 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive bg-card border-border hover:border-destructive/50 text-foreground shadow-xs"
+              aria-label="Call help"
+              className="py-2.5 px-1.5 border-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all touch-manipulation button-interactive bg-card border-border hover:border-emerald-500/50 text-foreground shadow-xs"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              <Phone className="w-6 h-6 text-destructive" />
-              <span className="text-sm font-semibold">Call someone</span>
+              <Phone className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-xs font-semibold leading-tight">Call help</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">Family &amp; Dr</span>
+            </motion.button>
+
+            <motion.button
+              onClick={helpRequestedAt ? () => setShowEmergency(true) : handleRequestHelp}
+              aria-label={helpRequestedAt ? "Help is on the way. Call someone" : "Emergency SOS"}
+              title={helpRequestedAt ? "Help is on the way - tap to call someone" : "Emergency SOS - Need help"}
+              className={cn(
+                "py-2.5 px-1.5 border-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all touch-manipulation button-interactive shadow-sm",
+                helpRequestedAt
+                  ? "bg-amber-600 border-amber-500 text-white font-bold ring-2 ring-amber-500/50 animate-pulse"
+                  : "bg-destructive border-destructive text-white hover:bg-destructive/90",
+              )}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <ShieldAlert className="w-5 h-5 text-white" />
+              <span className="text-xs font-bold leading-tight text-white">
+                {helpRequestedAt ? "Help is coming" : "Emergency SOS"}
+              </span>
+              <span className="text-[10px] text-white/90 leading-tight">
+                {helpRequestedAt ? "Tap to call" : "Need help?"}
+              </span>
             </motion.button>
           </div>
         </div>
@@ -1131,6 +1142,8 @@ export default function CareReceiverPage() {
       {/* Module 6: Emergency SOS & Two-Stage Grace Countdown Modal */}
       <EmergencySosModal
         isOpen={showSosModal}
+        // Closing the modal never resolves an alert by itself: a false alarm is
+        // cancelled before anything is sent, and "I am safe now" uses onSafe.
         onCancel={() => setShowSosModal(false)}
         onDispatch={handleSosDispatch}
         onLocation={handleSosLocation}
@@ -1138,7 +1151,6 @@ export default function CareReceiverPage() {
         primaryContactName={primaryContact?.name || `Emergency (${EMERGENCY_NUMBER})`}
         primaryContactPhone={primaryContact?.phone || EMERGENCY_NUMBER}
       />
-
     </main>
   );
 }

@@ -477,3 +477,66 @@ html {
 .skeleton-shimmer > * {
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
+
+
+/* Print optimization for clinical summaries & reports */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force hide any elements marked print:hidden */
+  .print\:hidden,
+  aside,
+  nav,
+  button:not(.print\:block) {
+    display: none !important;
+  }
+
+  /* Ensure main content container scrolls/paginates freely */
+  main,
+  div {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Clean table borders and avoid splitting rows across pages */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Avoid orphan headers and section break issues */
+  h1,
+  h2,
+  h3,
+  h4,
+  section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
