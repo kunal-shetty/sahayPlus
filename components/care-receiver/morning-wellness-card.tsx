@@ -9,7 +9,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Smile, Meh, Frown, Check, Sun, ChevronDown, ChevronUp, Heart } from "lucide-react";
+import { Smile, Meh, Frown, Check, Sun, ChevronDown, ChevronUp } from "lucide-react";
 import { useSahay } from "@/lib/sahay-context";
 import { type WellnessLevel } from "@/lib/types";
 import { playSuccessChime, unlockAudioContext } from "@/lib/audio-chime";
