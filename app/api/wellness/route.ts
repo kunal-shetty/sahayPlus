@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { toLocalDateString } from "@/lib/utils";
 
 /**
  * GET /api/wellness
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
             .insert({
                 care_relationship_id,
                 user_id,
-                date: new Date().toISOString().split("T")[0],
+                date: toLocalDateString(),
                 level: normalizedLevel,
                 note: note || null,
             })
