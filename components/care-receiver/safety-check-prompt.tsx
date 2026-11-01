@@ -10,7 +10,7 @@
 
 import { useState, useEffect } from "react";
 import { useSahay } from "@/lib/sahay-context";
-import { ShieldAlert, Heart, Info } from "lucide-react";
+import { Heart, Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 /**
