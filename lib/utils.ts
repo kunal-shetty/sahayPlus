@@ -41,3 +41,15 @@ export function toLocalDateString(value: Date | string | number | null | undefin
     day: '2-digit',
   }).format(date)
 }
+
+/**
+ * Whether testing/demo controls (test alarm, simulated alerts, etc.) are shown.
+ * On in development; in production only when NEXT_PUBLIC_DEMO_MODE=true, so
+ * real users never see buttons that fake alarms or alerts.
+ */
+export const SHOW_DEMO_TOOLS =
+  process.env.NODE_ENV === 'development' ||
+  process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+
+/** Default emergency number for India (the app's locale). */
+export const EMERGENCY_NUMBER = '112'
