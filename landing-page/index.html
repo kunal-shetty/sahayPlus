@@ -27,7 +27,10 @@
       <ul class="nav-links" id="nav-links">
         <li><a href="#app">The app</a></li>
         <li><a href="#features">Features</a></li>
+        <li><a href="#day">A day with Sahay+</a></li>
+        <li><a href="#safety">Safety</a></li>
         <li><a href="#how">How it works</a></li>
+        <li><a href="#faq">FAQ</a></li>
       </ul>
     </nav>
     <!-- Points to the Next.js app's login page; change if the app is hosted elsewhere -->
@@ -80,6 +83,22 @@
     </div>
   </section>
 
+  <!-- THE PROBLEM -->
+  <section class="problem">
+    <div class="container problem-grid reveal">
+      <div class="problem-stat">
+        <strong>~50%</strong>
+        <p>of people with long-term conditions don't take their medicines as prescribed.</p>
+        <small>World Health Organization, <cite>Adherence to Long-Term Therapies</cite> (2003)</small>
+      </div>
+      <ul class="problem-list">
+        <li><i data-lucide="phone-call"></i><span><strong>The daily phone call.</strong> "Did you take it?" "Which one?" "I think so."</span></li>
+        <li><i data-lucide="layers"></i><span><strong>Foil strips everywhere.</strong> Six medicines, three times a day, and two of them look the same.</span></li>
+        <li><i data-lucide="map-pin-off"></i><span><strong>Living apart.</strong> You're at work or in another city, and you only find out about a missed dose days later.</span></li>
+      </ul>
+    </div>
+  </section>
+
   <!-- TWO VIEWS -->
   <section class="section" id="app">
     <div class="container">
@@ -99,7 +118,7 @@
             <ul class="ticks">
               <li><i data-lucide="bell-ring"></i> A soft chime at dose time, not a loud alarm</li>
               <li><i data-lucide="hand"></i> One big "I took it" button, or just say it</li>
-              <li><i data-lucide="siren"></i> SOS and "I need help" always one tap away</li>
+              <li><i data-lucide="siren"></i> Message, Call help and SOS always one tap away</li>
             </ul>
           </div>
         </article>
@@ -144,7 +163,7 @@
         <div class="feature reveal">
           <span class="feature-icon danger"><i data-lucide="siren"></i></span>
           <h3>One-tap SOS</h3>
-          <p>A red SOS button on every screen alerts the family instantly with a siren on their phone.</p>
+          <p>A red SOS button on the home screen gives a 10-second chance to cancel, then alerts the family with a siren on their dashboard.</p>
         </div>
         <div class="feature reveal">
           <span class="feature-icon amber"><i data-lucide="smile"></i></span>
@@ -162,6 +181,163 @@
           <p>Print a clean adherence report before appointments, instead of answering "mostly".</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- A DAY WITH SAHAY+ -->
+  <section class="section" id="day">
+    <div class="container day">
+      <div class="day-copy">
+        <div class="section-head section-head-left reveal">
+          <span class="eyebrow">A day with Sahay+</span>
+          <h2>From the first chime to a quiet goodnight</h2>
+          <p class="section-lead">What an ordinary day looks like, for Dada and for you.</p>
+        </div>
+        <ol class="timeline">
+          <li class="reveal">
+            <time>7:30 AM</time>
+            <div>
+              <h3><i data-lucide="sunrise"></i> Morning medicines</h3>
+              <p>A soft chime plays and a big card shows the pill's photo, colour and "before breakfast". He taps <b>I took it</b>, or just says "dawai le li".</p>
+            </div>
+          </li>
+          <li class="reveal">
+            <time>Live</time>
+            <div>
+              <h3><i data-lucide="smartphone"></i> You see it instantly</h3>
+              <p>Your dashboard ticks the dose off the moment it's taken. No call needed.</p>
+            </div>
+          </li>
+          <li class="reveal">
+            <time>9:30 AM</time>
+            <div>
+              <h3><i data-lucide="smile"></i> "How are you feeling?"</h3>
+              <p>One tap: Feeling Great, Doing Okay or Not Feeling Great. If he hasn't checked in by 9:30, the app gently nudges him, and you're told at 9:45.</p>
+            </div>
+          </li>
+          <li class="reveal">
+            <time>+15 min</time>
+            <div>
+              <h3><i data-lucide="alarm-clock"></i> A dose runs late</h3>
+              <p>If a medicine isn't confirmed 15 minutes after its time, the chime gets louder and you get an overdue alert, so you can send a gentle reminder.</p>
+            </div>
+          </li>
+          <li class="reveal">
+            <time>9:00 PM</time>
+            <div>
+              <h3><i data-lucide="moon"></i> Night mode</h3>
+              <p>The screen turns dark and calm for the evening dose, easy on tired eyes.</p>
+            </div>
+          </li>
+          <li class="reveal">
+            <time>10:30 PM</time>
+            <div>
+              <h3><i data-lucide="check-check"></i> Close the day</h3>
+              <p>You close the day in one tap: "6 of 6 taken". The streak grows, and tomorrow starts fresh.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+      <div class="day-visual reveal">
+        <div class="phone-frame">
+          <img src="assets/checkin.png" alt="Sahay+ morning check-in screen asking How are you feeling, with Feeling Great, Doing Okay and Not Feeling Great options">
+        </div>
+        <div class="float-card day-float">
+          <span class="float-icon ok"><i data-lucide="flame"></i></span>
+          <div>
+            <strong>6-day streak</strong>
+            <small>All medicines taken</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SAFETY -->
+  <section class="section section-dark" id="safety">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow eyebrow-light">When something's wrong</span>
+        <h2>Help is one tap away. A false alarm is one tap to cancel.</h2>
+      </div>
+      <div class="safety-grid">
+        <div class="safety-card reveal">
+          <span class="safety-icon"><i data-lucide="siren"></i></span>
+          <h3>SOS with a 10-second safety net</h3>
+          <p>Pressing SOS starts a large countdown. Pressed by mistake? One big "Cancel" button. Otherwise the family is alerted right away.</p>
+        </div>
+        <div class="safety-card reveal">
+          <span class="safety-icon"><i data-lucide="map-pin"></i></span>
+          <h3>Location follows</h3>
+          <p>If the phone allows it, a map link with their location is sent to the caregiver straight after the alert. The alert itself never waits for GPS.</p>
+        </div>
+        <div class="safety-card reveal">
+          <span class="safety-icon"><i data-lucide="phone"></i></span>
+          <h3>Call family, doctor or 112</h3>
+          <p>"Call help" lists the family's emergency contacts and the doctor, with one-tap calling and 112 always at the bottom.</p>
+        </div>
+        <div class="safety-card reveal">
+          <span class="safety-icon"><i data-lucide="vibrate"></i></span>
+          <h3>"Are you okay?" safety check</h3>
+          <p>A hard shake or jolt of the phone asks "Are you okay?". If there's no answer in 5 minutes, the caregiver is told.</p>
+        </div>
+      </div>
+      <p class="safety-note reveal"><i data-lucide="info"></i> Sahay+ helps families respond faster. It is not a replacement for emergency services. In an emergency, always call 112.</p>
+    </div>
+  </section>
+
+  <!-- CAREGIVER TOOLS -->
+  <section class="section" id="tools">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">For the caregiver</span>
+        <h2>Everything you'd otherwise keep in your head</h2>
+      </div>
+      <div class="tools-grid">
+        <div class="tool reveal">
+          <i data-lucide="history"></i>
+          <div><h3>Care timeline</h3><p>Every dose, check-in, message and alert in one running history.</p></div>
+        </div>
+        <div class="tool reveal">
+          <i data-lucide="sticky-note"></i>
+          <div><h3>Care notes</h3><p>"Dizzy this morning, skipped breakfast." Notes pinned to a day or a medicine, so the context isn't lost.</p></div>
+        </div>
+        <div class="tool reveal">
+          <i data-lucide="users"></i>
+          <div><h3>Share the care</h3><p>Add a second caregiver with the same care code, and hand over for a few days when you travel.</p></div>
+        </div>
+        <div class="tool reveal">
+          <i data-lucide="store"></i>
+          <div><h3>Pharmacist &amp; refills</h3><p>A days-left countdown for each medicine, and your chemist's number one tap away.</p></div>
+        </div>
+        <div class="tool reveal">
+          <i data-lucide="chart-line"></i>
+          <div><h3>Habit insights</h3><p>Adherence trends and patterns, like evening doses that keep slipping late.</p></div>
+        </div>
+        <div class="tool reveal">
+          <i data-lucide="message-circle"></i>
+          <div><h3>Messages &amp; quick replies</h3><p>Simple messages both ways, with big quick replies like "I took my medicine" for them.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACCESSIBILITY -->
+  <section class="section section-tint" id="design">
+    <div class="container access">
+      <div class="access-copy reveal">
+        <span class="eyebrow">Designed for older eyes and hands</span>
+        <h2>If it needed reading glasses, we redesigned it</h2>
+        <p>Many health apps are built for 30-year-olds. Sahay+ is built around the people actually holding the phone.</p>
+      </div>
+      <ul class="access-list">
+        <li class="reveal"><i data-lucide="hand"></i><div><h3>Big, forgiving buttons</h3><p>Large tap targets that are hard to miss, even with shaky hands.</p></div></li>
+        <li class="reveal"><i data-lucide="key-round"></i><div><h3>No passwords</h3><p>Sign in with an email, once. Nothing to forget.</p></div></li>
+        <li class="reveal"><i data-lucide="languages"></i><div><h3>Speaks their language</h3><p>Voice confirmation understands Hindi, English and Hinglish.</p></div></li>
+        <li class="reveal"><i data-lucide="image"></i><div><h3>See the pill, not just the name</h3><p>A photo, colour and shape for every medicine, so similar strips don't get mixed up.</p></div></li>
+        <li class="reveal"><i data-lucide="undo-2"></i><div><h3>Mistakes are easy to undo</h3><p>Tapped "I took it" by accident? An "Undo" button stays on screen for a few seconds.</p></div></li>
+        <li class="reveal"><i data-lucide="eye"></i><div><h3>One thing at a time</h3><p>The home screen shows only the next medicine. No menus, no clutter.</p></div></li>
+      </ul>
     </div>
   </section>
 
@@ -226,6 +402,62 @@
           <p>Set times once. Sahay+ handles the reminders every day.</p>
         </li>
       </ol>
+    </div>
+  </section>
+
+  <!-- ANDROID -->
+  <section class="section" id="android">
+    <div class="container android reveal">
+      <span class="android-icon"><i data-lucide="smartphone"></i></span>
+      <div>
+        <span class="eyebrow">Also on Android</span>
+        <h2>The same Sahay+, as a phone app</h2>
+        <p>The Android app adds system notifications for caregivers, one-tap calling from SOS, and shake detection for safety checks. It works with the same account as the web app.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section section-tint" id="faq">
+    <div class="container faq-wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Questions</span>
+        <h2>Frequently asked questions</h2>
+      </div>
+      <div class="faq">
+        <details class="reveal">
+          <summary>Does my parent need to know how to use a smartphone?</summary>
+          <p>Barely. The home screen shows one medicine and one big "I took it" button. You set everything up from your phone: medicines, times, photos and contacts.</p>
+        </details>
+        <details class="reveal">
+          <summary>What happens if they forget to tap the button?</summary>
+          <p>The reminder stays on screen. Fifteen minutes after the dose time the chime gets louder and you get an overdue alert, so you can message or call them.</p>
+        </details>
+        <details class="reveal">
+          <summary>Can more than one family member help?</summary>
+          <p>Yes. A second caregiver can link with the same 6-letter care code and sees everything you see. You can also hand over care for a few days when you're travelling.</p>
+        </details>
+        <details class="reveal">
+          <summary>Which languages does voice confirmation understand?</summary>
+          <p>Hindi, English and a mix of both. Phrases like "dawai le li" or "I took my Dolo" work.</p>
+        </details>
+        <details class="reveal">
+          <summary>What if SOS is pressed by accident?</summary>
+          <p>There's a 10-second countdown with a large "Cancel (False Alarm)" button before anything is sent. After an alert, "I'm okay" lets them tell the family they're safe.</p>
+        </details>
+        <details class="reveal">
+          <summary>Does it work on tablets and computers?</summary>
+          <p>Yes. It runs in any modern browser, the caregiver dashboard works on laptops and phones, and there's an Android app too.</p>
+        </details>
+        <details class="reveal">
+          <summary>Is Sahay+ a medical device or a replacement for a doctor?</summary>
+          <p>No. Sahay+ helps families stay on top of medicines a doctor has already prescribed. It doesn't give medical advice. Always follow your doctor's instructions, and call 112 in an emergency.</p>
+        </details>
+        <details class="reveal">
+          <summary>How much does it cost?</summary>
+          <p>Sahay+ is free to use.</p>
+        </details>
+      </div>
     </div>
   </section>
 
