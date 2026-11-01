@@ -29,9 +29,9 @@ import {
   type HandoverInfo,
   generateId,
   defaultAppData,
-  STORAGE_KEY,
 } from './types'
 import { api } from './api'
+import { toLocalDateString } from './utils'
 import { showNotification } from './notifications'
 import { supabase } from './supabase-client'
 import {
@@ -547,10 +547,10 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        const today = new Date().toISOString().split('T')[0]
+        const today = toLocalDateString()
         const yesterdayDate = new Date()
         yesterdayDate.setDate(yesterdayDate.getDate() - 1)
-        const yesterday = yesterdayDate.toISOString().split('T')[0]
+        const yesterday = toLocalDateString(yesterdayDate)
 
         let takenMedIds = new Set<string>()
         let allLogs: any[] = []
@@ -593,7 +593,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
         let checkDate = logsByDate.has(today) ? new Date() : (logsByDate.has(yesterday) ? new Date(yesterdayDate) : null)
         if (checkDate) {
           while (true) {
-            const checkStr = checkDate.toISOString().split('T')[0]
+            const checkStr = toLocalDateString(checkDate)
             if (logsByDate.has(checkStr)) {
               currentStreak++
               checkDate.setDate(checkDate.getDate() - 1)
@@ -640,7 +640,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
                 : (medLogs.some((l: any) => l.date === yesterday) ? new Date(yesterdayDate) : null)
               if (checkMedD) {
                 while (true) {
-                  const s = checkMedD.toISOString().split('T')[0]
+                  const s = toLocalDateString(checkMedD)
                   if (medLogs.some((l: any) => l.date === s)) {
                     medStreak++
                     checkMedD.setDate(checkMedD.getDate() - 1)
@@ -790,8 +790,8 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               : prev.emergencyContacts,
             lastFineCheckIn: (() => {
               const todayFineEvent = timelineRes.status === 'fulfilled'
-                ? ((timelineRes.value?.events || (Array.isArray(timelineRes.value) ? timelineRes.value : []))).find(
-                    (e: any) => (e.type === 'fine_check_in' || e.type === 'wellness_logged') && e.created_at?.startsWith(today)
+                ? (timelineRes.value.events || []).find(
+                    (e: any) => (e.type === 'fine_check_in' || e.type === 'wellness_logged') && toLocalDateString(e.created_at) === today
                   )
                 : undefined
               const todayWellnessEntry = wellnessRes.status === 'fulfilled'
@@ -1251,7 +1251,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Closes the care day and records a summary of medication adherence.
    */
   const closeDay = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString()
     setData((prev) => {
       const takenCount = prev.medications.filter((m) => m.taken).length
       const newClosure: DayClosure = {
@@ -1303,7 +1303,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Returns true if the care day has been closed.
    */
   const isDayClosed = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString()
     return (data.dayClosures || []).some((c) => c.date === today)
   }, [data.dayClosures])
 
@@ -1314,7 +1314,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     if (data.userRole !== 'caregiver') return null
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
-    const yesterdayStr = yesterday.toISOString().split('T')[0]
+    const yesterdayStr = toLocalDateString(yesterday)
     const yesterdayClosure = (data.dayClosures || []).find((c) => c.date === yesterdayStr)
 
     if (yesterdayClosure && yesterdayClosure.totalMeds > 0 && yesterdayClosure.takenCount === 0) {
@@ -1411,7 +1411,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Logs a daily wellness entry.
    */
   const logWellness = useCallback((level: WellnessLevel, note?: string) => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString()
     const now = new Date().toISOString()
     const tempId = generateId()
     const normalizedLevel: WellnessLevel = level === ('not_great' as any) ? 'notGreat' : level
@@ -1456,7 +1456,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Retrieves the wellness entry for today.
    */
   const getTodayWellness = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString()
     const directEntry = (data.wellnessEntries || []).find((e) => e.date === today)
     if (directEntry) {
       return {
@@ -1465,7 +1465,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    if (data.lastFineCheckIn?.startsWith(today)) {
+    if (data.lastFineCheckIn && toLocalDateString(data.lastFineCheckIn) === today) {
       return {
         id: 'today-fine-checkin',
         date: today,
@@ -1476,7 +1476,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
     }
 
     const fineEvent = (data.timeline || []).find(
-      (e) => (e.type === 'fine_check_in' || e.type === 'wellness_logged') && e.timestamp?.startsWith(today)
+      (e) => (e.type === 'fine_check_in' || e.type === 'wellness_logged') && toLocalDateString(e.timestamp) === today
     )
     if (fineEvent) {
       let inferredLevel: WellnessLevel = 'great'
@@ -1503,9 +1503,9 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    */
   const getWellnessTrend = useCallback(() => {
     const entries = [...(data.wellnessEntries || [])]
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString()
     const hasToday = entries.some((e) => e.date === today)
-    if (!hasToday && data.lastFineCheckIn?.startsWith(today)) {
+    if (!hasToday && data.lastFineCheckIn && toLocalDateString(data.lastFineCheckIn) === today) {
       entries.push({
         id: 'today-fine-checkin',
         date: today,
@@ -1591,14 +1591,14 @@ export function SahayProvider({ children }: { children: ReactNode }) {
    * Pure getter that calculates adherence rates for the last 7 days.
    */
   const getWeeklyAdherence = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString()
     const days: { day: string; taken: number; total: number }[] = []
     const totalMeds = data.medications.length || 1
 
     for (let i = 6; i >= 0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().split('T')[0]
+      const dateStr = toLocalDateString(d)
       const closure = (data.dayClosures || []).find((c) => c.date === dateStr)
 
       let taken = closure?.takenCount ?? 0
@@ -1613,7 +1613,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
       if (taken === 0) {
         const timelineMeds = new Set<string>()
         for (const e of data.timeline || []) {
-          if (e.type === 'medication_taken' && e.timestamp?.startsWith(dateStr)) {
+          if (e.type === 'medication_taken' && toLocalDateString(e.timestamp) === dateStr) {
             if (e.medicationId) timelineMeds.add(e.medicationId)
           }
         }
@@ -2181,7 +2181,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
   const refreshRelationshipData = useCallback(async () => {
     if (!user?.care_relationship_id) return
     const crId = user.care_relationship_id
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString()
 
     try {
       const [medsRes, logsRes, timelineRes, wellnessRes, handoverRes] = await Promise.allSettled([
@@ -2460,7 +2460,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
           if ((payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') && payload.new) {
             const raw = payload.new as any
             const mId = String(raw.medication_id)
-            const today = new Date().toISOString().split('T')[0]
+            const today = toLocalDateString()
             const isToday = raw.date === today
             const isTaken = Boolean(raw.taken)
 
@@ -2504,7 +2504,7 @@ export function SahayProvider({ children }: { children: ReactNode }) {
               timestamp: raw.created_at || raw.date,
               isRead: false,
             }
-            const today = new Date().toISOString().split('T')[0]
+            const today = toLocalDateString()
             setData((prev) => {
               const filtered = (prev.wellnessEntries || []).filter((e) => e.date !== raw.date && e.id !== String(raw.id))
               return {
