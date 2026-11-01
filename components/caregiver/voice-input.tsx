@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Mic, Square, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useSahay } from "@/lib/sahay-context";
