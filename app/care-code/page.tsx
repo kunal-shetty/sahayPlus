@@ -44,7 +44,7 @@ export default function CareCodePage() {
             await linkCareCode(code);
             // Redirect based on user role after linking
             router.push(
-                user?.role === "caregiver" ? "/caregiver" : "/care-receiver",
+                user?.role === "caregiver" ? "/dashboard" : "/care-receiver",
             );
         } catch (err: any) {
             setError(err.message || "Invalid code. Please try again.");
