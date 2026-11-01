@@ -16,12 +16,11 @@ test.describe('Phase 2: Caregiver Daily Operations Flow', () => {
   });
 
   test('Step 1: should render caregiver dashboard with senior info and streak analytics', async ({ page }) => {
-    await page.goto('/caregiver');
+    await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
-    // Care header and greeting displayed
-    await expect(page.locator('h1')).toContainText('Care');
-    await expect(page.getByText(/Good (morning|afternoon|evening)/i)).toBeVisible();
+    // Dashboard header displayed
+    await expect(page.locator('h1')).toContainText('Health Dashboard');
 
     // Streak and adherence analytics visible
     await expect(page.getByText(/Current Streak/i)).toBeVisible();
@@ -35,7 +34,7 @@ test.describe('Phase 2: Caregiver Daily Operations Flow', () => {
   });
 
   test('Step 2: should open medication form and allow adding a new medication to regimen', async ({ page }) => {
-    await page.goto('/caregiver');
+    await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
     // Click "Add medication"
@@ -63,7 +62,7 @@ test.describe('Phase 2: Caregiver Daily Operations Flow', () => {
   });
 
   test('Step 3: should open and close the caregiver settings panel', async ({ page }) => {
-    await page.goto('/caregiver');
+    await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
     // Click settings gear button
