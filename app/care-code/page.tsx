@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Heart, Link2, ArrowRight, Loader2, Copy, Check } from "lucide-react";
+import { Link2, ArrowRight, Loader2, Copy, Check } from "lucide-react";
 import { useSahay } from "@/lib/sahay-context";
 import { useRouter } from "next/navigation";
 
