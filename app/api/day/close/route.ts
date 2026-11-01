@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { toLocalDateString } from "@/lib/utils";
 
 // POST /api/day/close — Close the day (daily closure ritual)
 export async function POST(req: NextRequest) {
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
             .from("day_closures")
             .insert({
                 care_relationship_id,
-                date: new Date().toISOString().split("T")[0],
+                date: toLocalDateString(),
                 closed_at: new Date().toISOString(),
                 all_taken: all_taken || false,
                 total_meds: total_meds || 0,
