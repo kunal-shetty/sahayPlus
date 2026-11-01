@@ -128,7 +128,7 @@ test.describe('Human-Like Exploratory QA Testing: Senior Persona', () => {
       await humanClick(alarmDismiss);
     }
 
-    // Senior locates the floating red SOS button
+    // Senior locates the red SOS button
     const sosBtn = page.getByRole('button', { name: /Emergency SOS|SOS/i }).first();
     await expect(sosBtn).toBeVisible();
 
@@ -149,7 +149,7 @@ test.describe('Human-Like Exploratory QA Testing: Senior Persona', () => {
 
     // Verify modal closes cleanly and the peace of the main screen is restored
     await expect(page.getByText(/Emergency SOS Triggered/i)).not.toBeVisible({ timeout: 3000 });
-    await expect(page.getByText(/Need Help|How I feel|I need help/i).first()).toBeVisible();
+    await expect(page.getByText(/I need help/i).first()).toBeVisible();
 
     errorMonitor.stop();
     if (errorMonitor.errors.length > 0) {
@@ -166,7 +166,7 @@ test.describe('Human-Like Exploratory QA Testing: Caregiver Persona', () => {
     await injectSession(page, 'caregiver');
 
     // 1. Navigate to caregiver dashboard
-    await page.goto('/caregiver');
+    await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
     // Human scrolls down to inspect existing regimen
