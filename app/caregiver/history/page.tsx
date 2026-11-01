@@ -3,16 +3,13 @@
 import { useState, useMemo } from "react";
 import { motion } from "motion/react";
 import { useSahay } from "@/lib/sahay-context";
-import { type Medication, type TimelineEvent } from "@/lib/types";
 import {
   Calendar,
-  TrendingUp,
   Pill,
   Filter,
   Download,
   Search,
 } from "lucide-react";
-import { CaregiverLayout } from "@/components/caregiver/caregiver-layout";
 
 /**
  * Medication History & Performance Stats Page
