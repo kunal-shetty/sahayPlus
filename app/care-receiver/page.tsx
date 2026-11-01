@@ -1001,47 +1001,52 @@ export default function CareReceiverPage() {
             </div>
           )}
 
-          {/* Bottom 3 Quick Actions: "How I feel", "I need help", "Call help" */}
+          {/* Bottom 3 Quick Actions: "Message", "Call help", "Emergency SOS" */}
           <div className="grid grid-cols-3 gap-2 shrink-0 w-full mb-1">
             <motion.button
-              onClick={() => setShowWellness(true)}
-              className="py-2.5 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive bg-card border-border hover:border-sahay-success/50 text-foreground shadow-xs"
+              onClick={() => setShowMessages(true)}
+              aria-label="Message Caregiver"
+              className="py-2.5 px-1.5 border-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all touch-manipulation button-interactive bg-card border-border hover:border-primary/50 text-foreground shadow-xs"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              <Smile className="w-5 h-5 text-sahay-success" />
-              <span className="text-xs font-semibold">How I feel</span>
-            </motion.button>
-
-            <motion.button
-              onClick={helpRequestedAt ? handleDismissHelp : handleRequestHelp}
-              className={cn(
-                "py-2.5 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive shadow-xs",
-                helpRequestedAt
-                  ? "bg-destructive/15 border-destructive text-destructive font-bold ring-2 ring-destructive/30"
-                  : "bg-card border-border hover:border-primary/50 text-foreground",
-              )}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              {helpRequestedAt ? (
-                <ShieldAlert className="w-5 h-5 text-destructive animate-pulse" />
-              ) : (
-                <Heart className="w-5 h-5 text-primary" />
-              )}
-              <span className="text-xs font-semibold">
-                {helpRequestedAt ? "Alert Active" : "I need help"}
-              </span>
+              <MessageCircle className="w-5 h-5 text-primary" />
+              <span className="text-xs font-semibold leading-tight">Message</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">Caregiver</span>
             </motion.button>
 
             <motion.button
               onClick={() => setShowEmergency(true)}
-              className="py-2.5 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive bg-card border-border hover:border-destructive/50 text-foreground shadow-xs"
+              aria-label="Call help"
+              className="py-2.5 px-1.5 border-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all touch-manipulation button-interactive bg-card border-border hover:border-emerald-500/50 text-foreground shadow-xs"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              <Phone className="w-5 h-5 text-destructive" />
-              <span className="text-xs font-semibold">Call help</span>
+              <Phone className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-xs font-semibold leading-tight">Call help</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">Family &amp; Dr</span>
+            </motion.button>
+
+            <motion.button
+              onClick={helpRequestedAt ? handleDismissHelp : handleRequestHelp}
+              aria-label="Emergency SOS"
+              title={helpRequestedAt ? "SOS Active - Tap to dismiss" : "Emergency SOS - Need help"}
+              className={cn(
+                "py-2.5 px-1.5 border-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all touch-manipulation button-interactive shadow-sm",
+                helpRequestedAt
+                  ? "bg-amber-600 border-amber-500 text-white font-bold ring-2 ring-amber-500/50 animate-pulse"
+                  : "bg-destructive border-destructive text-white hover:bg-destructive/90",
+              )}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <ShieldAlert className="w-5 h-5 text-white" />
+              <span className="text-xs font-bold leading-tight text-white">
+                {helpRequestedAt ? "Alert Active" : "Emergency SOS"}
+              </span>
+              <span className="text-[10px] text-white/90 leading-tight">
+                {helpRequestedAt ? "Tap to clear" : "Need help?"}
+              </span>
             </motion.button>
           </div>
         </div>
@@ -1094,33 +1099,14 @@ export default function CareReceiverPage() {
       {/* Module 6: Emergency SOS & Two-Stage Grace Countdown Modal */}
       <EmergencySosModal
         isOpen={showSosModal}
-        onCancel={() => setShowSosModal(false)}
+        onCancel={() => {
+          setShowSosModal(false);
+          handleDismissHelp();
+        }}
         onDispatch={handleSosDispatch}
         primaryContactName={data.emergencyContacts?.find((c) => c.isPrimary)?.name || data.caregiver?.name || "Primary Caregiver"}
         primaryContactPhone={data.emergencyContacts?.find((c) => c.isPrimary)?.phone || "911"}
       />
-
-      {/* Floating Red SOS Button (Module 6 Requirement) */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <motion.button
-          onClick={helpRequestedAt ? handleDismissHelp : handleRequestHelp}
-          className={cn(
-            "w-16 h-16 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all border-2 touch-manipulation focus:outline-none focus:ring-4",
-            helpRequestedAt
-              ? "bg-amber-600 text-white border-white ring-4 ring-amber-500/50 animate-pulse"
-              : "bg-destructive text-white border-white/40 ring-4 ring-destructive/30 hover:scale-105 active:scale-95"
-          )}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.92 }}
-          title={helpRequestedAt ? "SOS Active - Tap to dismiss" : "Emergency SOS - Need help"}
-          aria-label="Emergency SOS"
-        >
-          <ShieldAlert className="w-7 h-7" />
-          <span className="text-[10px] font-black uppercase tracking-wider mt-0.5">
-            {helpRequestedAt ? "ACTIVE" : "SOS"}
-          </span>
-        </motion.button>
-      </div>
     </main>
   );
 }
