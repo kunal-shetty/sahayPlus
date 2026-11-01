@@ -7,7 +7,6 @@
  * along with a clear readable text badge (e.g. "Yellow • Oval Tablet").
  */
 
-import React from "react";
 import { type MedicationColor, type MedicationShape } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
