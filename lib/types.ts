@@ -5,6 +5,8 @@
  * wellness entries, and the global application state.
  */
 
+import { toLocalDateString } from './utils'
+
 /** The role of the user in the care relationship. */
 export type UserRole = 'caregiver' | 'careReceiver' | null
 
@@ -333,7 +335,7 @@ export const defaultAppData: AppData = {
   caregiver: null,
   careReceiver: null,
   medications: [],
-  lastResetDate: new Date().toISOString().split('T')[0],
+  lastResetDate: toLocalDateString(),
   timeline: [],
   contextualNotes: [],
   pharmacist: null,
@@ -472,7 +474,7 @@ export const dummyAppData: AppData = {
       totalTaken: 45,
     },
   ],
-  lastResetDate: new Date().toISOString().split('T')[0],
+  lastResetDate: toLocalDateString(),
   timeline: [
     {
       id: 'evt_001',
