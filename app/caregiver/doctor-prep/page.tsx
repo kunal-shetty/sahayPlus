@@ -9,7 +9,6 @@ import {
   Heart,
   AlertCircle,
   Printer,
-  Share2,
   Copy,
   Check,
   Mail,
@@ -18,8 +17,6 @@ import {
   Pill,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { CaregiverLayout } from "@/components/caregiver/caregiver-layout";
-import { motion } from "motion/react";
 import { formatTime12h } from "@/lib/types";
 
 /**
