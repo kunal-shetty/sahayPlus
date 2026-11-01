@@ -31,7 +31,6 @@ import {
   Moon,
   RefreshCw,
   Camera,
-  Image as ImageIcon,
   Utensils,
   Coffee,
   Clock,
