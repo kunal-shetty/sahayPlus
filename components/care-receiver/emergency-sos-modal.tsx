@@ -14,11 +14,17 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ShieldAlert, Phone, X, AlertTriangle, Check, MapPin, Radio } from "lucide-react";
 import { playHeartbeatPulse, stopHeartbeatPulse } from "@/lib/audio-chime";
+import { EMERGENCY_NUMBER } from "@/lib/utils";
 
 interface EmergencySosModalProps {
   isOpen: boolean;
   onCancel: () => void;
-  onDispatch: (location?: { latitude: number; longitude: number }) => void;
+  /** Fired the moment the countdown ends — the alert must not wait on GPS. */
+  onDispatch: () => void;
+  /** Fired afterwards if the phone's location becomes available. */
+  onLocation?: (location: { latitude: number; longitude: number }) => void;
+  /** "I am safe now" after dispatch — resolves the alert, not just closes the modal. */
+  onSafe?: () => void;
   primaryContactName?: string;
   primaryContactPhone?: string;
 }
@@ -27,8 +33,10 @@ export function EmergencySosModal({
   isOpen,
   onCancel,
   onDispatch,
+  onLocation,
+  onSafe,
   primaryContactName = "Primary Caregiver",
-  primaryContactPhone = "911",
+  primaryContactPhone = EMERGENCY_NUMBER,
 }: EmergencySosModalProps) {
   const [secondsLeft, setSecondsLeft] = useState(10);
   const [stage, setStage] = useState<"grace" | "dispatched">("grace");
@@ -64,6 +72,7 @@ export function EmergencySosModal({
     if (!isOpen) {
       setSecondsLeft(10);
       setStage("grace");
+      setLocationStr(null);
       stopHeartbeatPulse();
       return;
     }
@@ -78,14 +87,7 @@ export function EmergencySosModal({
     }
 
     const timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          triggerDispatch();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setSecondsLeft((prev) => Math.max(0, prev - 1));
     }, 1000);
 
     return () => {
@@ -94,11 +96,23 @@ export function EmergencySosModal({
     };
   }, [isOpen]);
 
+  // Dispatch exactly once when the countdown reaches zero. Kept out of the
+  // setState updater above, which React may run twice.
+  useEffect(() => {
+    if (isOpen && stage === "grace" && secondsLeft === 0) {
+      triggerDispatch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, stage, secondsLeft]);
+
   const triggerDispatch = () => {
     stopHeartbeatPulse();
     setStage("dispatched");
 
-    // Fetch GPS coordinates
+    // Alert the caregiver immediately; location is a follow-up. Waiting on
+    // GPS here would stall the alert behind the browser's permission prompt.
+    onDispatch();
+
     if (typeof window !== "undefined" && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -106,17 +120,14 @@ export function EmergencySosModal({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
           };
-          setLocationStr(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
-          onDispatch(loc);
+          setLocationStr(`${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}`);
+          onLocation?.(loc);
         },
         () => {
           setLocationStr("Location unavailable");
-          onDispatch();
         },
-        { timeout: 5000, enableHighAccuracy: true }
+        { timeout: 10000, enableHighAccuracy: true },
       );
-    } else {
-      onDispatch();
     }
   };
 
@@ -196,7 +207,7 @@ export function EmergencySosModal({
                 Help Alert Dispatched!
               </h2>
               <p className="text-base text-foreground font-medium">
-                Your caregiver has been notified with high-priority audio alarm and location.
+                Your caregiver has been alerted. Your location will be sent if your phone allows it.
               </p>
               {locationStr && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary rounded-full text-xs text-muted-foreground">
@@ -217,10 +228,19 @@ export function EmergencySosModal({
               </a>
 
               <button
-                onClick={handleAbort}
+                onClick={() => {
+                  handleAbort();
+                  onSafe?.();
+                }}
                 className="w-full py-3 px-6 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:bg-secondary transition-all"
               >
-                I am safe now (Dismiss)
+                I am safe now
+              </button>
+              <button
+                onClick={handleAbort}
+                className="w-full py-3 px-6 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-secondary transition-all"
+              >
+                Close (keep alert on)
               </button>
             </div>
           </>
