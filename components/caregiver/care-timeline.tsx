@@ -27,7 +27,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, toLocalDateString } from "@/lib/utils";
 
 /**
  * CareTimeline component.
@@ -90,7 +90,7 @@ export function CareTimeline({ onClose }: { onClose: () => void }) {
   const groupedEvents: Record<string, TimelineEvent[]> = {};
 
   for (const event of filteredTimeline) {
-    const date = new Date(event.timestamp).toISOString().split("T")[0];
+    const date = toLocalDateString(event.timestamp);
     if (!groupedEvents[date]) {
       groupedEvents[date] = [];
     }
