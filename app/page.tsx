@@ -53,10 +53,8 @@ export default function Home() {
 
     // 4. Route based on user role
     if (user.role === "caregiver") {
-      // Caregivers get a separate dashboard on desktop and a mobile-optimized page on smaller screens
-      const isDesktop =
-        typeof window !== "undefined" && window.innerWidth >= 1024;
-      router.push(isDesktop ? "/dashboard" : "/caregiver");
+      // The dashboard is responsive, so it is the caregiver home on every screen size
+      router.push("/dashboard");
     } else if (user.role === "care_receiver") {
       router.push("/care-receiver");
     } else {
