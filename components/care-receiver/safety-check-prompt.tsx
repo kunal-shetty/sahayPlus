@@ -53,7 +53,18 @@ export function SafetyCheckPrompt() {
      * Re-triggers the safety check if significant motion (shake) is detected,
      * ensuring that the prompt remains active during active movement.
      */
+    const isPending = data.safetyCheck.status === "pending_check";
     useEffect(() => {
+        // Don't stack checks: while one is open, motion is ignored.
+        if (isPending) return;
+
+        const GRAVITY = 9.81;
+        const JOLT_THRESHOLD = 15; // m/s² beyond gravity — a hard shake/impact, not walking
+        const JOLTS_NEEDED = 3; // within the window below
+        const WINDOW_MS = 2000;
+        const COOLDOWN_MS = 60_000;
+
+        let jolts: number[] = [];
         let lastTriggerTime = 0;
 
         const handleMotion = (event: DeviceMotionEvent) => {
@@ -63,14 +74,15 @@ export function SafetyCheckPrompt() {
             const x = acc.x || 0;
             const y = acc.y || 0;
             const z = acc.z || 0;
-
             const magnitude = Math.sqrt(x * x + y * y + z * z);
             const now = Date.now();
 
-            // Shake threshold: magnitude > 20, rate-limited to once every 5 seconds
-            if (magnitude > 20 && now - lastTriggerTime > 5000) {
-                lastTriggerTime = now;
+            if (Math.abs(magnitude - GRAVITY) < JOLT_THRESHOLD) return;
 
+            jolts = [...jolts.filter((t) => now - t < WINDOW_MS), now];
+            if (jolts.length >= JOLTS_NEEDED && now - lastTriggerTime > COOLDOWN_MS) {
+                lastTriggerTime = now;
+                jolts = [];
                 triggerSafetyCheck("motion");
             }
         };
@@ -80,7 +92,7 @@ export function SafetyCheckPrompt() {
         return () => {
             window.removeEventListener("devicemotion", handleMotion);
         };
-    }, [triggerSafetyCheck]);
+    }, [triggerSafetyCheck, isPending]);
 
     if (data.safetyCheck.status !== "pending_check") return null;
 
