@@ -31,7 +31,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getOverdueMeds, type OverdueMedInfo } from "@/lib/overdue-utils";
-import { cn, toLocalDateString } from "@/lib/utils";
+import { cn, toLocalDateString, SHOW_DEMO_TOOLS } from "@/lib/utils";
+import { useRoleGuard } from "@/hooks/use-role-guard";
 import {
   playCaregiverEmergencySiren,
   stopCaregiverEmergencySiren,
@@ -43,6 +44,7 @@ import { CareConfidence } from "@/components/caregiver/care-confidence";
 import { DailyClosure } from "@/components/caregiver/daily-closure";
 import { CaregiverLayout } from "@/components/caregiver/caregiver-layout";
 import { VoiceInput } from "@/components/caregiver/voice-input";
+import { QuickPillActions } from "@/components/caregiver/quick-pill-actions";
 
 /**
  * Caregiver Responsive Dashboard
@@ -60,6 +62,7 @@ export default function DashboardPage() {
   } = useSahay();
 
   const router = useRouter();
+  const isAllowed = useRoleGuard("caregiver");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -207,7 +210,7 @@ export default function DashboardPage() {
     evening: Moon,
   };
 
-  if (isLoading || isDataLoading)
+  if (!isAllowed || isLoading || isDataLoading)
     return (
       <div className="min-h-screen flex items-center justify-center">
         Loading Dashboard...
@@ -257,6 +260,8 @@ export default function DashboardPage() {
               <Activity className="w-4 h-4 text-sahay-success" />
               <span>System Status: Nominal</span>
             </div>
+            {SHOW_DEMO_TOOLS && (
+            <>
             <button
               onClick={() => {
                 setIsAlertDismissed(false);
@@ -298,8 +303,11 @@ export default function DashboardPage() {
               <Smile className="w-4 h-4 text-orange-500" />
               <span>{simulateMissingWellness ? "Missing Wellness Active" : "Simulate Missing Check-in"}</span>
             </button>
+            </>
+            )}
             <button
               onClick={() => setShowSettings(true)}
+              aria-label="Settings"
               className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-all active:scale-95"
             >
               <Settings className="w-5 h-5 md:w-6 md:h-6" />
@@ -575,6 +583,9 @@ export default function DashboardPage() {
                 </motion.div>
               )}
             </div>
+
+            {/* One-tap mark-as-taken for pending doses and refill warnings */}
+            <QuickPillActions />
 
             {/* Medication Checklist */}
             <section className="bg-card border-2 border-border rounded-3xl p-6 md:p-8 shadow-sm">
