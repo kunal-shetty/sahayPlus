@@ -16,7 +16,7 @@ test.describe('Phase 4: Real-Time Cross-Role Sync & Care Closure', () => {
   });
 
   test('Step 1: should reflect real-time medication intake sync on caregiver dashboard', async ({ page }) => {
-    await page.goto('/caregiver');
+    await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
     // Confirm caregiver sees scheduled medication items
@@ -28,7 +28,7 @@ test.describe('Phase 4: Real-Time Cross-Role Sync & Care Closure', () => {
   });
 
   test('Step 2: should perform peaceful end-of-day closure ritual', async ({ page }) => {
-    await page.goto('/caregiver');
+    await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
     // Find the Daily Closure card
