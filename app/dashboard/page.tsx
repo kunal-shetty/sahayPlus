@@ -17,17 +17,12 @@ import {
   Check,
   Clock,
   Settings,
-  ChevronRight,
   LayoutDashboard,
-  BarChart3,
-  FileText,
   ShieldAlert,
-  Heart,
   Phone,
   MessageCircle,
   Smile,
   Pill,
-  TrendingUp,
   Activity,
   Calendar,
   User,
@@ -36,7 +31,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getOverdueMeds, type OverdueMedInfo } from "@/lib/overdue-utils";
-import { cn } from "@/lib/utils";
+import { cn, toLocalDateString } from "@/lib/utils";
 import {
   playCaregiverEmergencySiren,
   stopCaregiverEmergencySiren,
@@ -80,7 +75,7 @@ export default function DashboardPage() {
   const [acknowledgedMissingWellness, setAcknowledgedMissingWellness] = useState(false);
   const [sentWellnessReminder, setSentWellnessReminder] = useState(false);
 
-  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const todayStr = useMemo(() => toLocalDateString(), []);
   const todayWellness = getTodayWellness();
 
   // Determine if morning wellness check-in is overdue (after 9:45 AM — 15 min grace after 9:30 AM reminder) and missing
