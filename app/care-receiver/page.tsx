@@ -26,18 +26,16 @@ import {
   Cloud,
   Moon,
   Settings,
-  Pill,
-  MessageCircle,
   Phone,
   Smile,
   ArrowLeftRight,
   Mic,
   Info,
   ShieldAlert,
-  ShieldCheck,
-  AlertTriangle,
   Bell,
   Camera,
+  ShieldCheck,
+  MessageCircle,
 } from "lucide-react";
 import { WellnessCheckin } from "@/components/care-receiver/wellness-checkin";
 import { MorningWellnessCard } from "@/components/care-receiver/morning-wellness-card";
@@ -58,7 +56,7 @@ import {
 } from "@/lib/audio-chime";
 import { CareReceiverHomeSkeleton } from "@/components/skeletons";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn, toLocalDateString } from "@/lib/utils";
 
 /**
  * CareReceiverPage component.
@@ -144,7 +142,7 @@ export default function CareReceiverPage() {
       const currentHours = now.getHours();
       const currentMinutes = now.getMinutes();
       const nowInMinutes = currentHours * 60 + currentMinutes;
-      const todayStr = now.toISOString().split("T")[0];
+      const todayStr = toLocalDateString(now);
       const nowTs = Date.now();
 
       const untaken = data.medications.filter((m) => !m.taken);
@@ -243,7 +241,7 @@ export default function CareReceiverPage() {
     stopMedicineChime();
     setIsAlarmOverdue(false);
     if (alarmMedication) {
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = toLocalDateString();
       setDismissedMeds((prev) => ({
         ...prev,
         [alarmMedication.id]: todayStr,
@@ -277,12 +275,12 @@ export default function CareReceiverPage() {
 
   /** Check if an active unresolved help request was triggered today */
   useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = toLocalDateString();
     const activeHelp = (data.timeline || []).find(
       (e) =>
         e.type === "help_requested" &&
         !e.note?.includes("resolved") &&
-        e.timestamp.startsWith(today),
+        toLocalDateString(e.timestamp) === today,
     );
     if (activeHelp) {
       if (helpRequestedAt !== activeHelp.timestamp) {
@@ -313,7 +311,7 @@ export default function CareReceiverPage() {
   };
 
   /** Theme state: 'light', 'dark', or 'auto' (automatic night mode). */
-  const [theme, setTheme] = useState<"light" | "dark" | "auto">("light");
+  const [theme, setTheme] = useState<"light" | "dark" | "auto">("auto");
 
   /** Restore theme preference from localStorage on mount. */
   useEffect(() => {
@@ -628,9 +626,8 @@ export default function CareReceiverPage() {
 
   const doneCount = data.medications.filter((m) => m.taken).length;
   const TimeIcon = nextMed ? timeIcons[nextMed.timeOfDay] : Check;
-  const isFineCheckedIn = data.lastFineCheckIn?.startsWith(
-    new Date().toISOString().split("T")[0],
-  );
+  const isFineCheckedIn =
+    toLocalDateString(data.lastFineCheckIn) === toLocalDateString();
   const currentHour = new Date().getHours();
   const currentMinute = new Date().getMinutes();
   const isPastLateMorning = currentHour > 9 || (currentHour === 9 && currentMinute >= 30);
