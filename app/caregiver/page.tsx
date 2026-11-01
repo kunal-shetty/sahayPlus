@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { useSahay } from "@/lib/sahay-context";
 import {
   type TimeOfDay,
@@ -9,8 +9,6 @@ import {
   timeOfDayLabels,
   getCurrentTimeOfDay,
   formatTime12h,
-  calculateConfidence,
-  getConfidenceMessage,
 } from "@/lib/types";
 import {
   Sun,
@@ -21,19 +19,12 @@ import {
   Clock,
   Settings,
   ChevronRight,
-  BookOpen,
-  Users,
-  FileText,
-  RefreshCw,
-  BarChart3,
   Phone,
   MessageCircle,
   Heart,
   ArrowLeftRight,
-  History,
   ShieldAlert,
   Smile,
-  Pill,
   AlertTriangle,
   X,
 } from "lucide-react";
@@ -43,18 +34,16 @@ import { getOverdueMeds, type OverdueMedInfo } from "@/lib/overdue-utils";
 import { MedicationForm } from "@/components/caregiver/medication-form";
 import { SettingsPanel } from "@/components/caregiver/settings-panel";
 import { CareTimeline } from "@/components/caregiver/care-timeline";
-import { GentleCheckIn } from "@/components/caregiver/gentle-check-in";
-import { CareConfidence } from "@/components/caregiver/care-confidence";
 import { DailyClosure } from "@/components/caregiver/daily-closure";
 import { RoleStatus } from "@/components/caregiver/role-status";
 import { ContextualNotes } from "@/components/caregiver/contextual-notes";
 import { AnalyticsDashboard } from "@/components/caregiver/analytics-dashboard";
 import { EmergencyContacts } from "@/components/caregiver/emergency-contacts";
-import { Messages } from "@/components/caregiver/messages";
 import { WellnessOverview } from "@/components/caregiver/wellness-overview";
 import { MedicationHistory } from "@/components/caregiver/medication-history";
 import { QuickPillActions } from "@/components/caregiver/quick-pill-actions";
 import { CaregiverBottomNav } from "@/components/caregiver/bottom-nav";
+import { toLocalDateString } from "@/lib/utils";
 
 /**
  * Caregiver Page
@@ -102,7 +91,7 @@ export default function CaregiverPage() {
   const [acknowledgedMissingWellness, setAcknowledgedMissingWellness] = useState(false);
   const [sentWellnessReminder, setSentWellnessReminder] = useState(false);
 
-  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const todayStr = useMemo(() => toLocalDateString(), []);
   const todayWellness = getTodayWellness();
 
   // Determine if morning wellness check-in is overdue (after 9:45 AM — 15 min grace after 9:30 AM reminder) and missing
