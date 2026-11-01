@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Morning ritual placeholder illustration">
+  <defs>
+    <linearGradient id="pm-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdf3e3"/>
+      <stop offset="0.6" stop-color="#fdeedd"/>
+      <stop offset="1" stop-color="#e9f7f1"/>
+    </linearGradient>
+    <linearGradient id="pm-sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8b877"/>
+      <stop offset="1" stop-color="#f59145"/>
+    </linearGradient>
+    <linearGradient id="pm-hill1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fc9ab"/>
+      <stop offset="1" stop-color="#00b089"/>
+    </linearGradient>
+    <linearGradient id="pm-hill2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#008760"/>
+      <stop offset="1" stop-color="#02684e"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#pm-sky)"/>
+  <circle cx="200" cy="150" r="150" fill="#f8b877" opacity="0.18"/>
+  <circle cx="200" cy="150" r="100" fill="#f59145" opacity="0.14"/>
+  <g stroke="#f59145" stroke-width="5" stroke-linecap="round" opacity="0.55">
+    <line x1="200" y1="86" x2="200" y2="64"/>
+    <line x1="146" y1="108" x2="130" y2="92"/>
+    <line x1="254" y1="108" x2="270" y2="92"/>
+    <line x1="128" y1="152" x2="104" y2="152"/>
+    <line x1="272" y1="152" x2="296" y2="152"/>
+  </g>
+  <circle cx="200" cy="164" r="34" fill="url(#pm-sun)"/>
+  <path d="M0 214 Q90 158 190 206 T400 190 L400 300 L0 300 Z" fill="url(#pm-hill1)"/>
+  <path d="M0 250 Q110 206 220 244 T400 234 L400 300 L0 300 Z" fill="url(#pm-hill2)"/>
+  <g transform="translate(163 232)">
+    <rect x="0" y="14" width="74" height="34" rx="17" fill="#ffffff" opacity="0.95"/>
+    <circle cx="24" cy="31" r="11" fill="#00b089"/>
+    <path d="M19.5 31 l3.2 3.4 l6 -6.4" stroke="#ffffff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="42" y="24" width="24" height="5" rx="2.5" fill="#cdeede"/>
+    <rect x="42" y="33" width="17" height="5" rx="2.5" fill="#efe9da"/>
+  </g>
+  <circle cx="118" cy="258" r="5" fill="#f59145" opacity="0.7"/>
+  <circle cx="300" cy="266" r="4" fill="#009fc1" opacity="0.5"/>
+  <circle cx="332" cy="120" r="6" fill="#f8b877" opacity="0.6"/>
+  <circle cx="72" cy="96" r="5" fill="#4fc9ab" opacity="0.55"/>
+</svg>
