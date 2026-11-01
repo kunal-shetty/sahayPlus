@@ -15,13 +15,12 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
-  Filter,
   X,
   Edit3,
 } from "lucide-react";
-import type { WellnessLevel, WellnessEntry } from "@/lib/types";
+import type { WellnessLevel } from "@/lib/types";
 import { motion, AnimatePresence } from "motion/react";
-import { cn } from "@/lib/utils";
+import { cn, toLocalDateString } from "@/lib/utils";
 
 const wellnessConfig: Record<
   string,
@@ -96,7 +95,7 @@ export default function WellnessPage() {
   const past7Days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(todayDateObj.getDate() - (6 - i));
-    const dateStr = d.toISOString().split("T")[0];
+    const dateStr = toLocalDateString(d);
     const isToday = i === 6;
     const weekday = isToday
       ? "Today"
@@ -119,7 +118,7 @@ export default function WellnessPage() {
   // Filter entries that actually occurred within the last 7 calendar days
   const sevenDaysAgoDate = new Date();
   sevenDaysAgoDate.setDate(todayDateObj.getDate() - 7);
-  const sevenDaysAgoStr = sevenDaysAgoDate.toISOString().split("T")[0];
+  const sevenDaysAgoStr = toLocalDateString(sevenDaysAgoDate);
 
   const weekEntries = allEntries.filter((e) => {
     const entryDate = e.date || (e.timestamp ? e.timestamp.split("T")[0] : "");
