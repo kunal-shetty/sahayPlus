@@ -15,6 +15,8 @@ import {
   ChevronRight,
   Menu,
   X,
+  MessageCircle,
+  ShieldAlert,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -103,7 +105,9 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+    { label: "Home", icon: LayoutDashboard, path: "/dashboard" },
+    { label: "Messages", icon: MessageCircle, path: "/caregiver/messages" },
+    { label: "Emergency", icon: ShieldAlert, path: "/caregiver/emergency" },
     { label: "Analytics", icon: BarChart3, path: "/caregiver/analytics" },
     { label: "Care Notes", icon: FileText, path: "/caregiver/notes" },
     { label: "Wellness", icon: Smile, path: "/caregiver/wellness" },
@@ -214,7 +218,7 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       {/* Main Content Area - Independently scrollable */}
-      <main ref={mainRef} className="flex-1 h-full min-w-0 overflow-y-auto">
+      <main ref={mainRef} className="flex-1 h-full min-w-0 overflow-y-auto pt-14 lg:pt-0">
         {children}
       </main>
     </div>
