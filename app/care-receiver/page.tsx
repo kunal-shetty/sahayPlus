@@ -27,7 +27,6 @@ import {
   Moon,
   Settings,
   Phone,
-  Smile,
   ArrowLeftRight,
   Mic,
   Info,
@@ -37,7 +36,6 @@ import {
   ShieldCheck,
   MessageCircle,
 } from "lucide-react";
-import { WellnessCheckin } from "@/components/care-receiver/wellness-checkin";
 import { MorningWellnessCard } from "@/components/care-receiver/morning-wellness-card";
 import { QuickMessages } from "@/components/care-receiver/quick-messages";
 import { EmergencyCall } from "@/components/care-receiver/emergency-call";
@@ -56,7 +54,31 @@ import {
 } from "@/lib/audio-chime";
 import { CareReceiverHomeSkeleton } from "@/components/skeletons";
 import { useRouter } from "next/navigation";
-import { cn, toLocalDateString } from "@/lib/utils";
+import { cn, toLocalDateString, SHOW_DEMO_TOOLS, EMERGENCY_NUMBER } from "@/lib/utils";
+import { useRoleGuard } from "@/hooks/use-role-guard";
+
+/** How long the "Undo this" screen stays up after marking a dose. */
+const UNDO_WINDOW_MS = 8000;
+
+const SNOOZE_STORAGE_KEY = "sahay_alarm_snoozed";
+const DISMISS_STORAGE_KEY = "sahay_alarm_dismissed";
+
+function readStoredAlarmState<T>(key: string): Record<string, T> {
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredAlarmState(key: string, value: Record<string, unknown>) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage unavailable (private mode etc.) — alarm state just won't survive a reload
+  }
+}
 
 /**
  * CareReceiverPage component.
@@ -76,8 +98,10 @@ export default function CareReceiverPage() {
     resolveHelpRequest,
     reportOverdueDose,
     dismissChangeIndicator,
+    sendMessage,
   } = useSahay();
   const router = useRouter();
+  const isAllowed = useRoleGuard("care_receiver");
 
   /**
    * Sets up a global function on the window object to allow external triggers
@@ -99,7 +123,6 @@ export default function CareReceiverPage() {
   const [confirmedMed, setConfirmedMed] = useState<Medication | null>(null);
   const [showUndo, setShowUndo] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showWellness, setShowWellness] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
@@ -111,8 +134,23 @@ export default function CareReceiverPage() {
   // Scheduled Medicine Alarm State
   const [alarmMedication, setAlarmMedication] = useState<Medication | null>(null);
   const [isAlarmOverdue, setIsAlarmOverdue] = useState(false);
-  const [snoozedMeds, setSnoozedMeds] = useState<Record<string, number>>({});
-  const [dismissedMeds, setDismissedMeds] = useState<Record<string, string>>({});
+  /** True while the alarm on screen is a test from Settings, not a real dose. */
+  const [isTestAlarm, setIsTestAlarm] = useState(false);
+  // Snooze/dismiss survive a reload, otherwise the alarm rings again on refresh.
+  const [snoozedMeds, setSnoozedMeds] = useState<Record<string, number>>(() =>
+    readStoredAlarmState(SNOOZE_STORAGE_KEY),
+  );
+  const [dismissedMeds, setDismissedMeds] = useState<Record<string, string>>(() =>
+    readStoredAlarmState(DISMISS_STORAGE_KEY),
+  );
+
+  useEffect(() => {
+    writeStoredAlarmState(SNOOZE_STORAGE_KEY, snoozedMeds);
+  }, [snoozedMeds]);
+
+  useEffect(() => {
+    writeStoredAlarmState(DISMISS_STORAGE_KEY, dismissedMeds);
+  }, [dismissedMeds]);
   const [isAlarmSoundMuted, setIsAlarmSoundMuted] = useState(false);
   const reportedOverdueMedsRef = useRef<Record<string, boolean>>({});
 
@@ -213,6 +251,12 @@ export default function CareReceiverPage() {
     stopMedicineChime();
     playSuccessChime();
     setIsAlarmOverdue(false);
+    if (isTestAlarm) {
+      // A test alarm must never record a real dose
+      setIsTestAlarm(false);
+      setAlarmMedication(null);
+      return;
+    }
     if (alarmMedication) {
       reportedOverdueMedsRef.current[alarmMedication.id] = false;
       markMedicationTaken(alarmMedication.id, true);
@@ -226,6 +270,11 @@ export default function CareReceiverPage() {
   const handleAlarmSnooze = () => {
     stopMedicineChime();
     setIsAlarmOverdue(false);
+    if (isTestAlarm) {
+      setIsTestAlarm(false);
+      setAlarmMedication(null);
+      return;
+    }
     if (alarmMedication) {
       const tenMinutesLater = Date.now() + 10 * 60 * 1000;
       setSnoozedMeds((prev) => ({
@@ -240,6 +289,11 @@ export default function CareReceiverPage() {
   const handleAlarmDismiss = () => {
     stopMedicineChime();
     setIsAlarmOverdue(false);
+    if (isTestAlarm) {
+      setIsTestAlarm(false);
+      setAlarmMedication(null);
+      return;
+    }
     if (alarmMedication) {
       const todayStr = toLocalDateString();
       setDismissedMeds((prev) => ({
@@ -266,6 +320,8 @@ export default function CareReceiverPage() {
       lastUpdated: new Date().toISOString(),
     };
     setShowSettings(false);
+    setIsTestAlarm(true);
+    setIsAlarmOverdue(false);
     setAlarmMedication(medToTest);
     unlockAudioContext();
     if (!isAlarmSoundMuted) {
@@ -297,11 +353,18 @@ export default function CareReceiverPage() {
     setShowSosModal(true);
   };
 
-  const handleSosDispatch = (location?: { latitude: number; longitude: number }) => {
+  /** Called by the SOS modal as soon as the countdown ends. */
+  const handleSosDispatch = () => {
     requestHelp();
-    triggerSafetyCheck("manual");
-    const nowIso = new Date().toISOString();
-    setHelpRequestedAt(nowIso);
+    setHelpRequestedAt(new Date().toISOString());
+  };
+
+  /** Called later, if/when the phone's location becomes available. */
+  const handleSosLocation = (location: { latitude: number; longitude: number }) => {
+    const { latitude, longitude } = location;
+    sendMessage(
+      `📍 My location: https://maps.google.com/?q=${latitude.toFixed(5)},${longitude.toFixed(5)}`,
+    );
   };
 
   const handleDismissHelp = () => {
@@ -402,7 +465,7 @@ export default function CareReceiverPage() {
       const timer = setTimeout(() => {
         setShowUndo(false);
         setConfirmedMed(null);
-      }, 3000);
+      }, UNDO_WINDOW_MS);
       return () => clearTimeout(timer);
     }
   }, [showUndo]);
@@ -420,7 +483,7 @@ export default function CareReceiverPage() {
     return "Good evening";
   };
 
-  if (isLoading || isDataLoading) {
+  if (!isAllowed || isLoading || isDataLoading) {
     return <CareReceiverHomeSkeleton />;
   }
 
@@ -430,6 +493,7 @@ export default function CareReceiverPage() {
       <IntakeAlarmModal
         medication={alarmMedication}
         isNight={isNight}
+        isOverdue={isAlarmOverdue}
         onTookIt={handleAlarmTookIt}
         onSnooze={handleAlarmSnooze}
         onDismiss={handleAlarmDismiss}
@@ -444,10 +508,6 @@ export default function CareReceiverPage() {
         isMuted={isAlarmSoundMuted}
       />
     );
-  }
-
-  if (showWellness) {
-    return <WellnessCheckin onClose={() => setShowWellness(false)} />;
   }
 
   if (showMessages) {
@@ -515,6 +575,8 @@ export default function CareReceiverPage() {
               )}
             </div>
 
+            {SHOW_DEMO_TOOLS && (
+            <>
             <button
               onClick={handleTestAlarm}
               className="w-full py-4 px-6 bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xl font-semibold
@@ -551,6 +613,8 @@ export default function CareReceiverPage() {
               <Heart className="w-6 h-6 text-sahay-sage" />
               Simulate Safety Check
             </button>
+            </>
+            )}
 
             <button
               onClick={() => {
@@ -606,7 +670,10 @@ export default function CareReceiverPage() {
 
           <div className="mt-8 w-full max-w-xs">
             <div className="h-1 bg-sahay-sage/20 rounded-full overflow-hidden">
-              <div className="h-full bg-sahay-sage animate-shrink-width" />
+              <div
+                className="h-full bg-sahay-sage animate-shrink-width"
+                style={{ animationDuration: `${UNDO_WINDOW_MS}ms` }}
+              />
             </div>
           </div>
         </div>
@@ -621,6 +688,7 @@ export default function CareReceiverPage() {
    * any moment — emergencies often follow a dose. A formally closed day shares
    * the same reassuring card, since the pills are equally all recorded.
    */
+  const primaryContact = data.emergencyContacts?.find((c) => c.isPrimary && c.phone);
   const finishedTitle = "You are all caught up";
   const finishedMessage = "At this time no medicine is required.";
 
@@ -677,17 +745,6 @@ export default function CareReceiverPage() {
           </div>
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => {
-                unlockAudioContext();
-                setShowVoiceModal(true);
-              }}
-              className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary text-primary hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-              aria-label="Voice Medication Confirmation"
-              title="Speak to record your dose"
-            >
-              <Mic className="w-4 h-4 text-primary" />
-            </button>
-            <button
               onClick={() => setShowMessages(true)}
               className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary text-primary hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
               aria-label="Send Message"
@@ -695,6 +752,7 @@ export default function CareReceiverPage() {
             >
               <MessageCircle className="w-4 h-4" />
             </button>
+            {SHOW_DEMO_TOOLS && (
             <button
               onClick={handleTestAlarm}
               className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
@@ -703,6 +761,7 @@ export default function CareReceiverPage() {
             >
               <Bell className="w-4 h-4 text-amber-500" />
             </button>
+            )}
             <button
               onClick={() => setShowSettings(true)}
               className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary text-foreground hover:bg-secondary/80 border border-border touch-manipulation focus:outline-none focus:ring-2 focus:ring-ring transition-all"
@@ -1001,47 +1060,39 @@ export default function CareReceiverPage() {
             </div>
           )}
 
-          {/* Bottom 3 Quick Actions: "How I feel", "I need help", "Call help" */}
-          <div className="grid grid-cols-3 gap-2 shrink-0 w-full mb-1">
+          {/*
+            Bottom actions. "Help" is the single SOS: it starts the 10-second
+            countdown and alerts the caregiver. While an alert is active it
+            never cancels it — it opens the call screen instead; cancelling is
+            only done via the explicit "I'm okay" button in the banner above.
+          */}
+          <div className="grid grid-cols-2 gap-2 shrink-0 w-full mb-1">
             <motion.button
-              onClick={() => setShowWellness(true)}
-              className="py-2.5 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive bg-card border-border hover:border-sahay-success/50 text-foreground shadow-xs"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <Smile className="w-5 h-5 text-sahay-success" />
-              <span className="text-xs font-semibold">How I feel</span>
-            </motion.button>
-
-            <motion.button
-              onClick={helpRequestedAt ? handleDismissHelp : handleRequestHelp}
+              onClick={helpRequestedAt ? () => setShowEmergency(true) : handleRequestHelp}
               className={cn(
-                "py-2.5 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive shadow-xs",
+                "py-3 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive shadow-md focus:outline-none focus:ring-4",
                 helpRequestedAt
-                  ? "bg-destructive/15 border-destructive text-destructive font-bold ring-2 ring-destructive/30"
-                  : "bg-card border-border hover:border-primary/50 text-foreground",
+                  ? "bg-amber-600 text-white border-amber-700 ring-2 ring-amber-500/40"
+                  : "bg-destructive text-white border-destructive focus:ring-destructive/40",
               )}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
+              aria-label={helpRequestedAt ? "Help is on the way. Call someone" : "SOS, I need help"}
             >
-              {helpRequestedAt ? (
-                <ShieldAlert className="w-5 h-5 text-destructive animate-pulse" />
-              ) : (
-                <Heart className="w-5 h-5 text-primary" />
-              )}
-              <span className="text-xs font-semibold">
-                {helpRequestedAt ? "Alert Active" : "I need help"}
+              <ShieldAlert className={cn("w-6 h-6", helpRequestedAt && "animate-pulse")} />
+              <span className="text-sm font-bold">
+                {helpRequestedAt ? "Help is coming" : "SOS · I need help"}
               </span>
             </motion.button>
 
             <motion.button
               onClick={() => setShowEmergency(true)}
-              className="py-2.5 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive bg-card border-border hover:border-destructive/50 text-foreground shadow-xs"
+              className="py-3 px-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all touch-manipulation button-interactive bg-card border-border hover:border-destructive/50 text-foreground shadow-xs"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              <Phone className="w-5 h-5 text-destructive" />
-              <span className="text-xs font-semibold">Call help</span>
+              <Phone className="w-6 h-6 text-destructive" />
+              <span className="text-sm font-semibold">Call someone</span>
             </motion.button>
           </div>
         </div>
@@ -1059,20 +1110,6 @@ export default function CareReceiverPage() {
               Quiet Night Mode Active
             </span>
           </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {alarmMedication && (
-          <IntakeAlarmModal
-            medication={alarmMedication}
-            isNight={isNight}
-            isOverdue={isAlarmOverdue}
-            isMuted={isAlarmSoundMuted}
-            onToggleSound={(muted) => setIsAlarmSoundMuted(muted)}
-            onTookIt={handleAlarmTookIt}
-            onSnooze={handleAlarmSnooze}
-            onDismiss={handleAlarmDismiss}
-          />
         )}
       </AnimatePresence>
       <VoiceIntakeModal
@@ -1096,31 +1133,12 @@ export default function CareReceiverPage() {
         isOpen={showSosModal}
         onCancel={() => setShowSosModal(false)}
         onDispatch={handleSosDispatch}
-        primaryContactName={data.emergencyContacts?.find((c) => c.isPrimary)?.name || data.caregiver?.name || "Primary Caregiver"}
-        primaryContactPhone={data.emergencyContacts?.find((c) => c.isPrimary)?.phone || "911"}
+        onLocation={handleSosLocation}
+        onSafe={handleDismissHelp}
+        primaryContactName={primaryContact?.name || `Emergency (${EMERGENCY_NUMBER})`}
+        primaryContactPhone={primaryContact?.phone || EMERGENCY_NUMBER}
       />
 
-      {/* Floating Red SOS Button (Module 6 Requirement) */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <motion.button
-          onClick={helpRequestedAt ? handleDismissHelp : handleRequestHelp}
-          className={cn(
-            "w-16 h-16 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all border-2 touch-manipulation focus:outline-none focus:ring-4",
-            helpRequestedAt
-              ? "bg-amber-600 text-white border-white ring-4 ring-amber-500/50 animate-pulse"
-              : "bg-destructive text-white border-white/40 ring-4 ring-destructive/30 hover:scale-105 active:scale-95"
-          )}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.92 }}
-          title={helpRequestedAt ? "SOS Active - Tap to dismiss" : "Emergency SOS - Need help"}
-          aria-label="Emergency SOS"
-        >
-          <ShieldAlert className="w-7 h-7" />
-          <span className="text-[10px] font-black uppercase tracking-wider mt-0.5">
-            {helpRequestedAt ? "ACTIVE" : "SOS"}
-          </span>
-        </motion.button>
-      </div>
     </main>
   );
 }
