@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { toLocalDateString } from "@/lib/utils";
 
 // POST /api/medications/:id/take — Mark medication as taken
 export async function POST(
@@ -11,7 +12,7 @@ export async function POST(
         const body = await req.json().catch(() => ({}));
         const { marked_by } = body;
 
-        const today = new Date().toISOString().split("T")[0];
+        const today = toLocalDateString();
 
         // Check if a log already exists for this medication today
         const { data: existingLog } = await supabase
