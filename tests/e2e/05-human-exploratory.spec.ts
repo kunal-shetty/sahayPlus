@@ -83,7 +83,7 @@ test.describe('Human-Like Exploratory QA Testing: Senior Persona', () => {
     expect(mobileLayout.hasHorizontalOverflow).toBeFalsy();
 
     // Dismiss any initial alarm modal if open, to inspect the home screen
-    const alarmDismiss = page.getByRole('button', { name: /Dismiss|Close|Later/i }).first();
+    const alarmDismiss = page.getByRole('button', { name: /Not right now|Dismiss|Close|Later/i }).first();
     if (await alarmDismiss.isVisible().catch(() => false)) {
       await humanClick(alarmDismiss);
     }
@@ -123,7 +123,7 @@ test.describe('Human-Like Exploratory QA Testing: Senior Persona', () => {
     await page.waitForLoadState('networkidle');
 
     // Dismiss initial alarm if present
-    const alarmDismiss = page.getByRole('button', { name: /Dismiss|Close|Later/i }).first();
+    const alarmDismiss = page.getByRole('button', { name: /Not right now|Dismiss|Close|Later/i }).first();
     if (await alarmDismiss.isVisible().catch(() => false)) {
       await humanClick(alarmDismiss);
     }
