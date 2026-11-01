@@ -15,8 +15,8 @@
 
 import { motion } from "motion/react";
 import { useSahay } from "@/lib/sahay-context";
-import { type Medication, type TimelineEvent } from "@/lib/types";
-import { ChevronLeft, Calendar, TrendingUp, Pill } from "lucide-react";
+import { type Medication } from "@/lib/types";
+import { ChevronLeft, Calendar, Pill } from "lucide-react";
 
 /**
  * Props for the MedicationHistory component.
