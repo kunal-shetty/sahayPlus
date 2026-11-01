@@ -15,7 +15,7 @@
 
 import { motion } from "motion/react";
 import { useSahay } from "@/lib/sahay-context";
-import { Pill, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Pill, AlertCircle } from "lucide-react";
 
 /**
  * QuickPillActions component.
