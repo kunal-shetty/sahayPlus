@@ -11,7 +11,6 @@ import {
   Stethoscope,
   Pill,
   Users,
-  Settings,
   ChevronLeft,
   ChevronRight,
   Menu,
