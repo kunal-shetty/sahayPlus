@@ -1,26 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import {
-  ArrowLeft,
   Pill,
+  ArrowLeft,
   Clock,
   Save,
   X,
-  Plus,
-  ChevronRight,
   Phone,
   MessageSquare,
   Check,
-  Share2,
   ExternalLink,
   Copy,
 } from "lucide-react";
 import { useSahay } from "@/lib/sahay-context";
 import { useRouter } from "next/navigation";
 import { type Medication } from "@/lib/types";
-import { CaregiverLayout } from "@/components/caregiver/caregiver-layout";
 
 /**
  * Pharmacist Panel Page (Module 12: Neighborhood Chemist Refills)
