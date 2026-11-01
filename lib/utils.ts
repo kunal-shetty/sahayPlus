@@ -16,3 +16,28 @@ import { twMerge } from 'tailwind-merge'
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
+/** Timezone used for all calendar-day bookkeeping (dose logs, closures, wellness). */
+export const APP_TIME_ZONE = 'Asia/Kolkata'
+
+/**
+ * Returns the calendar date (YYYY-MM-DD) of a moment in the app's timezone.
+ * Unlike `toISOString().split('T')[0]`, this does not roll back to the previous
+ * day between 00:00 and 05:30 IST, and gives the same result on the server (UTC)
+ * and in the browser.
+ *
+ * @param value - A Date, ISO timestamp or epoch ms. Defaults to now.
+ * @returns The YYYY-MM-DD date string, or '' if the value is missing or invalid.
+ */
+export function toLocalDateString(value: Date | string | number | null | undefined = new Date()): string {
+  if (value === null || value === undefined || value === '') return ''
+  const date = value instanceof Date ? value : new Date(value)
+  if (isNaN(date.getTime())) return ''
+  // en-CA formats as YYYY-MM-DD
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: APP_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
