@@ -163,7 +163,7 @@ test.describe('Phase 3: Senior Daily Living & Intake Flow', () => {
     await expect(page.getByRole('heading', { name: 'Are you okay?' })).not.toBeVisible({ timeout: 10000 });
   });
 
-  test('Step 7: should open emergency call screen when tapping "Call help"', async ({ page }) => {
+  test('Step 7: should open emergency call screen when tapping "Call someone"', async ({ page }) => {
     await page.goto('/care-receiver');
     await page.waitForLoadState('networkidle');
 
@@ -176,7 +176,7 @@ test.describe('Phase 3: Senior Daily Living & Intake Flow', () => {
       // Alarm modal wasn't active
     }
 
-    const callHelpBtn = page.getByRole('button', { name: 'Call help' });
+    const callHelpBtn = page.getByRole('button', { name: 'Call someone' });
     await expect(callHelpBtn).toBeVisible({ timeout: 10000 });
     await callHelpBtn.click();
     await expect(page.getByRole('heading', { name: 'Need Help?' })).toBeVisible();
